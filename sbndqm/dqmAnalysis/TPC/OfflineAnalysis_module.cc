@@ -61,8 +61,12 @@ tpcAnalysis::OfflineAnalysis::OfflineAnalysis(fhicl::ParameterSet const & p):
 }
 
 void tpcAnalysis::OfflineAnalysis::analyze(art::Event const & e) {
-    _analysis.AnalyzeEvent(e);
-    _output->Fill();
+  _analysis.AnalyzeEvent(e);
+  // calculate correlations here if you want to:
+  // e.g. _analysis.Correlation(channel_i, channel_j);
+  // or calculate the whole matrix:
+  // _analysis.CorrelationMatrix()
+  _output->Fill();
 }
 
 

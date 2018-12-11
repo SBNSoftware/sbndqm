@@ -81,6 +81,8 @@ public:
   // calculate the correlation between two channels
   // Call after AnalyzeEvent()
   float Correlation(unsigned channel_i, unsigned channel_j);
+  // and build the whole matrix
+  std::vector<std::vector<float>> CorrelationMatrix();
 
   // configuration
   struct AnalysisConfig {

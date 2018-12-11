@@ -409,6 +409,22 @@ float Analysis::Correlation(unsigned channel_i, unsigned channel_j) {
     _noise_samples[channel_j], (*_raw_digits_handle)[digits_j].ADCs());
 }
 
+std::vector<std::vector<float>> Analysis::CorrelationMatrix() {
+  unsigned n_channels = _channel_info.NChannels();
+  std::vector<std::vector<float>> ret(n_channels, std::vector<float>(n_channels, 0));
+  for (unsigned i = 0; i < n_channels; i++) {
+    for (unsigned j = 0; j <= i; j++) {
+      if (i == j) ret[i][j] = 1.;
+      else {
+        float corr = Correlation(i, j);
+        ret[i][j] = corr;
+        ret[j][i] = corr;
+      }
+    }
+  }
+  return ret;
+}
+
 void Timing::StartTime() {
   start = std::chrono::high_resolution_clock::now(); 
 }
