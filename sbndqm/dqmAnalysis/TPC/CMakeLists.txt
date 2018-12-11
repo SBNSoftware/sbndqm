@@ -1,13 +1,17 @@
-# find_ups_product( lardataobj v1_17_00 )
+find_ups_product( lardataobj)
 
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
+
+# check if we have sbnddaq-datatypes locally
+# TODO: Better way to do this?????
+if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
 # subdirectory for SBND decoder
-# add_subdirectory(SBND_Decode)
+  add_subdirectory(SBNDDecode)
+endif()
+
 # install fcl
 add_subdirectory(fcl)
-
-# link_directories($ENV{FFTW_LIBRARY})
 
 art_dictionary(DICTIONARY_LIBRARIES tpcAnalysis_SBN)
 

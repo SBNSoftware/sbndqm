@@ -17,7 +17,6 @@
 #include "sbnddaq-datatypes/Overlays/NevisTPCFragment.hh"
 
 #include "../HeaderData.hh"
-#include "../VSTChannelMap.hh"
 
 /*
   * The Decoder module takes as input "NevisTPCFragments" and
@@ -56,34 +55,25 @@ private:
     bool produce_header;
     bool produce_metadata;
     bool baseline_calc;
-    bool validate_header;
     unsigned n_mode_skip;
     bool calc_checksum;
     bool subtract_pedestal;
+
+    unsigned channel_per_slot;
+    unsigned min_slot_no;
 
     // for converting nevis frame time into timestamp
     unsigned timesize;
     unsigned frame_to_dt;
 
-    bool v_checksum;
-    bool v_event_no;
-    bool v_slot_no;
-    bool v_adc_count_non_zero;
-    bool v_inc_event_no;
-    bool v_inc_trig_frame_no;
     Config(fhicl::ParameterSet const & p);
   };
 
   // process an individual fragment inside an art event
   void process_fragment(art::Event &event, const artdaq::Fragment &frag,
     std::unique_ptr<std::vector<raw::RawDigit>> &product_collection,
-    std::unique_ptr<std::vector<daqAnalysis::HeaderData>> &header_collection);
+    std::unique_ptr<std::vector<tpcAnalysis::HeaderData>> &header_collection);
 
-  // validate Nevis header
-  void validate_header(const daqAnalysis::HeaderData &header);
-
-  // handle to the channel map service
-  art::ServiceHandle<daqAnalysis::VSTChannelMap> _channel_map;
 
   // Gets the WIRE ID of the channel. This wire id can be then passed
   // to the Lariat geometry.

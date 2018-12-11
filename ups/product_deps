@@ -47,8 +47,8 @@ only_for_build  cetbuildtools   v7_02_01
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
 qualifier	larsoft		artdaq_core	sbnddaq-datatypes	fftw	notes
-e15:prof	e15:prof	e15:prof:s65	e15:s65			prof
-e15:debug	e15:debug	e15:debug:s65	e15:s65			debug
+e15:prof	e15:prof	e15:prof:s65	e15:prof:s65		prof
+e15:debug	e15:debug	e15:debug:s65	e15:debug:s65		debug
 
 # table fragment to set FW_SEARCH_PATH needed to find XML files:
 table_fragment_begin
