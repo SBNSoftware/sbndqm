@@ -23,11 +23,8 @@
 
 #include "ChannelData.hh"
 #include "HeaderData.hh"
-#include "NevisTPCMetaData.hh"
-#include "VSTChannelMap.hh"
 #include "FFT.hh"
 #include "Noise.hh"
-#include "EventInfo.hh"
 
 /*
   * Main analysis code of the online Monitoring.
@@ -114,20 +111,19 @@ public:
     AnalysisConfig() {}
   };
 
-  enum plane_type { unspecified, induction, collection };
 
   // holds limited channel information
   class ChannelInfo {
     public:
       explicit ChannelInfo(const fhicl::ParameterSet &param);
       unsigned NChannels(); //!< Total number of channels to be analyzed
-      plane_type PlaneType(unsigned channel); //!< plane associated with this channel
+      PeakFinder::plane_type PlaneType(unsigned channel); //!< plane associated with this channel
 
     private:
       unsigned _n_channels;
       std::set<unsigned> _collection_channels;
       std::set<unsigned> _induction_channels;
-  }
+  };
 
   // other functions
   void ProcessChannel(const raw::RawDigit &digits);
@@ -148,7 +144,7 @@ public:
   std::vector<tpcAnalysis::ChannelData> _per_channel_data;
   std::vector<tpcAnalysis::ReducedChannelData> _per_channel_data_reduced;
   std::vector<tpcAnalysis::NoiseSample> _noise_samples;
-  tpcAnalysis::EventInfo _event_info;
+  std::vector<tpcAnalysis::HeaderData> _header_data;
   std::vector<RunningThreshold> _thresholds;
 
 private:

@@ -60,13 +60,13 @@ public:
   float mean_peak_amplitude;
 
   // zero initialize
-  ReducedChannelData(unsigned channel=0):
+  explicit ReducedChannelData(unsigned channel=0):
     channel_no(channel),
     empty(true /* except for empty by default*/),
     baseline(0),
     rms(0),
     occupancy(0),
-    mean_peak_amplitude(0),
+    mean_peak_amplitude(0)
   {}
 
   ReducedChannelData(ChannelData &channel_data) {

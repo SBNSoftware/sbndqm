@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <ctime>
 
-namespace daqAnalysis {
+namespace tpcAnalysis {
 
 // HeaderData: assumes the each board is 
 // generating one fragment, and the each fragment has one header

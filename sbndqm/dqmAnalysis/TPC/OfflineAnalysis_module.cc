@@ -62,9 +62,7 @@ tpcAnalysis::OfflineAnalysis::OfflineAnalysis(fhicl::ParameterSet const & p):
 
 void tpcAnalysis::OfflineAnalysis::analyze(art::Event const & e) {
     _analysis.AnalyzeEvent(e);
-  if (_analysis.ReadyToProcess()) {
-     _output->Fill();
-  }
+    _output->Fill();
 }
 
 

@@ -41,14 +41,11 @@
 
 #include "Analysis.hh"
 #include "ChannelData.hh"
-#include "VSTChannelMap.hh"
 #include "HeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 #include "PeakFinder.hh"
 #include "Mode.hh"
-#include "Purity.hh"
-#include "EventInfo.hh"
 
 using namespace tpcAnalysis;
 
@@ -56,14 +53,12 @@ Analysis::Analysis(fhicl::ParameterSet const & p) :
   _channel_info(p), // get a handle to the VST Channel Map service
   //art::ServiceHandle<tpcAnalysis::VSTChannelMap>()->GetProvider()), // get a handle to the VST Channel Map service
   _config(p),
-  _channel_index_map(channel_info.NChannels()),
-  _per_channel_data(channel_info.NChannels()),
-  _per_channel_data_reduced((_config.reduce_data) ? channel_info.NChannels() : 0), // setup reduced event vector if we need it
-  _noise_samples(channel_info.NChannels()),
+  _channel_index_map(_channel_info.NChannels()),
+  _per_channel_data(_channel_info.NChannels()),
+  _per_channel_data_reduced((_config.reduce_data) ? _channel_info.NChannels() : 0), // setup reduced event vector if we need it
+  _noise_samples(_channel_info.NChannels()),
   _header_data(std::max(_config.n_headers,0)),
-  _event_info(),
-  _nevis_tpc_metadata(std::max(_config.n_metadata,0)),
-  _thresholds( (_config.threshold_calc == 3) ? channel_info.NChannels() : 0),
+  _thresholds( (_config.threshold_calc == 3) ? _channel_info.NChannels() : 0),
   _fft_manager(  (_config.static_input_size > 0) ? _config.static_input_size: 0)
 
 {
@@ -140,12 +135,16 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   _event_ind ++;
 
   // clear out containers from last iter
-  for (unsigned i = 0; i < channel_info.NChannels(); i++) {
+  for (unsigned i = 0; i < _channel_info.NChannels(); i++) {
     _per_channel_data[i].waveform.clear();
     _per_channel_data[i].fft_real.clear();
     _per_channel_data[i].fft_imag.clear();
     _per_channel_data[i].peaks.clear();
   }
+
+  // get the raw digits
+  art::Handle<std::vector<raw::RawDigit> > raw_digits_handle;
+  event.getByLabel(_config.daq_tag,raw_digits_handle);
 
   unsigned index = 0;
   // calculate per channel stuff 
@@ -175,7 +174,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   // now calculate stuff that depends on stuff between channels
 
   // DNoise
-  for (unsigned i = 0; i < channel_info.NChannels() - 1; i++) {
+  for (unsigned i = 0; i < _channel_info.NChannels() - 1; i++) {
     unsigned next_channel = i + 1; 
 
     if (!_per_channel_data[i].empty && !_per_channel_data[next_channel].empty) {
@@ -199,7 +198,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     }
   }
   // don't set last dnoise
-  _per_channel_data[channel_info.NChannels() - 1].next_channel_dnoise = 0;
+  _per_channel_data[_channel_info.NChannels() - 1].next_channel_dnoise = 0;
 
   if (_config.timing) {
     _timing.EndTime(&_timing.coherent_noise_calc);
@@ -213,13 +212,6 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     auto const &headers_handle = event.getValidHandle<std::vector<tpcAnalysis::HeaderData>>(_config.daq_tag);
     for (auto const &header: *headers_handle) {
       ProcessHeader(header);
-    }
-  }
-  // or metadata if that's how we're doing things
-  if (_config.n_metadata > 0) {
-    auto const &metdata_handle = event.getValidHandle<std::vector<tpcAnalysis::NevisTPCMetaData>>(_config.daq_tag);
-    for (auto const &metadata: *metdata_handle) {
-      ProcessMetaData(metadata);
     }
   }
   if (_config.timing) {
@@ -244,7 +236,7 @@ void Analysis::ProcessHeader(const tpcAnalysis::HeaderData &header) {
 	      
 void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   auto channel = digits.Channel();
-  if (channel >= channel_info.NChannels()) return;
+  if (channel >= _channel_info.NChannels()) return;
   // handle empty events
   if (digits.NADC() == 0) {
     // default constructor handles empty event
@@ -348,7 +340,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   else if (_config.threshold_calc == 3) {
     // if using plane data, make collection planes reach a higher threshold
     float n_sigma = _config.threshold_sigma;
-    if (_config.use_planes && channel_info.PlaneType(channel) == collection) n_sigma = n_sigma * 1.5;
+    if (_config.use_planes && _channel_info.PlaneType(channel) == PeakFinder::collection) n_sigma = n_sigma * 1.5;
   
     threshold = _thresholds[channel].Threshold(adc_vec, _per_channel_data[channel].baseline, n_sigma);
   }
@@ -362,7 +354,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _timing.StartTime();
   }
   // get Peaks
-  Analysis::plane_type plane = (_config.use_planes) ? channel_info.PlaneType(channel) : unspecified;
+  PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
   
   PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
       _config.n_smoothing_samples, _config.n_above_threshold, plane);
@@ -397,7 +389,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   }
 
   // register rms if using running threshold
-  if (_config.threshold_calc == 3 && !_config.fUseRawHits) {
+  if (_config.threshold_calc == 3) {
     _thresholds[channel].AddRMS(_per_channel_data[channel].rms);
   }
 
@@ -434,13 +426,13 @@ Analysis::ChannelInfo::ChannelInfo(const fhicl::ParameterSet &param) {}
 
 unsigned Analysis::ChannelInfo::NChannels() { return _n_channels; }
 
-Analysis::plane_type Analysis::ChannelInfo::PlaneType(unsigned channel) {
+PeakFinder::plane_type Analysis::ChannelInfo::PlaneType(unsigned channel) {
   bool is_collection = _collection_channels.find(channel) != _collection_channels.end();
-  if (is_colletion) return collection;
+  if (is_collection) return PeakFinder::collection;
 
   bool is_induction = _induction_channels.find(channel) != _induction_channels.end();
-  if (is_induction) return induction;
+  if (is_induction) return PeakFinder::induction;
 
-  return unspecified;
+  return PeakFinder::unspecified;
 }
 

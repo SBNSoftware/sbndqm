@@ -8,6 +8,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "lardataobj/RecoBase/Hit.h"
 
+namespace tpcAnalysis {
 // Reinventing the wheel: search for a bunch of peaks in a set of data
 // 
 // Implementation: searches for points above some threshold (requiring a 
@@ -40,11 +41,14 @@ public:
 
   };
 
+  enum plane_type { unspecified, induction, collection };
+
   // initialize internal vector of peaks from art product
   explicit PeakFinder(const std::vector<art::Ptr<recob::Hit> > &hits);
 
   // generate list of peaks by providing waveform -- does hitfinding internally
-  PeakFinder(std::vector<int16_t> &waveform, int16_t baseline, float threshold, unsigned n_smoothing_samples=1, unsigned n_above_threshold=0, unsigned plane_type=0);
+  PeakFinder(std::vector<int16_t> &waveform, int16_t baseline, float threshold, 
+      unsigned n_smoothing_samples=1, unsigned n_above_threshold=0, plane_type plane=unspecified);
   inline std::vector<Peak> *Peaks() { return &_peaks; }
 private:
   Peak FinishPeak(Peak peak, std::vector<int16_t> *waveform, unsigned n_smoothing_samples, int16_t baseline, bool up_peak, unsigned index);
@@ -78,5 +82,7 @@ private:
   unsigned _rms_ind;
   unsigned _n_past_rms;
 };
+
+} // end namespace tpcAnalysis
 
 #endif

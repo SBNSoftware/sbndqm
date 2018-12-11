@@ -1,8 +1,7 @@
 #include "canvas/Persistency/Common/Wrapper.h"
 #include <vector>
-#include "sbndcode/VSTAnalysis/ChannelData.hh"
-#include "sbndcode/VSTAnalysis/HeaderData.hh"
-#include "sbndcode/VSTAnalysis/NevisTPCMetaData.hh"
+#include "sbndqm/dqmAnalysis/TPC/ChannelData.hh"
+#include "sbndqm/dqmAnalysis/TPC/HeaderData.hh"
 
 namespace {
   struct dictionary {
@@ -20,11 +19,6 @@ namespace {
     std::vector<tpcAnalysis::HeaderData> h_v;
     art::Wrapper<tpcAnalysis::HeaderData> h_w;
     art::Wrapper<std::vector<tpcAnalysis::HeaderData>> h_v_w;
-
-    tpcAnalysis::NevisTPCMetaData m;
-    std::vector<tpcAnalysis::NevisTPCMetaData> m_v;
-    art::Wrapper<tpcAnalysis::NevisTPCMetaData> m_w;
-    art::Wrapper<std::vector<tpcAnalysis::NevisTPCMetaData>> m_v_w;
 
     std::vector<std::vector<short>> vs_v;
     art::Wrapper<std::vector<std::vector<short>>> vs_v_w;

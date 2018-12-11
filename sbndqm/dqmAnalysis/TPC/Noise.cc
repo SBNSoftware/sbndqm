@@ -7,7 +7,9 @@
 
 #include "Noise.hh"
 
-tpcAnalysis::NoiseSample::NoiseSample(std::vector<PeakFinder::Peak>& peaks, int16_t baseline, unsigned wvfm_size) {
+using namespace tpcAnalysis;
+
+NoiseSample::NoiseSample(std::vector<PeakFinder::Peak>& peaks, int16_t baseline, unsigned wvfm_size) {
   // we assume here that the vector of peaks are "sorted"
   // that peak[i].start_loose <= peak[i+1].start_loose and
   // that peak[i].end_loose <= peak[i+1].end_loose
@@ -27,7 +29,7 @@ tpcAnalysis::NoiseSample::NoiseSample(std::vector<PeakFinder::Peak>& peaks, int1
   _baseline = baseline;
 }
 
-float tpcAnalysis::NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline) {
+float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline) {
   unsigned n_samples = 0;
   int ret = 0;
   // iterate over the regions w/out signal
@@ -40,7 +42,7 @@ float tpcAnalysis::NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, s
   return sqrt((float)ret / n_samples);
 }
 
-tpcAnalysis::NoiseSample tpcAnalysis::NoiseSample::DoIntersection(tpcAnalysis::NoiseSample &me, tpcAnalysis::NoiseSample &other, int16_t baseline) {
+NoiseSample NoiseSample::DoIntersection(NoiseSample &me, NoiseSample &other, int16_t baseline) {
   std::vector<std::array<unsigned, 2>> ranges;
   unsigned self_ind = 0;
   unsigned other_ind = 0;
@@ -60,11 +62,11 @@ tpcAnalysis::NoiseSample tpcAnalysis::NoiseSample::DoIntersection(tpcAnalysis::N
 
   }
 
-  return tpcAnalysis::NoiseSample(ranges, baseline);
+  return NoiseSample(ranges, baseline);
 }
 
-float tpcAnalysis::NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self, tpcAnalysis::NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
-  tpcAnalysis::NoiseSample joint = Intersection(other);
+float NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+  NoiseSample joint = Intersection(other);
   unsigned n_samples = 0;
   int ret = 0;
   // iterate over the regions w/out signal
@@ -77,14 +79,14 @@ float tpcAnalysis::NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self
   return ((float)ret) / n_samples;
 }
 
-float tpcAnalysis::NoiseSample::Correlation(const std::vector<int16_t> &wvfm_self, tpcAnalysis::NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
-  tpcAnalysis::NoiseSample joint = Intersection(other);
+float NoiseSample::Correlation(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+  NoiseSample joint = Intersection(other);
   float scaling = CalcRMS(wvfm_self, joint._ranges, _baseline) * CalcRMS(wvfm_other, joint._ranges, other._baseline);
   return Covariance(wvfm_self, other, wvfm_other) / scaling;
 }
 
-float tpcAnalysis::NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, tpcAnalysis::NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
-  tpcAnalysis::NoiseSample joint = Intersection(other);
+float NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+  NoiseSample joint = Intersection(other);
   unsigned n_samples = 0;
   int ret = 0;
   // iterate over the regions w/out signal
@@ -98,10 +100,10 @@ float tpcAnalysis::NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, tp
   return sqrt(((float)ret) / n_samples);
 }
 
-float tpcAnalysis::NoiseSample::ScaledSumRMS(std::vector<tpcAnalysis::NoiseSample *>& noises, std::vector<const std::vector<int16_t> *>& waveforms) {
+float NoiseSample::ScaledSumRMS(std::vector<NoiseSample *>& noises, std::vector<const std::vector<int16_t> *>& waveforms) {
   // calculate the joint noise sample over all n samples
   // n must be >= 2
-  tpcAnalysis::NoiseSample joint = DoIntersection(*noises[0], *noises[1]);
+  NoiseSample joint = DoIntersection(*noises[0], *noises[1]);
   for (unsigned i = 2; i < noises.size(); i++) {
     joint = DoIntersection(joint, *noises[i]);
   }
@@ -133,8 +135,8 @@ float tpcAnalysis::NoiseSample::ScaledSumRMS(std::vector<tpcAnalysis::NoiseSampl
   return (sum_rms - scale_sub) / scale_div; 
 }
 
-float tpcAnalysis::NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
-  tpcAnalysis::NoiseSample joint = Intersection(other);
+float NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+  NoiseSample joint = Intersection(other);
 
   unsigned n_samples = 0;
   int noise = 0;
@@ -151,7 +153,7 @@ float tpcAnalysis::NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, No
 }
 
 // calculated the mean of all adc values in noise ranges, and sets that as baseline
-void tpcAnalysis::NoiseSample::ResetBaseline(const std::vector<int16_t> &wvfm_self) {
+void NoiseSample::ResetBaseline(const std::vector<int16_t> &wvfm_self) {
   int total = 0;
   int n_values = 0;
   for (auto &range: _ranges) {
@@ -169,7 +171,7 @@ void tpcAnalysis::NoiseSample::ResetBaseline(const std::vector<int16_t> &wvfm_se
 
 // sum a group of waveforms looking for e.g. coherent noise
 // assumes output is of size output_size
-void tpcAnalysis::SumWaveforms(std::vector<int> &output, std::vector<const std::vector<int16_t>*>& waveforms, std::vector<int16_t> &baselines) {
+void SumWaveforms(std::vector<int> &output, std::vector<const std::vector<int16_t>*>& waveforms, std::vector<int16_t> &baselines) {
   size_t output_size = waveforms[0]->size();
 
   for (size_t adc_ind = 0; adc_ind < output_size; adc_ind++) {

@@ -13,16 +13,19 @@
 
 #include "PeakFinder.hh"
 #include "Noise.hh"
+#include "Analysis.hh"
 
-inline bool fitDownPeak(Analysis::plane_type plane) {
-  return plane_type == induction || plane_type == unspecified;
+using namespace tpcAnalysis;
+
+inline bool fitDownPeak(PeakFinder::plane_type plane) {
+  return plane == PeakFinder::induction || plane == PeakFinder::unspecified;
 }
 
-inline bool doMatchPeaks(Analysis::plane_type plane) {
-  return plane_type == induction;
+inline bool doMatchPeaks(PeakFinder::plane_type plane) {
+  return plane == PeakFinder::induction;
 }
 
-PeakFinder::PeakFinder(const std::vector<art::Ptr<recob::Hit> > &hits){
+PeakFinder::PeakFinder(const std::vector<art::Ptr<recob::Hit> > &hits) {
   //Creates peak objects used for the gettting the channel info by using the hits found using RawHitFinder.                                
   for(std::vector<art::Ptr<recob::Hit> >::const_iterator hit_iter=hits.begin(); hit_iter!=hits.end(); ++hit_iter){
     PeakFinder::Peak peak;
@@ -42,7 +45,7 @@ PeakFinder::PeakFinder(const std::vector<art::Ptr<recob::Hit> > &hits){
 
 }
 
-PeakFinder::PeakFinder(std::vector<int16_t> &inp_waveform, int16_t baseline, float threshold, unsigned n_smoothing_samples, unsigned n_above_threshold, Analysis::plane_type plane ) {
+PeakFinder::PeakFinder(std::vector<int16_t> &inp_waveform, int16_t baseline, float threshold, unsigned n_smoothing_samples, unsigned n_above_threshold, plane_type plane ) {
   // number of smoothing samples must be odd to make sense
   assert(n_smoothing_samples % 2 == 1);
 
@@ -274,7 +277,7 @@ Threshold::Threshold(std::vector<int16_t> &waveform, int16_t baseline, float n_s
 // gets the RMS from a wavefrom including any present signal 
 // i.e. will always overestimate the "true" RMS unless no signal is present
 float rawRMS(std::vector<int16_t> &waveform, int16_t baseline) {
-  tpcAnalysis::NoiseSample temp({{0, (unsigned)waveform.size() -1}}, baseline);
+  NoiseSample temp({{0, (unsigned)waveform.size() -1}}, baseline);
   return temp.RMS(waveform);
 }
 

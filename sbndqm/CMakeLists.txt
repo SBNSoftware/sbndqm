@@ -1,6 +1,7 @@
 # basic source code CMakeLists.txt
 
-art_make( )
+
+add_subdirectory(dqmAnalysis)
 
 install_headers()
 install_source()
