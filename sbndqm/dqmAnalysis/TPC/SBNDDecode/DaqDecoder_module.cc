@@ -39,7 +39,7 @@ DEFINE_ART_MODULE(daq::DaqDecoder)
 
 // constructs a header data object from a nevis header
 // construct from a nevis header
-tpcAnalysis::HeaderData Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag, unsigned frame_to_dt=1, unsigned timesize=1, bool calc_checksum=false) {
+tpcAnalysis::HeaderData daq::DaqDecoder::Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag) {
   sbnddaq::NevisTPCFragment fragment(frag);
 
   const sbnddaq::NevisTPCHeader *raw_header = fragment.header();
@@ -56,7 +56,9 @@ tpcAnalysis::HeaderData Fragment2HeaderData(art::Event &event, const artdaq::Fra
   
   // formula for getting unix timestamp from nevis frame number:
   // timestamp = frame_number * (timesize + 1) + trigger_sample
-  ret.timestamp = (raw_header->getFrameNum() * (timesize + 1) + raw_header->get2mhzSample()) * frame_to_dt;
+  ret.timestamp = (raw_header->getFrameNum() * (_config.timesize + 1) + raw_header->get2mhzSample()) * _config.frame_to_dt;
+
+  ret.index = raw_header->getSlot() - _config.min_slot_no;
 
   return ret;
 }
@@ -87,8 +89,6 @@ daq::DaqDecoder::Config::Config(fhicl::ParameterSet const & param) {
   produce_header = param.get<bool>("produce_header", false);
   // how many adc values to skip in mode/pedestal finding
   n_mode_skip = param.get<unsigned>("n_mode_skip", 1);
-  // whether to verify checksum
-  calc_checksum = param.get<bool>("calc_checksum", false);
   // whether to subtract pedestal
   subtract_pedestal = param.get<bool>("subtract_pedestal", false);
 
@@ -98,6 +98,11 @@ daq::DaqDecoder::Config::Config(fhicl::ParameterSet const & param) {
   // nevis tick length (for timestamp)
   // should be 1/(2MHz) = 0.5mus
   frame_to_dt = param.get<unsigned>("frame_to_dt", 1);
+
+  // number of channels in each slot
+  channel_per_slot = param.get<unsigned>("channel_per_slot", 0);
+  // index of 0th slot
+  min_slot_no = param.get<unsigned>("min_slot_no", 0);
 }
 
 void daq::DaqDecoder::produce(art::Event & event)
@@ -146,7 +151,7 @@ void daq::DaqDecoder::process_fragment(art::Event &event, const artdaq::Fragment
   (void)n_waveforms;
 
   if (_config.produce_header) {
-    auto header_data = Fragment2HeaderData(event, frag, _config.frame_to_dt, _config.timesize, _config.calc_checksum);
+    auto header_data = Fragment2HeaderData(event, frag);
     if (_config.produce_header || _config.produce_metadata) {
       // Construct HeaderData from the Nevis Header and throw it in the collection
       header_collection->push_back(header_data);

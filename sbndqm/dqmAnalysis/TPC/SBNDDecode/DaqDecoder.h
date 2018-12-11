@@ -56,7 +56,6 @@ private:
     bool produce_metadata;
     bool baseline_calc;
     unsigned n_mode_skip;
-    bool calc_checksum;
     bool subtract_pedestal;
 
     unsigned channel_per_slot;
@@ -81,6 +80,9 @@ private:
 
   // whether the given nevis readout channel is mapped to a wire
   bool is_mapped_channel(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id);
+
+  // build a HeaderData object from the Nevis Header
+  tpcAnalysis::HeaderData Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag);
 
   art::InputTag _tag;
   Config _config;
