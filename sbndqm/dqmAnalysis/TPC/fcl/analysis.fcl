@@ -1,0 +1,48 @@
+#include "vst_channel_map.fcl"
+
+physics:
+{
+  analyzers:
+  {
+    VSTAnalysis:
+    {
+      module_type: VSTAnalysis
+      producer_name: daq
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      use_planes: true
+      verbose: false
+      baseline_calc: 2
+      refine_baseline: false
+      n_mode_skip: 3
+
+      fft_per_channel: false
+      timing: false
+      sum_waveforms: false
+      fill_waveforms: true
+
+      UseNevisClock: true
+      DoPurityAna:  true
+    }
+  }
+
+  a: [VSTAnalysis]
+  end_paths: [a]
+}
+
+services:
+{
+  TFileService: { fileName: "out.root"}
+  VSTChannelMap: @local::lariat_data_channel_map_VST
+} 
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/sbnd/data/users/gputnam/VST/lariat_data.root"]
+}
+
+process_name: DAQANALYSIS
+
