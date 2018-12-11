@@ -77,8 +77,10 @@ public:
 
   // actually analyze stuff
   void AnalyzeEvent(art::Event const & e);
-  // sum FEM waveforms
-  void SumWaveforms(art::Event const & event);
+
+  // calculate the correlation between two channels
+  // Call after AnalyzeEvent()
+  float Correlation(unsigned channel_i, unsigned channel_j);
 
   // configuration
   struct AnalysisConfig {
@@ -152,6 +154,11 @@ private:
   FFTManager _fft_manager;
   // keep track of timing data (maybe)
   tpcAnalysis::Timing _timing;
+
+  // raw digits container for each event
+  art::Handle<std::vector<raw::RawDigit>> _raw_digits_handle;
+  // header data container for each event
+  art::Handle<std::vector<tpcAnalysis::HeaderData>> _header_data_handle;
 };
 
 

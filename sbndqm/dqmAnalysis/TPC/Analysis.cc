@@ -50,8 +50,7 @@
 using namespace tpcAnalysis;
 
 Analysis::Analysis(fhicl::ParameterSet const & p) :
-  _channel_info(p), // get a handle to the VST Channel Map service
-  //art::ServiceHandle<tpcAnalysis::VSTChannelMap>()->GetProvider()), // get a handle to the VST Channel Map service
+  _channel_info(p.get<fhicl::ParameterSet>("channel_info")), // get the channel info
   _config(p),
   _channel_index_map(_channel_info.NChannels()),
   _per_channel_data(_channel_info.NChannels()),
@@ -116,6 +115,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // Setting to some positive number will speed up FFT's.
   static_input_size = param.get<int>("static_input_size", -1);
   // how many headers to expect (set to negative if don't process) 
+  // Expects the passed in HeaderData objects to have "index" values in [0, n_headers)
   n_headers = param.get<int>("n_headers", -1);
 
   // whether to calculate/save certain things
@@ -143,12 +143,11 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   }
 
   // get the raw digits
-  art::Handle<std::vector<raw::RawDigit> > raw_digits_handle;
-  event.getByLabel(_config.daq_tag,raw_digits_handle);
+  event.getByLabel(_config.daq_tag, _raw_digits_handle);
 
   unsigned index = 0;
   // calculate per channel stuff 
-  for (auto const& digits: *raw_digits_handle) {
+  for (auto const& digits: *_raw_digits_handle) {
     _channel_index_map[digits.Channel()] = index;
     ProcessChannel(digits);
     index++;
@@ -181,7 +180,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
       unsigned raw_digits_i = _channel_index_map[i];
       unsigned raw_digits_next_channel = _channel_index_map[next_channel];
       float unscaled_dnoise = _noise_samples[i].DNoise(
-          (*raw_digits_handle)[raw_digits_i].ADCs(), _noise_samples[next_channel], (*raw_digits_handle)[raw_digits_next_channel].ADCs());
+          (*_raw_digits_handle)[raw_digits_i].ADCs(), _noise_samples[next_channel], (*_raw_digits_handle)[raw_digits_next_channel].ADCs());
       // Don't use same noise sample to scale dnoise
       // This should probably be ok, as long as the dnoise sample is large enough
 
@@ -209,8 +208,9 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   }
   // deal with the header
   if (_config.n_headers > 0) {
-    auto const &headers_handle = event.getValidHandle<std::vector<tpcAnalysis::HeaderData>>(_config.daq_tag);
-    for (auto const &header: *headers_handle) {
+    // get the header data
+    event.getByLabel(_config.daq_tag, _header_data_handle);
+    for (const tpcAnalysis::HeaderData &header: *_header_data_handle) {
       ProcessHeader(header);
     }
   }
@@ -402,6 +402,13 @@ bool Analysis::EmptyEvent() {
   return _per_channel_data[0].empty;
 }
 
+float Analysis::Correlation(unsigned channel_i, unsigned channel_j) {
+  unsigned digits_i = _channel_index_map[channel_i];
+  unsigned digits_j = _channel_index_map[channel_j];
+  return _noise_samples[channel_i].Correlation((*_raw_digits_handle)[digits_i].ADCs(), 
+    _noise_samples[channel_j], (*_raw_digits_handle)[digits_j].ADCs());
+}
+
 void Timing::StartTime() {
   start = std::chrono::high_resolution_clock::now(); 
 }
@@ -421,7 +428,34 @@ void Timing::Print() {
   std::cout << "COPY HEADERS : " << copy_headers << std::endl;
 }
 
-Analysis::ChannelInfo::ChannelInfo(const fhicl::ParameterSet &param) {}
+Analysis::ChannelInfo::ChannelInfo(const fhicl::ParameterSet &param) {
+  // number of channels to be analyzed.
+  // Assumes the passed in wire objects will have an wire ID [0, n_channels)
+  _n_channels = param.get<unsigned>("n_channels", 0);
+  // collection_channels and induction_channels should be a list of channels
+  // assigned to the collection or induction plane.
+
+  // For example, the cofiguration:
+  // collection_channels: [ [1,2] , [15, 25] ]
+  // will set channels 1,15,16,17,18,19,20,21,22,23,24 to be collection channels
+
+  // if a channel is set to neither collection nor induction, then it will be 
+  // set as "unspecified" (see PeakFinder for behavior of peak finding on unspecified channels)
+  std::vector<std::vector<unsigned>> collection_lists = param.get<std::vector<std::vector<unsigned>>>("collection_channels", { {} });
+  for (const std::vector<unsigned> &channel_pair: collection_lists) {
+    for (unsigned i = channel_pair[0]; i < channel_pair[1]; i++) {
+      _collection_channels.insert(i);
+    }
+  }
+
+  std::vector<std::vector<unsigned>> induction_lists = param.get<std::vector<std::vector<unsigned>>>("induction_channels", { {} });
+  for (const std::vector<unsigned> &channel_pair: induction_lists) {
+    for (unsigned i = channel_pair[0]; i < channel_pair[1]; i++) {
+      _induction_channels.insert(i);
+    }
+  }
+  
+}
 
 
 unsigned Analysis::ChannelInfo::NChannels() { return _n_channels; }
