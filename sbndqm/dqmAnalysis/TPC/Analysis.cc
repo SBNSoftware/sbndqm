@@ -255,8 +255,6 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
    
   _per_channel_data[channel].channel_no = channel;
 
-  int16_t max = -INT16_MAX;
-  int16_t min = INT16_MAX;
   auto adc_vec = digits.ADCs();
   if (_config.timing) {
     _timing.StartTime();
@@ -268,9 +266,6 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     
       // fill up waveform
        if (_config.fill_waveforms) {
-        if (adc > max) max = adc;
-        if (adc < min) min = adc;
-
         _per_channel_data[channel].waveform.push_back(adc);
       }
 
@@ -301,9 +296,6 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _timing.EndTime(&_timing.baseline_calc);
   }
 
-  _per_channel_data[channel].max = max;
-  _per_channel_data[channel].min = min;
-  
   if (_config.timing) {
     _timing.StartTime();
   }
@@ -472,7 +464,6 @@ Analysis::ChannelInfo::ChannelInfo(const fhicl::ParameterSet &param) {
   }
   
 }
-
 
 unsigned Analysis::ChannelInfo::NChannels() { return _n_channels; }
 

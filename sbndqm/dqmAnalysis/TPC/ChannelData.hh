@@ -15,8 +15,6 @@ public:
   unsigned channel_no;
   bool empty;
   int16_t baseline;
-  int16_t max;
-  int16_t min;
   float rms;
   float next_channel_dnoise;
   float threshold;
@@ -40,8 +38,6 @@ public:
     channel_no(channel),
     empty(true /* except for empty by default*/),
     baseline(0),
-    max(0),
-    min(0),
     rms(0),
     next_channel_dnoise(0),
     threshold(0),

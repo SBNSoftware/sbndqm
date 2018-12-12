@@ -48,8 +48,6 @@ float tpcAnalysis::ChannelData::Occupancy() {
 std::string tpcAnalysis::ChannelData::Print() {
   std::stringstream buffer;
   buffer << "baseline: " << baseline << std::endl;
-  buffer << "max: " << max << std::endl;
-  buffer << "min: " << min << std::endl;
   buffer << "rms: " << rms << std::endl;
   buffer << "channel_no: " << channel_no << std::endl;
   buffer << "empty: " << empty << std::endl;
