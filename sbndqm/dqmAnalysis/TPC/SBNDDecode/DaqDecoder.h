@@ -63,7 +63,7 @@ private:
 
     // for converting nevis frame time into timestamp
     unsigned timesize;
-    unsigned frame_to_dt;
+    double frame_to_dt;
 
     Config(fhicl::ParameterSet const & p);
   };

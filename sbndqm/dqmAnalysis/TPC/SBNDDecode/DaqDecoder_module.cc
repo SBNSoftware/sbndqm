@@ -97,7 +97,7 @@ daq::DaqDecoder::Config::Config(fhicl::ParameterSet const & param) {
 
   // nevis tick length (for timestamp)
   // should be 1/(2MHz) = 0.5mus
-  frame_to_dt = param.get<unsigned>("frame_to_dt", 1);
+  frame_to_dt = param.get<double>("frame_to_dt", 1);
 
   // number of channels in each slot
   channel_per_slot = param.get<unsigned>("channel_per_slot", 0);
