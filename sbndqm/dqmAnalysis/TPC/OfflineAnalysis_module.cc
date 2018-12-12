@@ -58,6 +58,10 @@ tpcAnalysis::OfflineAnalysis::OfflineAnalysis(fhicl::ParameterSet const & p):
   else {
     _output->Branch("channel_data", &_analysis._per_channel_data);
   }
+  if (_analysis._config.n_headers > 0) {
+    _output->Branch("header_data", &_analysis._header_data);
+  }
+
 }
 
 void tpcAnalysis::OfflineAnalysis::analyze(art::Event const & e) {
