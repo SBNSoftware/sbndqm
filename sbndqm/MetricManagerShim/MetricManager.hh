@@ -6,7 +6,6 @@
 // if metricMan is defined, it's included elsewhere -- we don't need to worry about it
 #ifndef metricMan
 artdaq::MetricManager *_I_am_the_metricMan = nullptr;
-#define metricMan _I_am_the_metricMan
 #endif
 
 using namespace artdaq;
@@ -14,10 +13,19 @@ using namespace artdaq;
 void InitializeMetricManager(fhicl::ParameterSet const& pset) {
   // don't re-initialize metricMan if it is defined elsewhere
   #ifndef metricMan
-  assert(metricMan == nullptr);
-  metricMan->initialize(pset);
+  assert(_I_am_the_metricMan == nullptr);
+  std::cout << "Initializing Metric manager" << std::endl;
+  _I_am_the_metricMan = new artdaq::MetricManager;
+  _I_am_the_metricMan->initialize(pset);
+  _I_am_the_metricMan->do_start();
+  #else 
+  std::cout << "Metric manager already initialized" << std::endl;
   #endif
 }
+
+#ifndef metricMan
+#define metricMan _I_am_the_metricMan
+#endif
 
 void sendMetric(std::string const& name, std::string const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
