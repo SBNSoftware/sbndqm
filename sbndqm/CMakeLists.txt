@@ -2,6 +2,7 @@
 
 
 add_subdirectory(dqmAnalysis)
+add_subdirectory(MetricManagerShim)
 
 install_headers()
 install_source()
