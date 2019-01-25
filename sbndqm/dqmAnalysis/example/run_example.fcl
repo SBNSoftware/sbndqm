@@ -1,0 +1,29 @@
+physics:
+{
+  analyzers:
+  {
+    ExampleTimeStream: {
+      module_type: ExampleTimeStream
+
+      metrics: {
+        redis_metric: {
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 2.0
+          verbose: true
+        }
+      }
+    }
+  }
+  a: [ExampleTimeStream]
+  end_paths: [a]
+}
+
+source:
+{
+  //module_type: RootInput
+  module_type: EmptyEvent
+  //fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/digits_and_header_data.root"]
+}
+
+process_name: EXAMPLESTREAM
