@@ -21,9 +21,7 @@ physics:
 
 source:
 {
-  //module_type: RootInput
   module_type: EmptyEvent
-  //fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/digits_and_header_data.root"]
 }
 
 process_name: EXAMPLESTREAM
