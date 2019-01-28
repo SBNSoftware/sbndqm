@@ -6,12 +6,22 @@ physics:
       module_type: ExampleTimeStream
 
       metrics: {
-        redis_metric: {
+        redis_metric_fast: { // can be named anything
           level: 3
           metricPluginType: "redis"
+          // period in seconds to send metric to database
           reporting_interval: 2.0
           verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_name_postfix: ":fast" 
         }
+        redis_metrix_slow: { // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_name_postfix: ":slow" 
       }
     }
   }

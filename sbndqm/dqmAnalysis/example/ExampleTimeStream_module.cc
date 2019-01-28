@@ -47,14 +47,24 @@ sbndqm::ExampleTimeStream::~ExampleTimeStream() {}
 
 void sbndqm::ExampleTimeStream::analyze(art::Event const & evt)
 {
+  // the value to send out at this instance
   double value = 5.0;
+  // level of importance of metric
   int level = 3;
+  // Metric Manager provides "units" field, but they are ignored by the redis plugin
   const char *units = "units are ignored...";
-  // send a test metric
-  sendMetric("example_metric", value, units, level, artdaq::MetricMode::Average);
+  // The mode to accumulate the metrics. Here, the manager will report the average of 
+  // of all metrics per reporting interval
+  artdaq::MetricMode mode = artdaq::MetricMode::Average;
+  // The name of the stream in redis. In redis, this metric will be stored as a Stream
+  // object with a key of: redis_name + redis_key_postfix, where redis_key_postfix is 
+  // as configured in the fhicl file
+  const char *name = "example_metric";
+  // send a metric 
+  sendMetric(name, value, units, level, mode);
 
   std::cout << "sleeping... " << std::endl;
-  // sleep for a second
+  // sleep for a second to simulate time between triggers
   sleep(1);
 }
 
