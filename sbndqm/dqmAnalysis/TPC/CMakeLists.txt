@@ -80,6 +80,23 @@ simple_plugin( OfflineAnalysis module
         	${ART_FRAMEWORK_IO_SOURCES}
 )
 
+simple_plugin( OnlineAnalysis module
+  tpcAnalysis_SBN
+  ${LARDATAOBJ}
+  lardataobj_RawData
+  ${ART_UTILITIES}
+  ${FHICLCPP}
+  ${ART_FRAMEWORK_CORE}
+  ${ROOT_BASIC_LIB_LIST}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_BASIC}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                        art_Persistency_Common
+        	${ART_FRAMEWORK_IO_SOURCES}
+  artdaq-utilities_Plugins
+)
 
 install_headers()
 install_fhicl()
