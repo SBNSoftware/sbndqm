@@ -36,11 +36,16 @@ class sbndqm::ExampleTimeStream : public art::EDAnalyzer {
   	 virtual void analyze(art::Event const & evt);
 
 	private:
+          unsigned _sleep_time;
 };
 
 sbndqm::ExampleTimeStream::ExampleTimeStream(fhicl::ParameterSet const & pset)
-    : EDAnalyzer(pset)  {
+    : EDAnalyzer(pset),
+      _sleep_time(pset.get<unsigned>("sleep_time", 0))  {
+
+  // Intiailize the metric manager
   InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+
 }
 
 sbndqm::ExampleTimeStream::~ExampleTimeStream() {}
@@ -63,9 +68,11 @@ void sbndqm::ExampleTimeStream::analyze(art::Event const & evt)
   // send a metric 
   sendMetric(name, value, units, level, mode);
 
-  std::cout << "sleeping... " << std::endl;
-  // sleep for a second to simulate time between triggers
-  sleep(1);
+  if (_sleep_time > 0) {
+    std::cout << "sleeping... " << std::endl;
+    // sleep for a bit to simulate time between triggers
+    sleep(_sleep_time);
+  }
 }
 
 DEFINE_ART_MODULE(sbndqm::ExampleTimeStream)

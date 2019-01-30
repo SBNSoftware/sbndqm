@@ -4,6 +4,7 @@ physics:
   {
     ExampleTimeStream: {
       module_type: ExampleTimeStream
+      sleep_time: 1
 
       metrics: {
         redis_metric_fast: { // can be named anything
@@ -13,15 +14,16 @@ physics:
           reporting_interval: 2.0
           verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
-          redis_name_postfix: ":fast" 
+          redis_key_postfix: ":fast" 
         }
-        redis_metrix_slow: { // can be named anything
+        redis_metric_slow: { // can be named anything
           level: 3
           metricPluginType: "redis"
           reporting_interval: 10.0
           verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
-          redis_name_postfix: ":slow" 
+          redis_key_postfix: ":slow" 
+        }
       }
     }
   }
