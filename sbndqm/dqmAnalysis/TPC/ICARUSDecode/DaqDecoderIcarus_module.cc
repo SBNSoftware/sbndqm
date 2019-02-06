@@ -142,7 +142,7 @@ raw::ChannelID_t daq::DaqDecoderIcarus::get_wire_id(const sbnddaq::NevisTPCHeade
 }
 */
 void daq::DaqDecoderIcarus::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
-  std::unique_ptr<std::vsector<raw::RawDigit>> &product_collection) {
+  std::unique_ptr<std::vector<raw::RawDigit>> &product_collection) {
 
   // convert fragment to Nevis fragment
   icarus::PhysCrateFragment fragment(frag);
@@ -163,7 +163,7 @@ for(size_t i_b=0; i_b < fragment.nBoards(); ++i_b){
 
 //	  rawDigitVec.emplace_back(channel_num,crate_data.nSamplesPerChannel(),wvfm);
       product_collection->emplace_back(channel_num,fragment.nSamplesPerChannel(),wvfm);
-   if(fragment.nSamplesPerChannel()!=4096) std::cout << "s channel " << channel_num << " wrong waveform size " << fragment.nSamplesPerChannel() << std::endl;
+ std::cout << "s channel " << channel_num << " wrong waveform size " << fragment.nSamplesPerChannel() << std::endl;
 
 	}//loop over channels
 

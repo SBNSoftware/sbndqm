@@ -77,7 +77,7 @@ services:
 source:
 {
   module_type: RootInput
-  fileNames: ["/icarus/data/users/yuntse/daq/vst/raw/run002_1.root"]
+  fileNames: ["/icarus/data/users/yuntse/daq/vst/raw/run003_1.root"]
 }
 
 process_name: TPCANALYSIS
