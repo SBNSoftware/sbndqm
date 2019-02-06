@@ -37,7 +37,7 @@ fwdir   product_dir scripts
 product          version
 artdaq_core	 v3_04_02
 larsoft          v06_73_00
-sbnddaq-datatypes	v00_01_00 - optional
+sbnddaq-datatypes	v00_02_01 - optional
 sbndaq_artdaq_core	v0_01_00	
 artdaq_utilities	v1_04_08
 fftw		v3_3_6_pl2

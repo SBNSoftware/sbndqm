@@ -2,31 +2,11 @@
 
 physics:
 {
-  // now also have something produce the digits and headers
-  producers:
-  {
-    daq: {
-      module_type: DaqDecoder
-      // for debugging -- time (in s) to wait in between analyzing events
-      wait_time: -1
-      // make the header
-      produce_header: true
-      baseline_calc: false
-      // parameters for timestamps
-      timesize: 2559
-      // produce timestamps in units of mus
-      frame_to_dt: 0.5
-      // parameters for header index
-      min_slot_no: 4
-      channel_per_slot: 64
-    }
-  }
-
   analyzers:
   {
-    OfflineAnalysis:
+    OnlineAnalysis:
     {
-      module_type: OfflineAnalysis
+      module_type: OnlineAnalysis
       // producer of digits and header info
       producer_name: daq
 
@@ -59,13 +39,32 @@ physics:
       reduce_data: false
 
       // number of headers per event provided by input (will be ignored if value is negative)
-      // 10 for SBND 
+      // 10 for SBND data
       n_headers: 10
+
+      metrics: {
+        redis_metric_fast: { // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          // period in seconds to send metric to database
+          reporting_interval: 2.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":fast" 
+        }
+        redis_metric_slow: { // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":slow" 
+        }
+      }
     }
   }
 
-  my_producer_modules: [daq]
-  a: [OfflineAnalysis]
+  a: [OnlineAnalysis]
   end_paths: [a]
 }
 
@@ -77,7 +76,7 @@ services:
 source:
 {
   module_type: RootInput
-  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/fragments.root"]
+  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/digits_and_header_data.root"]
 }
 
 process_name: TPCANALYSIS
