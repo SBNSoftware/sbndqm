@@ -5,4 +5,12 @@ SBND_simple_channel_info:
   collection_channels: [ [0, 320] ]
   induction_channels: [ [320, 640] ]
 }
+ICARUS_simple_channel_info: 
+{
+  n_channels: 512
+  collection_channels: [ [0, 255 ] ]
+  induction_channels: [ [256, 511] ]
+//collection_channels: [ [0,831]  ]
+//induction_channels: [ [1024,1855] ]
+}
 END_PROLOG

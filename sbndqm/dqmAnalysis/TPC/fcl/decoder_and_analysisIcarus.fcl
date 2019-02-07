@@ -31,7 +31,7 @@ physics:
       producer_name: daq
 
       // channel info
-      channel_info: @local::SBND_simple_channel_info
+      channel_info: @local::ICARUS_simple_channel_info
 
       // standard analysis config
       threshold_calc: 3
@@ -40,7 +40,7 @@ physics:
       n_smoothing_samples: 1
       baseline_calc: 2
       n_mode_skip: 3
-      use_planes: true
+      use_planes: false
       refine_baseline: false
 
       // turn on for analysis information printed out on stdin
@@ -60,13 +60,13 @@ physics:
 
       // number of headers per event provided by input (will be ignored if value is negative)
       // 10 for SBND 
-      n_headers: 10
+      n_headers: -1
     }
   }
 
   my_producer_modules: [daq]
   a: [OfflineAnalysis]
-  end_paths: [a]
+//  end_paths: [a]
 }
 
 services:

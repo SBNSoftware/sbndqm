@@ -146,24 +146,24 @@ void daq::DaqDecoderIcarus::process_fragment(art::Event &event, const artdaq::Fr
 
   // convert fragment to Nevis fragment
   icarus::PhysCrateFragment fragment(frag);
-
-for(size_t i_b=0; i_b < fragment.nBoards(); ++i_b){
+	std::cout << " n boards " << fragment.nBoards() << std::endl;
+//int channel_count=0;
+for(size_t i_b=0; i_b < fragment.nBoards(); i_b++){
 	//A2795DataBlock const& block_data = *(crate_data.BoardDataBlock(i_b));
-	//std::cout << block_data << std::endl;
+
 
 	for(size_t i_ch=0; i_ch < fragment.nChannelsPerBoard(); ++i_ch){
 
-	  raw::ChannelID_t channel_num = (i_ch & 0xff ) + (i_b << 8);
+	  //raw::ChannelID_t channel_num = (i_ch & 0xff ) + (i_b << 8);
+           raw::ChannelID_t channel_num = i_ch+i_b*64;
 	  raw::RawDigit::ADCvector_t wvfm(fragment.nSamplesPerChannel());
 	  for(size_t i_t=0; i_t < fragment.nSamplesPerChannel(); ++i_t) {
 	    wvfm[i_t] = fragment.adc_val(i_b,i_ch,i_t);
-            //if(channel_num==1855) std::cout << " sample " << i_t << " wave " << wvfm[i_t] << std::endl;
+           // if(channel_num==1855) std::cout << " sample " << i_t << " wave " << wvfm[i_t] << std::endl;
 }
-        
-
-//	  rawDigitVec.emplace_back(channel_num,crate_data.nSamplesPerChannel(),wvfm);
+     //   product_collection->emplace_back(channel_count++,fragment.nSamplesPerChannel(),wvfm);
       product_collection->emplace_back(channel_num,fragment.nSamplesPerChannel(),wvfm);
- std::cout << "s channel " << channel_num << " wrong waveform size " << fragment.nSamplesPerChannel() << std::endl;
+ //std::cout << " channel " << channel_num << " waveform size " << fragment.nSamplesPerChannel() << std::endl;
 
 	}//loop over channels
 
