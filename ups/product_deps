@@ -37,7 +37,7 @@ fwdir   product_dir scripts
 product          version
 artdaq_core	 v3_04_02
 larsoft          v06_73_00
-sbnddaq-datatypes	v00_02_01 - optional
+sbnddaq_datatypes	v00_02_01 - optional
 sbndaq_artdaq_core	v0_01_00	
 artdaq_utilities	v1_04_08
 fftw		v3_3_6_pl2
@@ -48,7 +48,7 @@ only_for_build  cetbuildtools   v7_02_01
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
-qualifier	larsoft		artdaq_core	sbnddaq-datatypes	sbndaq_artdaq_core	artdaq_utilities	fftw	notes
+qualifier	larsoft		artdaq_core	sbnddaq_datatypes	sbndaq_artdaq_core	artdaq_utilities	fftw	notes
 e15:prof	e15:prof	e15:prof:s64	e15:prof:s64		e15:prof		e15:prof:s64		prof
 e15:debug	e15:debug	e15:debug:s64	e15:debug:s64		e15:prof		e15:prof:s64		debug
 
