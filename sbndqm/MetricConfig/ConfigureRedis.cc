@@ -184,7 +184,7 @@ void sbndqm::GenerateMetricConfig(const fhicl::ParameterSet &config) {
 unsigned sbndqm::AddInstances2Group(redisContext *redis, const std::string &group_name, const std::vector<std::string> &instance_names) {
   redisAppendCommand(redis, "DEL GROUP_MEMBERS:%s", group_name.c_str());
   for (unsigned i = 0; i < instance_names.size(); i++) {
-    redisAppendCommand(redis, "SADD GROUP_MEMBERS:%s %s", group_name.c_str(), instance_names[i].c_str());
+    redisAppendCommand(redis, "RPUSH GROUP_MEMBERS:%s %s", group_name.c_str(), instance_names[i].c_str());
   }
   return instance_names.size()+1;
 }
@@ -229,7 +229,7 @@ unsigned sbndqm::GroupMetricConfig(redisContext *redis, const std::string &group
       json_config["title"] = config.title.value();
     }
     json_config["name"] = metric;
-    root["metrics"][metric] = json_config;
+    root["metric_config"][metric] = json_config;
   }
   
   // set up the streams
