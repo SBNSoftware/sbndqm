@@ -46,6 +46,8 @@ find_ups_product( art v1_08_00 )
 find_ups_product( cetbuildtools v4_14_01 )
 find_ups_product( sbndaq_artdaq_core v0_01_00 )
 find_ups_product( artdaq_utilities v1_00_00 )
+find_ups_product( jsoncpp v1_00_00 )
+# include_directories($ENV{JSONCPP_LIB})
 
 # macros for dictionary and simple_plugin
 include(ArtDictionary)

@@ -1,8 +1,9 @@
 # basic source code CMakeLists.txt
-
+find_ups_product(icarus_artdaq_base)
 
 add_subdirectory(dqmAnalysis)
 add_subdirectory(MetricManagerShim)
+add_subdirectory(MetricConfig)
 
 install_headers()
 install_source()

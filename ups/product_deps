@@ -41,6 +41,7 @@ sbnddaq_datatypes	v00_02_01 - optional
 sbndaq_artdaq_core	v0_01_00	
 artdaq_utilities	v1_04_08
 fftw		v3_3_6_pl2
+jsoncpp		v1_7_7b
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
