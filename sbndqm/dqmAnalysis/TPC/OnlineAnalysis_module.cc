@@ -65,7 +65,6 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   // _analysis.CorrelationMatrix()
 
   int level = 0;
-  const char *units = "";
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
   // send the metrics
   for (auto const &channel_data: _analysis._per_channel_data) {
@@ -74,23 +73,23 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
     name = keyName("rms", channel_data.channel_no);
     value = channel_data.rms;
-    sendMetric(name.c_str(), value, units, level, mode);
+    sendMetric(name.c_str(), value, level, mode);
 
     name = keyName("baseline", channel_data.channel_no);
     value = channel_data.baseline;
-    sendMetric(name.c_str(), value, units, level, mode);
+    sendMetric(name.c_str(), value, level, mode);
 
     name = keyName("next_channel_dnoise", channel_data.channel_no);
     value = channel_data.next_channel_dnoise;
-    sendMetric(name.c_str(), value, units, level, mode);
+    sendMetric(name.c_str(), value, level, mode);
 
     name = keyName("mean_peak_height", channel_data.channel_no);
     value = channel_data.mean_peak_height;
-    sendMetric(name.c_str(), value, units, level, mode);
+    sendMetric(name.c_str(), value, level, mode);
 
     name = keyName("occupancy", channel_data.channel_no);
     value = channel_data.occupancy;
-    sendMetric(name.c_str(), value, units, level, mode);
+    sendMetric(name.c_str(), value, level, mode);
   }
 }
 

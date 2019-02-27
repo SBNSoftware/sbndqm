@@ -27,33 +27,76 @@ void InitializeMetricManager(fhicl::ParameterSet const& pset) {
 #define metricMan _I_am_the_metricMan
 #endif
 
-void sendMetric(std::string const& name, std::string const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+// For send metrics with a raw name
+void sendMetric(std::string const& name, std::string const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
-    metricMan->sendMetric(name, value, unit, level, mode, metricPrefix, useNameOverride);
+    metricMan->sendMetric(name, value, "", level, mode, metricPrefix, useNameOverride);
   }
 }
 
-void sendMetric(std::string const& name, int const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+void sendMetric(std::string const& name, int const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
-    metricMan->sendMetric(name, value, unit, level, mode, metricPrefix, useNameOverride);
+    metricMan->sendMetric(name, value, "", level, mode, metricPrefix, useNameOverride);
   }
 }
 
-void sendMetric(std::string const& name, double const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+void sendMetric(std::string const& name, double const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
-    metricMan->sendMetric(name, value, unit, level, mode, metricPrefix, useNameOverride);
+    metricMan->sendMetric(name, value, "", level, mode, metricPrefix, useNameOverride);
   }
 }
 
-void sendMetric(std::string const& name, float const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+void sendMetric(std::string const& name, float const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
-    metricMan->sendMetric(name, value, unit, level, mode, metricPrefix, useNameOverride);
+    metricMan->sendMetric(name, value, "", level, mode, metricPrefix, useNameOverride);
   }
 }
 
-void sendMetric(std::string const& name, long unsigned int const& value, std::string const& unit, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+void sendMetric(std::string const& name, long unsigned int const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
-    metricMan->sendMetric(name, value, unit, level, mode, metricPrefix, useNameOverride);
+    metricMan->sendMetric(name, value, "", level, mode, metricPrefix, useNameOverride);
   }
 }
+
+std::string buildMetricName(std::string const& group, std::string const& instance, std::string const& metric) {
+  return group + ":" + instance + ":" + metric;
+}
+
+void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
+    std::string const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+  if (metricMan != NULL) {
+    metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+  }
+}
+
+void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
+    int const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+  if (metricMan != NULL) {
+    metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+  }
+}
+
+void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
+    double const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+  if (metricMan != NULL) {
+    metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+  }
+}
+
+void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
+    float const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+  if (metricMan != NULL) {
+    metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+  }
+}
+
+void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
+    long unsigned int const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
+  if (metricMan != NULL) {
+    metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+  }
+}
+
+// For sending metrics through the config interface
+
 #endif

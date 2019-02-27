@@ -12,7 +12,6 @@ physics:
           metricPluginType: "redis"
           // period in seconds to send metric to database
           reporting_interval: 2.0
-          verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":fast" 
         }
@@ -20,9 +19,23 @@ physics:
           level: 3
           metricPluginType: "redis"
           reporting_interval: 10.0
-          verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":slow" 
+        }
+      }
+
+      metric_config: {
+        redis_passfile: passfile
+
+        groups: [example]
+        metrics: {
+          rms: {
+            display_range: [0., 10.]
+            warning_range: [1., 5.]
+            alarm_range: [0.5, 7.5]
+            units: ADC
+            titie: "Example Wire %(instance)s RMS"
+          }
         }
       }
     }

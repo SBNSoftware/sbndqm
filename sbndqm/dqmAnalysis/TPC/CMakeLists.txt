@@ -8,8 +8,8 @@ add_subdirectory(OnlineFilters)
 if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
 # subdirectory for SBND decoder
   add_subdirectory(SBNDDecode)
-  add_subdirectory(ICARUSDecode)
 endif()
+#add_subdirectory(ICARUSDecode)
 
 # install fcl
 add_subdirectory(fcl)

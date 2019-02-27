@@ -88,7 +88,7 @@ void sbndaq::CAENV1730Stream::analyze(art::Event const & evt)
       // double rms = RMS(data, ch_size, baseline);
 
       // send the metric
-      sendMetric("n_channels", (long unsigned int) n_channels, "", 3, artdaq::MetricMode::Average);
+      sendMetric("n_channels", (long unsigned int) n_channels, 3, artdaq::MetricMode::Average);
 
     }
   }
