@@ -61,6 +61,31 @@ physics:
           redis_key_postfix: ":slow" 
         }
       }
+      metric_config: {
+        groups: [tpc_channel]
+        metrics: {
+          rms: {
+            units: ADC
+            title: "TPC wire %(instance)s rms"
+          }
+          baseline: {
+            units: ADC
+            title: "TPC wire %(instance)s baseline"
+          }
+          next_channel_dnoise: {
+            title: "TPC wire %(instance)s next channel dnoise"
+            display_range: [0., 1.]
+          }
+          mean_peak_height: {
+            units: ADC
+            title: "TPC wire %(instance)s mean peak height"
+          }
+          occupancy: {
+            title: "TPC wire %(instance)s occupancy"
+            display_range: [0., 1.]
+          }
+        }
+      }
     }
   }
 

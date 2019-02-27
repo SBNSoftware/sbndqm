@@ -8,7 +8,7 @@
 #include "fhiclcpp/ParameterSet.h"
 
 namespace sbndqm {
-  void InitializeMetricConfig(const fhicl::ParameterSet &config);
+  void GenerateMetricConfig(const fhicl::ParameterSet &config);
 
   struct MetricConfig {
     std::experimental::optional<std::array<double, 2>> display_range;

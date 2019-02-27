@@ -12,7 +12,7 @@
 #include "json/json.h"
 #include "json/writer.h"
 
-void sbndqm::InitializeMetricConfig(const fhicl::ParameterSet &config) {
+void sbndqm::GenerateMetricConfig(const fhicl::ParameterSet &config) {
   // Load connection config
   std::string server_name = config.get<std::string>("hostname", "localhost");
   int server_port = config.get<int>("port", 6379);

@@ -30,6 +30,8 @@ physics:
         groups: [example]
         metrics: {
           rms: {
+            // NOTE: all configs for each metric are optional
+
             // default range over which to display metric
             display_range: [0., 10.]
             // if the metric leaves this range, issue a warning

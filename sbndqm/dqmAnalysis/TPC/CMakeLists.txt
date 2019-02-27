@@ -97,6 +97,7 @@ simple_plugin( OnlineAnalysis module
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
+  sbndqm_redis_config
 )
 
 install_headers()

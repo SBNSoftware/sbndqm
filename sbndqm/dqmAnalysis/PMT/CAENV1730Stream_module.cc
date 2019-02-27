@@ -48,7 +48,7 @@ class sbndaq::CAENV1730Stream : public art::EDAnalyzer {
 
 sbndaq::CAENV1730Stream::CAENV1730Stream(fhicl::ParameterSet const & pset)
     : EDAnalyzer(pset)  {
-  InitializeMetricManager(pset);
+  sbndqm::InitializeMetricManager(pset);
 }
 
 sbndaq::CAENV1730Stream::~CAENV1730Stream() {}
@@ -88,7 +88,7 @@ void sbndaq::CAENV1730Stream::analyze(art::Event const & evt)
       // double rms = RMS(data, ch_size, baseline);
 
       // send the metric
-      sendMetric("n_channels", (long unsigned int) n_channels, 3, artdaq::MetricMode::Average);
+      sbndqm::sendMetric("n_channels", (long unsigned int) n_channels, 3, artdaq::MetricMode::Average);
 
     }
   }

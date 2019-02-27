@@ -10,6 +10,8 @@ artdaq::MetricManager *_I_am_the_metricMan = nullptr;
 
 using namespace artdaq;
 
+namespace sbndqm {
+
 void InitializeMetricManager(fhicl::ParameterSet const& pset) {
   // don't re-initialize metricMan if it is defined elsewhere
   #ifndef metricMan
@@ -62,6 +64,7 @@ std::string buildMetricName(std::string const& group, std::string const& instanc
   return group + ":" + instance + ":" + metric;
 }
 
+// For sending metrics through the config interface
 void sendMetric(std::string const& group, std::string const& instance, std::string const& metric, 
     std::string const& value, int level, MetricMode mode, std::string const& metricPrefix = "", bool useNameOverride = false) {
   if (metricMan != NULL) {
@@ -97,6 +100,5 @@ void sendMetric(std::string const& group, std::string const& instance, std::stri
   }
 }
 
-// For sending metrics through the config interface
-
+} // end namespace sbndqm
 #endif

@@ -18,6 +18,7 @@
 #include "Analysis.hh"
 
 #include "../../MetricManagerShim/MetricManager.hh"
+#include "../../MetricConfig/ConfigureRedis.hh"
 
 /*
  * Uses the Analysis class to print stuff to file
@@ -50,11 +51,8 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
   _analysis(p)
 {
-  InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
-}
-
-std::string keyName(const char *metric, unsigned channel_no) {
-  return "channel:" + std::to_string(channel_no) + ":" + metric;
+  sbndqm::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
+  sbndqm::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
 }
 
 void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
@@ -69,27 +67,22 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   // send the metrics
   for (auto const &channel_data: _analysis._per_channel_data) {
     double value;
-    std::string name;
+    std::string instance = std::to_string(channel_data.channel_no);
 
-    name = keyName("rms", channel_data.channel_no);
     value = channel_data.rms;
-    sendMetric(name.c_str(), value, level, mode);
+    sbndqm::sendMetric("tpc_channel", instance, "rms", value, level, mode);
 
-    name = keyName("baseline", channel_data.channel_no);
     value = channel_data.baseline;
-    sendMetric(name.c_str(), value, level, mode);
+    sbndqm::sendMetric("tpc_channel", instance, "baseline", value, level, mode);
 
-    name = keyName("next_channel_dnoise", channel_data.channel_no);
     value = channel_data.next_channel_dnoise;
-    sendMetric(name.c_str(), value, level, mode);
+    sbndqm::sendMetric("tpc_channel", instance, "next_channel_dnoise", value, level, mode);
 
-    name = keyName("mean_peak_height", channel_data.channel_no);
     value = channel_data.mean_peak_height;
-    sendMetric(name.c_str(), value, level, mode);
+    sbndqm::sendMetric("tpc_channel", instance, "mean_peak_height", value, level, mode);
 
-    name = keyName("occupancy", channel_data.channel_no);
     value = channel_data.occupancy;
-    sendMetric(name.c_str(), value, level, mode);
+    sbndqm::sendMetric("tpc_channel", instance, "occupancy", value, level, mode);
   }
 }
 

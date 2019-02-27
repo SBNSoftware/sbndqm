@@ -49,10 +49,10 @@ sbndqm::ExampleTimeStream::ExampleTimeStream(fhicl::ParameterSet const & pset)
       _sleep_time(pset.get<unsigned>("sleep_time", 0))  {
 
   // Intiailize the metric manager
-  InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+  sbndqm::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
 
   // Initialize the config
-  InitializeMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
+  sbndqm::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
 }
 
 sbndqm::ExampleTimeStream::~ExampleTimeStream() {}
@@ -82,7 +82,7 @@ void sbndqm::ExampleTimeStream::SendSingleMetric() {
   // value of metric
   double value = 5.;
   // send a metric 
-  sendMetric(name, value, level, mode);
+  sbndqm::sendMetric(name, value, level, mode);
 }
 
 void sbndqm::ExampleTimeStream::SendGroupMetrics() {
@@ -103,7 +103,7 @@ void sbndqm::ExampleTimeStream::SendGroupMetrics() {
     std::string instance = std::to_string(i);
     // metric value
     double value = (double) i;
-    sendMetric(group_name, instance, metric_name, value, level, mode); 
+    sbndqm::sendMetric(group_name, instance, metric_name, value, level, mode); 
   }
 }
 
