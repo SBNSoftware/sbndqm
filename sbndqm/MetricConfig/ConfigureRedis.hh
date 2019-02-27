@@ -19,7 +19,10 @@ namespace sbndqm {
   };
 
   unsigned AddGroup(redisContext *redis, const std::string &group_name);
-  unsigned GroupMetricConfig(redisContext *redis, const std::string &group_name, const std::vector<std::string> &metric_names, const std::vector<MetricConfig> &metric_configs);
+  unsigned GroupMetricConfig(redisContext *redis, const std::string &group_name, 
+    const std::vector<std::string> &metric_names, const std::vector<MetricConfig> &metric_configs,
+    const std::vector<std::string> &stream_names);
+  unsigned AddInstances2Group(redisContext *redis, const std::string &group_name, const std::vector<std::string> &instance_names);
 
   bool ProcessRedisReply(void *reply);
   bool ProcessAllRedisReplies(redisContext *redis, unsigned n_commands);

@@ -62,6 +62,7 @@ physics:
         }
       }
       metric_config: {
+        streams: [slow, fast]
         groups: [tpc_channel]
         metrics: {
           rms: {
