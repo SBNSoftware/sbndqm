@@ -8,6 +8,7 @@ physics:
 
       metrics: {
         redis_metric_fast: { // can be named anything
+          redis_passfile: passfile
           level: 3
           metricPluginType: "redis"
           // period in seconds to send metric to database
@@ -16,6 +17,7 @@ physics:
           redis_key_postfix: ":fast" 
         }
         redis_metric_slow: { // can be named anything
+          redis_passfile: passfile
           level: 3
           metricPluginType: "redis"
           reporting_interval: 10.0
@@ -25,16 +27,24 @@ physics:
       }
 
       metric_config: {
-        redis_passfile: passfile
-
         groups: [example]
         metrics: {
           rms: {
+            // default range over which to display metric
             display_range: [0., 10.]
+            // if the metric leaves this range, issue a warning
             warning_range: [1., 5.]
+            // if the metric leaves this range, issue an alarm
             alarm_range: [0.5, 7.5]
+            // units of metric
             units: ADC
-            titie: "Example Wire %(instance)s RMS"
+            // title of the metric to be shown in displays
+
+            // The title of the metric will be formatted in python
+            // passed the parameters "group" and "instance" as strings
+            // So, or this title, given the group "example" and instance
+            // "1", the title would be: "example Wire 1 RMS" 
+            titie: "%(group)s Wire %(instance)s RMS"
           }
         }
       }
@@ -48,5 +58,6 @@ source:
 {
   module_type: EmptyEvent
 }
+
 
 process_name: EXAMPLESTREAM
