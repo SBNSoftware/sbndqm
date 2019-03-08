@@ -7,6 +7,7 @@ physics: {
 
       metrics: {
         redis_metric_fast: { // can be named anything
+          redis_passfile: "/var/adm/krb5/redis_password"
           level: 3
           metricPluginType: "redis"
           // period in seconds to send metric to database
@@ -16,6 +17,7 @@ physics: {
           redis_key_postfix: ":fast" 
         }
         redis_metrix_slow: { // can be named anything
+          redis_passfile: "/var/adm/krb5/redis_password"
           level: 3
           metricPluginType: "redis"
           reporting_interval: 10.0
