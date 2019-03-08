@@ -23,14 +23,14 @@ void sbndqm::GenerateMetricConfig(const fhicl::ParameterSet &config) {
   if (password.size() == 0) {
     std::string passfile_name = config.get<std::string>("redis_passfile", "");
     if (passfile_name.size() > 0) {
-      std::ifstream passfile(passfile_name);
+      std::ifstream passfile(passfile_name, std::ifstream::in);
       if (passfile.good()) {
         passfile >> password;
       }
-    }
-    else {
-      mf::LogError("Redis Metric Config") << "Failed to open password file.";
-      return;
+      else {
+        mf::LogError("Redis Metric Config") << "Failed to open password file.";
+        return;
+      }
     }
   }
 
