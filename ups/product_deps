@@ -43,6 +43,7 @@ artdaq_utilities	v1_04_08
 fftw		v3_3_6_pl2
 jsoncpp		v1_7_7b
 smc_compiler            v6_6_0          -nq-    only_for_build
+xmlrpc_c                v1_39_10d
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
@@ -50,9 +51,9 @@ only_for_build  cetbuildtools   v7_02_01
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
-qualifier	larsoft		artdaq_core	sbnddaq_datatypes	sbndaq_artdaq_core	artdaq_utilities	fftw	notes
-e15:prof	e15:prof	e15:prof:s64	e15:prof:s64		e15:prof		e15:prof:s64		prof
-e15:debug	e15:debug	e15:debug:s64	e15:debug:s64		e15:prof		e15:prof:s64		debug
+qualifier	larsoft		artdaq_core	sbnddaq_datatypes	sbndaq_artdaq_core	artdaq_utilities	fftw	xmlrpc_c	notes
+e15:prof	e15:prof	e15:prof:s64	e15:prof:s64		e15:prof		e15:prof:s64		prof	e15:prof
+e15:debug	e15:debug	e15:debug:s64	e15:debug:s64		e15:prof		e15:prof:s64		debug	e15:prof
 
 # table fragment to set FW_SEARCH_PATH needed to find XML files:
 table_fragment_begin
