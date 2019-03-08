@@ -113,4 +113,9 @@ simple_plugin(TransferInput "source"
   ${TBB}
 )
 
+simple_plugin(Shmem "transfer"
+  #artdaq_TransferPlugins
+  sbndqm_TransferPlugins
+  artdaq-core_Core
+)
 
