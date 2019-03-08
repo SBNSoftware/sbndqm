@@ -42,6 +42,7 @@ sbndaq_artdaq_core	v0_01_00
 artdaq_utilities	v1_04_08
 fftw		v3_3_6_pl2
 jsoncpp		v1_7_7b
+smc_compiler            v6_6_0          -nq-    only_for_build
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
