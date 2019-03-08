@@ -38,6 +38,8 @@ physics:
           // example: [[0,8], 8, 9]
         }
 
+        // The names of the streams __must__ be the names of the redis_key_postfix's
+        // for each instance in 'metrics' with the initial colon (':') stripped
         streams: [slow, fast]
 
         metrics: {
