@@ -1,3 +1,4 @@
+find_ups_product(icarus_artdaq_base)
 find_ups_product(artdaq_core)
 simple_plugin( DaqDecoderIcarus module
   tpcAnalysis_MODE

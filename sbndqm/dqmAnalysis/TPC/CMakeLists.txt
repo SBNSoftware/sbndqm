@@ -1,5 +1,9 @@
 find_ups_product( lardataobj)
 
+include_directories($ENV{FFTW_LIBRARY})
+
+find_library(FFTW fftw3 HINTS $ENV{FFTW_LIBRARY})
+
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
 
@@ -9,7 +13,12 @@ if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
 # subdirectory for SBND decoder
   add_subdirectory(SBNDDecode)
 endif()
-#add_subdirectory(ICARUSDecode)
+
+if (DEFINED ENV{ICARUS_ARTDAQ_BASE_VERSION} )
+  if (DEFINED ENV{ICARUS_ARTDAQ_CORE_VERSION} )
+    add_subdirectory(ICARUSDecode)
+  endif()
+endif()
 
 # install fcl
 add_subdirectory(fcl)
@@ -44,7 +53,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		${ART_UTILITIES}
 		${FHICLCPP}
 		${ROOT_BASIC_LIB_LIST} 
-		fftw3
+		${FFTW}
                            larcore_Geometry_Geometry_service
                            larcorealg_Geometry
                            lardataobj_Simulation
