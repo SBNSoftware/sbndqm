@@ -10,6 +10,7 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "artdaq-core/Data/Fragment.hh"
+#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
 #include "canvas/Utilities/InputTag.h"
 
 //#include "sbnddaq-datatypes/Overlays/NevisTPCFragment.hh"
@@ -37,7 +38,7 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "fhiclcpp/make_ParameterSet.h"
 
-#include "icarus-artdaq-core/Overlays/PhysCrateFragment.hh"
+//#include "icarus-artdaq-core/Overlays/PhysCrateFragment.hh"
 
 //#include "WaveformPropertiesAlg.h"
 

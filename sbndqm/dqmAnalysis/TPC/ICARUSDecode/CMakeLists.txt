@@ -1,8 +1,10 @@
 find_ups_product(icarus_artdaq_base)
 find_ups_product(artdaq_core)
+find_ups_product(sbndaq_artdaq_core)
+
 simple_plugin( DaqDecoderIcarus module
   tpcAnalysis_MODE
-  icarus-artdaq-core_Overlays 
+  sbndaq-artdaq-core_Overlays_ICARUS 
   
   ${LARDATAOBJ}
   lardataobj_RawData

@@ -15,9 +15,7 @@ if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
 endif()
 
 if (DEFINED ENV{ICARUS_ARTDAQ_BASE_VERSION} )
-  if (DEFINED ENV{ICARUS_ARTDAQ_CORE_VERSION} )
     add_subdirectory(ICARUSDecode)
-  endif()
 endif()
 
 # install fcl
