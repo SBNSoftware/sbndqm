@@ -48,25 +48,29 @@ void FFTManager::Execute() {
 // get pointer to ith input
 double *FFTManager::InputAt(const int index) {
   assert(_is_allocated);
-  assert(index < _input_size);
+  assert(index >= 0);
+  assert((unsigned int)index < _input_size);
   return &_input_array[index];
 }
 
 double FFTManager::ReOutputAt(const int index) {
   assert(_is_allocated);
-  assert(index < _output_size);
+  assert(index >= 0);
+  assert((unsigned int)index < _output_size);
   return _output_array[index][0];
 }
 
 double FFTManager::ImOutputAt(const int index) {
   assert(_is_allocated);
-  assert(index < _output_size);
+  assert(index >= 0);
+  assert((unsigned int)index < _output_size);
   return _output_array[index][1];
 }
 
 double FFTManager::AbsOutputAt(const int index) {
   assert(_is_allocated);
-  assert(index < _output_size);
+  assert(index >= 0);
+  assert((unsigned int)index < _output_size);
   return _output_array[index][0]*_output_array[index][0] + _output_array[index][1]*_output_array[index][1];
 }
 
