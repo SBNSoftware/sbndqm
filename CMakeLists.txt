@@ -51,6 +51,7 @@ find_ups_product( jsoncpp v1_00_00 )
 find_ups_product(artdaq_core v3_00_00)
 find_ups_product(fftw)
 find_ups_product(xmlrpc_c)
+find_ups_product( sbndaq_redis_plugin v0_02_00 )
 # include_directories($ENV{JSONCPP_LIB})
 
 # macros for dictionary and simple_plugin
