@@ -52,6 +52,7 @@ private:
 
 
 daqAnalysis::SnapshotFilter::SnapshotFilter(fhicl::ParameterSet const & p):
+  art::EDFilter{p},
   _last_subrun(-1),
   _event_delay(p.get<unsigned>("event_delay", 0)),
   _event_number(0)

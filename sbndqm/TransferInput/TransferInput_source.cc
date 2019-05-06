@@ -1,5 +1,5 @@
-#include "ArtdaqInput.hh"
-#include "TransferWrapper.hh"
+#include "sbndqm/TransferInput/ArtdaqInput.hh"
+#include "sbndqm/TransferInput/TransferWrapper.hh"
 
 namespace art
 {
@@ -13,7 +13,7 @@ namespace art
 	};
 
 	/**
-	 * \brief TransferInput is an art::Source using the sbndqm_artdaq::TransferWrapper class as the data source
+	 * \brief TransferInput is an art::Source using the artdaq::TransferWrapper class as the data source
 	 */
 	typedef art::Source<ArtdaqInput<sbndqm_artdaq::TransferWrapper>> TransferInput;
 } // namespace art

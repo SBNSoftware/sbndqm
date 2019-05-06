@@ -84,8 +84,9 @@ art_make_library( LIBRARY_NAME sbndqm_ArtModules
   sbndqm_TransferPlugins
   art_Framework_Core
   art_Framework_IO_Sources
-  art_Framework_IO_Root
-  art_Framework_IO_RootVersion
+#  art_Framework_IO_Root
+#  art_Framework_IO_RootVersion
+  art_root_io
   art_Framework_IO
   art_Framework_Principal
   # artdaq_ArtModules_NetMonTransportService_service
@@ -111,6 +112,7 @@ simple_plugin(TransferInput "source"
   sbndqm_TransferPlugins
   sbndqm_ArtModules
   ${TBB}
+  ${HEP_CONCURRENCY}
 )
 
 simple_plugin(Shmem "transfer"

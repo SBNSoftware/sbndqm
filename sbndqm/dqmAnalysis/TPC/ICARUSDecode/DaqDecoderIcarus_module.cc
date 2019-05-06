@@ -65,6 +65,7 @@ DEFINE_ART_MODULE(daq::DaqDecoderIcarus)
 }
 */
 daq::DaqDecoderIcarus::DaqDecoderIcarus(fhicl::ParameterSet const & param): 
+  art::EDProducer{param},
   _tag(param.get<std::string>("raw_data_label", "daq"),param.get<std::string>("fragment_type_label", "PHYSCRATEDATA")),
   _config(param),
   _last_event_number(0),

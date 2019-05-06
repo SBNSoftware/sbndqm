@@ -2,8 +2,8 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent sbndqm v00_01_04
-defaultqual e15
+parent sbndqm v00_02_00
+defaultqual e17:s83
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -35,17 +35,16 @@ fwdir   product_dir scripts
 # Add the dependent product and version
 
 product          version
-artdaq_core	 v3_04_11
-larsoft          v06_73_00
-sbnddaq_datatypes	v00_02_01 - optional
-icarus_artdaq_base	v0_06_05 - optional
-sbndaq_artdaq_core	v0_01_04
+artdaq_core	 v3_04_15
+larsoft          v08_18_00
+icarus_artdaq_base	v0_06_06 - optional
+sbndaq_artdaq_core	v0_01_07
 artdaq_utilities	v1_04_10
-fftw		v3_3_6_pl2
-jsoncpp		v1_7_7b
+fftw		v3_3_8
+jsoncpp		v1_7_7c
 smc_compiler            v6_6_0          -nq-    only_for_build
 xmlrpc_c                v1_39_10d
-sbndaq_redis_plugin	v0_01_04
+sbndaq_redis_plugin	v0_02_00
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
@@ -53,9 +52,9 @@ cetbuildtools   v7_02_01 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
-qualifier	larsoft		artdaq_core	sbnddaq_datatypes	sbndaq_artdaq_core	artdaq_utilities	fftw	jsoncpp	sbndaq_redis_plugin	icarus_artdaq_base	xmlrpc_c	notes
-e15:prof	e15:prof	e15:prof:s65	e15:prof:s64		e15:prof		e15:prof:s65		prof	e15:prof	e15:prof	e15:prof	e15:prof
-e15:debug	e15:debug	e15:debug:s65	e15:debug:s64		e15:debug		e15:debug:s65		debug	e15:debug	e15:debug	e15:debug	e15:debug
+qualifier	larsoft		artdaq_core	sbndaq_artdaq_core	artdaq_utilities	fftw	jsoncpp	    sbndaq_redis_plugin	icarus_artdaq_base	xmlrpc_c	notes
+e17:prof:s83	e17:prof	e17:prof:s83	e17:prof:s83		e17:prof:s83		prof	e17:prof    e17:prof:s83	e17:prof		e17:prof
+e17:debug:s83	e17:debug	e17:debug:s83	e17:debug:s83		e17:debug:s83		debug	e17:debug   e17:debug:s83	e17:debug		e17:debug
 
 # table fragment to set FW_SEARCH_PATH needed to find XML files:
 table_fragment_begin
