@@ -1,0 +1,42 @@
+This directory contains files for running the SBN Online Monitoring
+Archiver. The archiver runs as a standalone python script. The
+dependencies for the script are stored in the requirements.txt file in
+this directory.
+
+To setup an environment to run this script, setup a virtual environment:
+
+virtualenv env
+source env/bin/activate
+pip install -r requirements.txt
+
+Note that you will need python 2.7 to run the needed redis library. The
+sbnd-daq machines have this version of python. However, the gpvm's by
+default use python 2.6. If you are developing on the gpvm's, then you
+must run instead:
+
+source /cvmfs/fermilab.opensciencegrid.org/products/larsoft/setup
+setup python v2_7_15a
+# I have a copy of virtualenv setup
+~gputnam/virtualenv-15.1.0/virtualenv.py env 
+source env/bin/activate
+pip install -r requirements.txt
+
+After initial setup of the environment, in the future when logging on
+you can just run:
+
+source env/bin/activate
+
+Or, if you had to "setup" a python, run:
+
+source /cvmfs/fermilab.opensciencegrid.org/products/larsoft/setup
+setup python v2_7_15a
+source env/bin/activate
+
+Then you can run the scripts. The script "fill_stream.py" fills a list
+of redis Stream instnaces. To use to fill the database instance on
+sbnd-daq33, run:
+
+python fill_stream.py -s example -t 1 -hn sbnd-daq33 -pw __password__
+
+Where you should ask Gray what the "__password__" is. In this case, the
+name of the Stream object in redis will be "example".

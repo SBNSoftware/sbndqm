@@ -148,6 +148,8 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   unsigned index = 0;
   // calculate per channel stuff 
   for (auto const& digits: *_raw_digits_handle) {
+    // ignore channels over limit
+    if (digits.Channel() >= _channel_info.NChannels()) continue;
     _channel_index_map[digits.Channel()] = index;
     ProcessChannel(digits);
     index++;
