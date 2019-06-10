@@ -1,0 +1,19 @@
+{
+    "config": {
+	"hostname": "sbnd-daq33",
+	"port": 6379,
+	"timeout": 1
+    },
+    "streams": {
+	"test": {
+	    "latest": "0-0",
+	    "timeblocks": 10,
+	    "type": "mean"
+	},
+	"teststream": {
+	    "latest": "0-0",
+	    "timeblocks": 10,
+	    "type": "mean"
+	}
+    }
+}
