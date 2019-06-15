@@ -2,7 +2,7 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent sbndqm v00_02_01
+parent sbndqm v00_02_02
 defaultqual e17:s83
 
 # These optional lines define the installed directories where headers,
@@ -36,9 +36,9 @@ fwdir   product_dir scripts
 
 product          version
 artdaq_core	 v3_04_16
-larsoft          v08_18_00
+larsoft          v08_19_01
 icarus_artdaq_base	v0_08_00 - optional
-sbndaq_artdaq_core	v0_02_01
+sbndaq_artdaq_core	v0_02_02
 artdaq_utilities	v1_04_11
 fftw		v3_3_8
 jsoncpp		v1_7_7c
