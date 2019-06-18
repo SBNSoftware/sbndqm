@@ -45,12 +45,13 @@ private:
   tpcAnalysis::Analysis _analysis;
   TTree *_output;
   TH1F *_sample_hist;
+  
 
 };
 
 tpcAnalysis::TPCWavefromCreator::TPCWavefromCreator(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
-  _analysis(p)
+  _analysis(p
 {
   /*
   art::ServiceHandle<art::TFileService> fs;
@@ -74,7 +75,9 @@ tpcAnalysis::TPCWavefromCreator::TPCWavefromCreator(fhicl::ParameterSet const & 
 void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & e) {
 
   art::ServiceHandle<art::TFileService> fs;
-  _sample_hist = fs->make<TH1F>("sample_hist","Title",1000,0,1000);
+  _sample_hist = fs->make<TH1F>("sample_hist","Histogram",1000,0,1000);
+  _sample_hist->Fill(3);
+  _sample_hist->Fill(20);
 
 
   //get the raw digits from the event
