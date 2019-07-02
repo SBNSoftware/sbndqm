@@ -1,0 +1,29 @@
+#!/bin/bash
+
+rm times*.log
+
+python CreateConfig.py -q 10
+python Fill.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876
+for ((i = 0 ; i < 50 ; i++)); do
+    python Archiver.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876 >> times10.log
+done
+
+python CreateConfig.py -q 100
+python Fill.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876
+for ((i = 0 ; i < 50 ; i++)); do
+    python Archiver.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876  >> times100.log
+done
+
+python CreateConfig.py -q 1000
+python Fill.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876
+for ((i = 0 ; i < 50 ; i++)); do
+    python Archiver.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876  >> times1000.log
+done
+
+python CreateConfig.py -q 10000
+python Fill.py  -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876
+for ((i = 0 ; i < 50 ; i++)); do
+    python Archiver.py -pw B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876  >> times10000.log
+done
+
+python RunTimeAverages.py

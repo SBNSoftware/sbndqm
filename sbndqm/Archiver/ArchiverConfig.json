@@ -1,19 +1,49 @@
 {
     "config": {
-	"hostname": "sbnd-daq33",
-	"port": 6379,
-	"timeout": 1
-    },
+        "hostname": "localhost", 
+        "port": 6379, 
+        "timeout": 1
+    }, 
     "streams": {
-	"test": {
-	    "latest": "0-0",
-	    "timeblocks": 10,
-	    "type": "mean"
-	},
-	"teststream": {
-	    "latest": "0-0",
-	    "timeblocks": 10,
-	    "type": "mean"
-	}
+        "test0": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test1": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test2": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test3": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test4": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test5": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test6": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test7": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test8": {
+            "time": 59000, 
+            "type": "mean"
+        }, 
+        "test9": {
+            "time": 59000, 
+            "type": "mean"
+        }
     }
 }
