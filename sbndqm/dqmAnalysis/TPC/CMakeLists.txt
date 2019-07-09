@@ -106,6 +106,7 @@ simple_plugin( TPCWaveformCreator module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
+  sbndqm_redis_config
 )
 
 simple_plugin( OnlineAnalysis module
