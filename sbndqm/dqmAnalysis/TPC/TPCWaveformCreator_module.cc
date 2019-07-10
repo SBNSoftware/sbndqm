@@ -33,23 +33,22 @@
 /* Uses the Analysis class to print stuff to file
 */
 namespace tpcAnalysis {
-  class TPCWavefromCreator;
+  class TPCWaveformCreator;
 }
 
 
-class tpcAnalysis::TPCWavefromCreator : public art::EDAnalyzer {
+class tpcAnalysis::TPCWaveformCreator : public art::EDAnalyzer {
 public:
-  explicit TPCWavefromCreator(fhicl::ParameterSet const & p);
+  explicit TPCWaveformCreator(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base.
   // classes without bare pointers or other resource use. Plugins should not be copied or assigned.
-   TPCWavefromCreator(TPCWavefromCreator const &) = delete;
-   TPCWavefromCreator(TPCWavefromCreator &&) = delete;
-   TPCWavefromCreator & operator = (TPCWavefromCreator const &) = delete;
-   TPCWavefromCreator & operator = (TPCWavefromCreator &&) = delete;
+   TPCWaveformCreator(TPCWaveformCreator const &) = delete;
+   TPCWaveformCreator(TPCWaveformCreator &&) = delete;
+   TPCWaveformCreator & operator = (TPCWaveformCreator const &) = delete;
+   TPCWaveformCreator & operator = (TPCWaveformCreator &&) = delete;
    virtual void analyze(art::Event const & e) override;
 
 private:
-  tpcAnalysis::Analysis _analysis;
   TTree *_output;
   TH1D *Times;
   TStopwatch timer;
@@ -62,10 +61,13 @@ private:
   double stringSum = 0.0;
   redisContext* context;
   double makeStrings(raw::RawDigit const&);
+
+  std::string fRedisHostname;
+  int         fRedisPort;
   
 };
 
-double tpcAnalysis::TPCWavefromCreator::makeStrings(raw::RawDigit const& rd){ 
+double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd){ 
    TStopwatch sendString;
    TStopwatch redisString;
    
@@ -126,17 +128,19 @@ double tpcAnalysis::TPCWavefromCreator::makeStrings(raw::RawDigit const& rd){
    return time;
 }
 
-tpcAnalysis::TPCWavefromCreator::TPCWavefromCreator(fhicl::ParameterSet const & p):
+tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
-  _analysis(p){  
-  context =  sbndaq::Connect2Redis("icarus-db01",6379);//to make the configure options w/ password??  later 
+  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db01.fnal.gov")),
+  fRedisPort(p.get<int>("RedisPort",6379))
+{  
+  context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort);//to make the configure options w/ password??  later 
 
   art::ServiceHandle<art::TFileService> tfs; 
   Times = tfs->make<TH1D>("Times","Channel_Times",100,0,2);   
 
 }
   
-void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
+void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
   master.Start();
   art::EventNumber_t eventNumber = evt.id().event();
   //get the raw digits from the event
@@ -263,7 +267,7 @@ void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
 }
 
 
-DEFINE_ART_MODULE(tpcAnalysis::TPCWavefromCreator)	 
+DEFINE_ART_MODULE(tpcAnalysis::TPCWaveformCreator)	 
 				  
   //fin
 

@@ -37,8 +37,8 @@ fwdir   product_dir scripts
 product          version
 artdaq_core	 v3_04_16
 larsoft          v08_19_01
-icarus_artdaq_base	v0_08_00 - optional
-sbndaq_artdaq_core	v0_02_02
+icarus_artdaq_base	v0_08_01 - optional
+sbndaq_artdaq_core	v0_02_03
 artdaq_utilities	v1_04_11
 fftw		v3_3_8
 jsoncpp		v1_7_7c
