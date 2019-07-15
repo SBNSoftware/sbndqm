@@ -7,6 +7,7 @@
 #include <vector>
 #include <sstream>
 #include <TVirtualFFT.h>
+#include <stdio.h>
 #include "TStopwatch.h"
 #include "TROOT.h"
 #include "TTree.h"
@@ -33,19 +34,19 @@
 /* Uses the Analysis class to print stuff to file
 */
 namespace tpcAnalysis {
-  class TPCWavefromCreator;
+  class TPCWaveformCreator;
 }
 
 
-class tpcAnalysis::TPCWavefromCreator : public art::EDAnalyzer {
+class tpcAnalysis::TPCWaveformCreator : public art::EDAnalyzer {
 public:
-  explicit TPCWavefromCreator(fhicl::ParameterSet const & p);
+  explicit TPCWaveformCreator(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base.
   // classes without bare pointers or other resource use. Plugins should not be copied or assigned.
-   TPCWavefromCreator(TPCWavefromCreator const &) = delete;
-   TPCWavefromCreator(TPCWavefromCreator &&) = delete;
-   TPCWavefromCreator & operator = (TPCWavefromCreator const &) = delete;
-   TPCWavefromCreator & operator = (TPCWavefromCreator &&) = delete;
+   TPCWaveformCreator(TPCWaveformCreator const &) = delete;
+   TPCWaveformCreator(TPCWaveformCreator &&) = delete;
+   TPCWaveformCreator & operator = (TPCWaveformCreator const &) = delete;
+   TPCWaveformCreator & operator = (TPCWaveformCreator &&) = delete;
    virtual void analyze(art::Event const & e) override;
 
 private:
@@ -54,18 +55,51 @@ private:
   TH1D *Times;
   TStopwatch timer;
   TStopwatch master;
+  float Ped;
   double rSum = 0.0;
   double sSum = 0.0;
-  double Ped = 0.0;
-  double sum = 0.0;
+  float Sum;
+  int counter = 1;
+  float sum = 0.0;
   double stringTime = 0.0;
   double stringSum = 0.0;
   redisContext* context;
   double makeStrings(raw::RawDigit const&);
-  
-};
+  // short int calcPed(raw::RawDigit const&); 
+  //  short int meanP;
 
-double tpcAnalysis::TPCWavefromCreator::makeStrings(raw::RawDigit const& rd){ 
+};
+/*short int tpcAnalysis::TPCWaveformCreator::calcPed(raw::RawDigit const& rd){
+    for(size_t i_p=0; i_p<raw_digits_vector[i_p]; ++i_p){
+    //  using 'auto' here because I'm too lazy to type raw::RawDigit	                                                                                                                                                
+    //raw::RawDigit const& rd = raw_digits_vector[i_d];                                                                                         
+    // auto const& rd = raw_digits_vector[i_p];
+    short a[100];
+    short sum = 0;
+    for(size_t i_t=0; i_t< rd.Samples(); ++i_t){
+      a[i_t] = rd.ADC(i_t);
+      sum+=a[i_t];
+      Ped = sum/(float)(i_t + 1);
+      if (i_p == 0){
+	if (i_t == 0){
+	  std::cout << " val " <<rd.ADC(i_t)<<  std::endl;                                                                                   \
+	}                                                                                                                                    \
+	if (i_t == 1){                                                                                                                       \
+	  std::cout << " val " <<rd.ADC(i_t)<<  std::endl;                                                                                    \
+	  std::cout << " mean " <<Ped<<  std::endl;                                                                                           \
+	}                                                                                                                                    \
+	if (i_t == 2){                                                                                                                       \
+	  std::cout << " val " <<rd.ADC(i_t)<<  std::endl;                                                                                     \
+	  std::cout << " mean0 " << Ped<<  std::endl;                                                                                          \
+	}
+      }
+    }
+  
+
+  return Ped;
+}
+*/
+double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd){ 
    TStopwatch sendString;
    TStopwatch redisString;
    
@@ -76,7 +110,7 @@ double tpcAnalysis::TPCWavefromCreator::makeStrings(raw::RawDigit const& rd){
    sendString.Start();
    // store the waveform and fft's
    // also delete old lists
-    redisAppendCommand(context, "DEL snapshot:waveform:wire:%i", rd.Channel());
+   redisAppendCommand(context, "DEL snapshot:waveform:wire:%i", rd.Channel());
 
    // we're gonna put the whole waveform into one very large list 
    // allocate enough space for it 
@@ -126,17 +160,16 @@ double tpcAnalysis::TPCWavefromCreator::makeStrings(raw::RawDigit const& rd){
    return time;
 }
 
-tpcAnalysis::TPCWavefromCreator::TPCWavefromCreator(fhicl::ParameterSet const & p):
+tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
   _analysis(p){  
   context =  sbndaq::Connect2Redis("icarus-db01",6379);//to make the configure options w/ password??  later 
 
   art::ServiceHandle<art::TFileService> tfs; 
   Times = tfs->make<TH1D>("Times","Channel_Times",100,0,2);   
-
 }
   
-void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
+void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
   master.Start();
   art::EventNumber_t eventNumber = evt.id().event();
   //get the raw digits from the event
@@ -159,29 +192,34 @@ void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
    //        << ", event " << eventNumber << " has " << raw_digits_handle->size()
    //	     << " channels"<< std::endl;
    timer.Start();
- 
    for(size_t i_d=0; i_d<raw_digits_vector.size(); ++i_d){ 
-     // using 'auto' here because I'm too lazy to type raw::RawDigit                                                                                  
-     //raw::RawDigit const& rd = raw_digits_vector[i_d];
+     // using 'auto' here because I'm too lazy to type raw::RawDigit                                                                                 //raw::RawDigit const& rd = raw_digits_vector[i_d];
      auto const& rd = raw_digits_vector[i_d];
      stringTime = makeStrings(rd);
      // std::cout<<"Channel " << rd.Channel() << ": time for the string to be created is " <<stringTime<<" seconds."<<std::endl;
      Times->Fill(stringTime);
-    
      //std::cout << "Looking at " << i_d << " rawdigit. Channel number is ... " << rd.Channel() << std::endl;  
+    
      std::stringstream ss_hist_title,ss_hist_name;
+
      ss_hist_title << "(Run,Event,rawdigit,Channel) "
-    		   << evt.run() <<","
-		   <<eventNumber << ","
-		   <<i_d <<","
-		   <<rd.Channel();
+
+		   << evt.run() <<","
+
+                   <<eventNumber << ","
+
+                   <<i_d <<","
+
+                   <<rd.Channel();
 
      ss_hist_name << "Waveform_"
-	          <<eventNumber <<"_"
-	          <<i_d;
 
+                  <<eventNumber <<"_"
 
-     //FFT                                                                                                                                         
+                  <<i_d;
+                                                                                   
+                                                                                                                
+ //FFT                                                                                                                                         
 
      /*          int NDIM = 4096;
      TVirtualFFT *fftr2c = TVirtualFFT::FFT(1, &NDIM, "R2C EX K");
@@ -240,16 +278,60 @@ void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
      // std::cout << "going to create histogram " << ss_hist_name.str()<< std::endl;
 
 
-     hist_vector_eventNumber.push_back(tfs->make<TH1F>(ss_hist_name.str().c_str(),ss_hist_title.str().c_str(),4096,0,4096));
+      hist_vector_eventNumber.push_back(tfs->make<TH1F>(ss_hist_name.str().c_str(),ss_hist_title.str().c_str(),2000,0,4096));
      //          std::cout << "Created histo. Total histos is now  " << hist_vector_eventNumber.size()<< std::endl;
      for(size_t i_t=0; i_t< rd.Samples(); ++i_t){
-       short my_adc_value = rd.ADC(i_t); 
-       //       std::cout << " Wave val " << my_adc_value<<std::endl; 
-       if(my_adc_value!=0) hist_vector_eventNumber.back()->SetBinContent(i_t+1,my_adc_value);
+      
+       short a[100];
+       a[i_t] = rd.ADC(i_t);
+      	Sum+=a[i_t];
+        Ped = Sum/(float)(counter);
+	counter++;
+	if (i_d == 0){	 
+	  if (i_t == 0){
+	    std::cout << " val " <<rd.ADC(i_t)<<  std::endl;
+	    std::cout << " sum " <<Sum<<  std::endl;
+	    std::cout << " mean " <<Ped<<  std::endl;
+	  }
+	  if (i_t == 1){
+	    std::cout << " val " <<rd.ADC(i_t)<<  std::endl;
+	    std::cout << " mean " <<Ped<<  std::endl;
+	    std::cout << " sum " <<Sum<<  std::endl;
+	  }
+	  if (i_t == 2){
+	    std::cout << " val " <<rd.ADC(i_t)<<  std::endl;
+	    std::cout << " mean " <<Ped<<  std::endl;
+	    std::cout << " sum " <<Sum<<  std::endl;
+	  }
+       }
+   	 short my_adc_value = rd.ADC(i_t);
 
+	 if (i_d == 0){
+	   if (i_t == 0){
+	     std::cout << " wave v before " <<my_adc_value<<  std::endl;
+	     std::cout << " mean used in sub " << Ped<<  std::endl;
+	     std::cout << " wave v after " << my_adc_value - Ped <<  std::endl;
+	   }
+	   if (i_t == 1){
+	     std::cout << " wave v before " <<my_adc_value<<  std::endl;
+	     std::cout << " mean used in sub " << Ped<<  std::endl;
+	     std::cout << " wave v after " << my_adc_value - Ped << std::endl;
+	   }
+	   if (i_t == 2){
+	     std::cout << " wave v before " <<my_adc_value<<  std::endl;
+	     std::cout << " mean used in sub " << Ped<<  std::endl;
+	     std::cout << " wave v after " << my_adc_value - Ped<< std::endl;
+	   }
+	  
+	 }
+
+	 //       std::cout << " Wave val " << my_adc_value<<std::endl; 
+
+	 if(my_adc_value!=0) hist_vector_eventNumber.back()->SetBinContent(i_t,my_adc_value);       
      }
-  }
+   }
 
+       
    timer.Stop();
    std::cout << " Time to create three types of  histograms is " << timer.RealTime()<< " seconds."<< std::endl;
 
@@ -258,12 +340,11 @@ void tpcAnalysis::TPCWavefromCreator::analyze(art::Event const & evt) {
    std::cout << " The total time for this event is " << master.RealTime()<<" seconds."<< std::endl;
    sum = sum +master.RealTime();
    std::cout  << " The overall total time accross all events is " << sum <<" seconds."<< std::endl;	    
-
   
 }
 
 
-DEFINE_ART_MODULE(tpcAnalysis::TPCWavefromCreator)	 
+DEFINE_ART_MODULE(tpcAnalysis::TPCWaveformCreator)	 
 				  
   //fin
-
+ 
