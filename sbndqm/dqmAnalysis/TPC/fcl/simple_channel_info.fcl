@@ -7,9 +7,9 @@ SBND_simple_channel_info:
 }
 ICARUS_simple_channel_info: 
 {
-  n_channels: 512
+  n_channels: 576
   collection_channels: [ [0, 255 ] ]
-  induction_channels: [ [256, 511] ]
+  induction_channels: [ [256, 575] ]
 //collection_channels: [ [0,831]  ]
 //induction_channels: [ [1024,1855] ]
 }
