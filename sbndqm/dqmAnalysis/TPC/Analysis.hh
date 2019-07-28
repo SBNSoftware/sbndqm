@@ -132,6 +132,9 @@ public:
   // other functions
   void ProcessChannel(const raw::RawDigit &digits);
   void ProcessHeader(const tpcAnalysis::HeaderData &header);
+//compute board sum
+void ComputeBoardSum(int brd);
+void ComputeUncorrelatedData(int brd);
 
   // if the containers filled by the analysis are ready to be processed
   bool EmptyEvent();
@@ -146,8 +149,12 @@ public:
   std::vector<unsigned> _channel_index_map;
   // output containers of analysis code. Only use after calling ReadyToProcess()
   std::vector<tpcAnalysis::ChannelData> _per_channel_data;
+std::vector<tpcAnalysis::ChannelData> _per_board_data;
+std::vector<tpcAnalysis::ChannelData> _uncorrelated_data;
+
   std::vector<tpcAnalysis::ReducedChannelData> _per_channel_data_reduced;
   std::vector<tpcAnalysis::NoiseSample> _noise_samples;
+std::vector<tpcAnalysis::NoiseSample> _boardnoise_samples;
   std::vector<tpcAnalysis::HeaderData> _header_data;
   std::vector<RunningThreshold> _thresholds;
 
@@ -159,6 +166,8 @@ private:
 
   // raw digits container for each event
   art::Handle<std::vector<raw::RawDigit>> _raw_digits_handle;
+  // board sum container for each event
+  art::Handle<std::vector<raw::RawDigit>> _board_sum_handle;
   // header data container for each event
   art::Handle<std::vector<tpcAnalysis::HeaderData>> _header_data_handle;
 };

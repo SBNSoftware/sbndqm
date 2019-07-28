@@ -54,7 +54,10 @@ Analysis::Analysis(fhicl::ParameterSet const & p) :
   _config(p),
   _channel_index_map(_channel_info.NChannels()),
   _per_channel_data(_channel_info.NChannels()),
+_per_board_data(_channel_info.NChannels()/64),
+ _uncorrelated_data(_channel_info.NChannels()),
   _per_channel_data_reduced((_config.reduce_data) ? _channel_info.NChannels() : 0), // setup reduced event vector if we need it
+
   _noise_samples(_channel_info.NChannels()),
   _header_data(std::max(_config.n_headers,0)),
   _thresholds( (_config.threshold_calc == 3) ? _channel_info.NChannels() : 0),
@@ -131,7 +134,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
 }
 
 void Analysis::AnalyzeEvent(art::Event const & event) {
-
+//std::cout << " analyzing event " << std::endl;
   _event_ind ++;
 
   // clear out containers from last iter
@@ -148,13 +151,18 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   unsigned index = 0;
   // calculate per channel stuff 
   for (auto const& digits: *_raw_digits_handle) {
-    // ignore channels over limit
-    if (digits.Channel() >= _channel_info.NChannels()) continue;
     _channel_index_map[digits.Channel()] = index;
     ProcessChannel(digits);
     index++;
   }
-
+for (unsigned i = 0; i < _channel_info.NChannels()/64; i++) {
+  ComputeBoardSum(i);
+  //std::cout << " board" << i << " rms " << _per_board_data[i].rms<< std::endl;
+}
+for (unsigned i = 0; i < _channel_info.NChannels(); i++) {
+  ComputeUncorrelatedData(i);
+  //std::cout << " channel " << i << " uncorrelated rms " << _uncorrelated_data[i].rms<< std::endl;
+}
   if (_config.timing) {
     _timing.StartTime();
   }
@@ -265,7 +273,8 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   if (_config.fill_waveforms || _config.fft_per_channel) {
     for (unsigned i = 0; i < n_adc; i ++) {
       int16_t adc = adc_vec[i];
-    
+      //adc=100*sin(i/25.);
+
       // fill up waveform
        if (_config.fill_waveforms) {
         _per_channel_data[channel].waveform.push_back(adc);
@@ -278,7 +287,6 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
       }
     }
   }
-
   if (_config.timing) {
     _timing.EndTime(&_timing.fill_waveform);
   }
@@ -307,8 +315,15 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     int adc_fft_size = _fft_manager.OutputSize();
     for (int i = 0; i < adc_fft_size; i++) {
       _per_channel_data[channel].fft_real.push_back(_fft_manager.ReOutputAt(i));
+//std::cout << " fft real " << _fft_manager.ReOutputAt(i) << std::endl;
       _per_channel_data[channel].fft_imag.push_back(_fft_manager.ImOutputAt(i));
-    } 
+    }  float TMAX=adc_fft_size;
+  for (int i=0; i< TMAX; i++)
+      {
+        _per_channel_data[channel].fourier_real[i]=_per_channel_data[channel].fft_real[i];
+        _per_channel_data[channel].fourier_imag[i]=_per_channel_data[channel].fft_imag[i];
+      }
+
   }
   if (_config.timing) {
     _timing.EndTime(&_timing.execute_fft);
@@ -478,4 +493,114 @@ PeakFinder::plane_type Analysis::ChannelInfo::PlaneType(unsigned channel) {
 
   return PeakFinder::unspecified;
 }
+void Analysis::ComputeBoardSum(int brd) {
+//std::cout << " computing board sum " << brd << std::endl;
 
+_per_board_data[brd] = ChannelData(brd);
+//std::cout << " computing board sum constructor " << brd << std::endl;
+  // if there are ADC's, the channel isn't empty
+  _per_board_data[brd].empty = false;
+  _per_board_data[brd].channel_no = brd;
+
+int ch0=64*brd;
+for(int j=0;j<4096;j++)
+_per_board_data[brd].waveform.push_back(0);
+
+_per_board_data[brd].fft_real.clear();
+    _per_board_data[brd].fft_imag.clear();
+
+for(int channel=ch0;channel<ch0+64;channel++) {
+std::vector<int16_t> wave=_per_channel_data[channel].waveform;
+
+
+  auto n_adc = wave.size();
+  //std::cout << " channel " << channel << std::endl;
+    for (unsigned i = 0; i < n_adc; i ++) {
+      int16_t adc = wave[i]-2048;
+        (_per_board_data[brd].waveform[i])+=adc;
+
+   //std::cout << " after adding " << _per_board_data[brd].waveform[i] << std::endl;
+    }
+}
+
+double sum64[4096];
+  for(int j=0;j<4096;j++) {
+    sum64[j]=_per_board_data[brd].waveform[j]/64.;
+_per_board_data[brd].waveform[j]=_per_board_data[brd].waveform[j]/64;
+ double *input = _fft_manager.InputAt(j);
+        *input = (double) (sum64[j]);
+}
+double media(0), rms2(0);
+for(int j=0;j<4096;j++)
+  media+=(sum64[j]/4096.);
+for(int j=0;j<4096;j++)
+  rms2+=((sum64[j]-media)*(sum64[j]-media)/4096.);
+ _per_board_data[brd].rms = sqrt(rms2);
+
+ _fft_manager.Execute();
+    int adc_fft_size = _fft_manager.OutputSize();
+           //  std::cout << " fftsiez " << adc_fft_size << std::endl;
+    for (int i = 0; i < adc_fft_size-1; i++) {
+      _per_board_data[brd].fft_real.push_back(_fft_manager.ReOutputAt(i));
+      _per_board_data[brd].fft_imag.push_back(_fft_manager.ImOutputAt(i));
+    } 
+  for (int i=0; i< adc_fft_size-1; i++)
+      {
+        _per_board_data[brd].fourier_real[i]=_per_board_data[brd].fft_real[i];
+        _per_board_data[brd].fourier_imag[i]=_per_board_data[brd].fft_imag[i];
+      }
+}
+
+void Analysis::ComputeUncorrelatedData(int ch) {
+//std::cout << " computing uncorrelated data	 " << ch << std::endl;
+
+_uncorrelated_data[ch] = ChannelData(ch);
+//std::cout << " uncorrelateddata constructor " << ch << std::endl;
+  // if there are ADC's, the channel isn't empty
+  _uncorrelated_data[ch].empty = false;
+  _uncorrelated_data[ch].channel_no = ch;
+
+int brd=ch/64;
+for(int j=0;j<4096;j++)
+_uncorrelated_data[ch].waveform.push_back(0);
+
+_uncorrelated_data[ch].fft_real.clear();
+    _uncorrelated_data[ch].fft_imag.clear();
+
+std::vector<int16_t> bwave=_per_board_data[brd].waveform;
+auto n_adc = bwave.size();
+  //std::cout << " channel " << channel << std::endl;
+    for (unsigned i = 0; i < n_adc; i ++) {
+      //int16_t adc = wave[i]-2048;
+//std::cout << " subtracting " << i << " " << (_per_channel_data[ch]).waveform[i] << " " << (_per_board_data[brd]).waveform[i] <<std::endl; 
+        (_uncorrelated_data[ch].waveform[i])=(_per_channel_data[ch]).waveform[i]-(_per_board_data[brd]).waveform[i];
+double *input = _fft_manager.InputAt(i);
+        *input = (double) (_uncorrelated_data[ch].waveform[i]);
+//std::cout << " after subtracting " << i << std::endl; 
+}
+
+double sum[4096];
+  for(int j=0;j<4096;j++)
+    sum[j]=_uncorrelated_data[ch].waveform[j];
+double media(0), rms2(0);
+for(int j=0;j<4096;j++)
+  media+=(sum[j]/4096.);
+for(int j=0;j<4096;j++)
+  rms2+=((sum[j]-media)*(sum[j]-media)/4096.);
+ _uncorrelated_data[ch].rms = sqrt(rms2);
+
+ _fft_manager.Execute();
+    int adc_fft_size = _fft_manager.OutputSize();
+        //     std::cout << " fftsiez " << adc_fft_size << std::endl;
+    for (int i = 0; i < adc_fft_size-1; i++) {
+      _uncorrelated_data[ch].fft_real.push_back(_fft_manager.ReOutputAt(i));
+      _uncorrelated_data[ch].fft_imag.push_back(_fft_manager.ImOutputAt(i));
+    } 
+  for (int i=0; i< adc_fft_size-1; i++)
+      {
+        //_uncorrelated_data[ch].fourier_real[i]=_per_channel_data[ch].fft_real[i]-_per_board_data[brd].fft_real[i];
+        //_uncorrelated_data[ch].fourier_imag[i]=_per_channel_data[ch].fft_imag[i]-_per_board_data[brd].fft_imag[i];
+_uncorrelated_data[ch].fourier_real[i]=_uncorrelated_data[ch].fft_real[i];
+        _uncorrelated_data[ch].fourier_imag[i]=_uncorrelated_data[ch].fft_imag[i];
+      }
+}

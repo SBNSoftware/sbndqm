@@ -61,6 +61,8 @@ tpcAnalysis::OfflineAnalysis::OfflineAnalysis(fhicl::ParameterSet const & p):
   if (_analysis._config.n_headers > 0) {
     _output->Branch("header_data", &_analysis._header_data);
   }
+_output->Branch("board_data", &_analysis._per_board_data);
+_output->Branch("uncorrelated_data", &_analysis._uncorrelated_data);
 
 }
 

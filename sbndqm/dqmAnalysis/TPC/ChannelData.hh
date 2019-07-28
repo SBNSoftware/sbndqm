@@ -29,9 +29,15 @@ public:
   float mean_peak_height;
   float occupancy;
 
+
   float meanPeakHeight();
   float meanPeakHeight(const std::vector<art::Ptr<recob::Hit> > &hits);
   float Occupancy();
+
+
+
+  double fourier_real[2048];
+  double fourier_imag[2048];
 
   // zero initialize
   explicit ChannelData(unsigned channel=0):

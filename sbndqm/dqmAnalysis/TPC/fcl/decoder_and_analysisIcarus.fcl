@@ -15,7 +15,7 @@ physics:
       // parameters for timestamps
       timesize: 2559
       // produce timestamps in units of mus
-      frame_to_dt: 0.5
+      frame_to_dt: 0.4
       // parameters for header index
       min_slot_no: 4
       channel_per_slot: 64
@@ -49,10 +49,11 @@ physics:
       timing: false
 
       // turn on to calculate FFT and save them in output ChannelData
-      fft_per_channel: false
+      fft_per_channel: true
+
 
       // turn on to save waveform in output ChannelData
-      fill_waveforms: false
+      fill_waveforms: true
 
       // turn on to output ReducedChannelData objects instead of 
       // ChannelData (will throw out waveform and FFT info)
