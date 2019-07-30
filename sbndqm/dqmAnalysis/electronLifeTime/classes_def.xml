@@ -1,0 +1,24 @@
+<lcgdict>
+  <class name="sbndqm::crt::CRTData" ClassVersion="12">
+    <version ClassVersion="12" checksum="4014796032"/>
+  </class>
+  <class name="std::vector<sbndqm::crt::CRTData>"/>
+  <class name="art::Wrapper<sbndqm::crt::CRTData>"/>
+  <class name="art::Wrapper<std::vector<sbndqm::crt::CRTData> >"/>
+
+  <class name="sbndqm::crt::CRTHit" ClassVersion="14">
+    <version ClassVersion="14" checksum="1444826046"/>
+  </class>
+  <class name="std::vector<sbndqm::crt::CRTHit>"/>
+  <class name="art::Wrapper<sbndqm::crt::CRTHit>"/>
+  <class name="art::Wrapper<std::vector<sbndqm::crt::CRTHit> >"/>
+
+  <class name="std::map< uint8_t, uint16_t >"/>
+  <class name="std::map< unsigned char, std::vector< std::pair<int,float> > > "/>
+
+  <class name="sbndqm::crt::CRTTrack" ClassVersion="10">
+    <version ClassVersion="10" checksum="2681413750"/>
+  </class>
+  <class name="std::vector<sbndqm::crt::CRTTrack>"/>
+  <class name="art::Wrapper< std::vector<sbndqm::crt::CRTTrack> >"/>
+</lcgdict>

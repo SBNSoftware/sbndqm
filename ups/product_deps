@@ -2,7 +2,7 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent sbndqm v00_02_02
+parent sbndqm v00_02_04
 defaultqual e17:s83
 
 # These optional lines define the installed directories where headers,
@@ -37,8 +37,8 @@ fwdir   product_dir scripts
 product          version
 artdaq_core	 v3_04_16
 larsoft          v08_19_01
-icarus_artdaq_base	v0_08_00 - optional
-sbndaq_artdaq_core	v0_02_02
+icarus_artdaq_base	v0_08_02 - optional
+sbndaq_artdaq_core	v0_02_04
 artdaq_utilities	v1_04_11
 fftw		v3_3_8
 jsoncpp		v1_7_7c
@@ -48,7 +48,7 @@ sbndaq_redis_plugin	v0_02_01
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
-cetbuildtools   v7_02_01 - only_for_build
+cetbuildtools   v7_09_02 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
