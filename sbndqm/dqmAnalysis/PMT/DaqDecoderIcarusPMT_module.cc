@@ -4,6 +4,7 @@
 // File:        DaqDecoderIcarus.cxx
 //
 ////////////////////////////////////////////////////////////////////////
+
 #include "DaqDecoderIcarus.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -12,22 +13,34 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+
 #include <memory>
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>
 #include <thread>
+
 #include "art/Framework/Core/ModuleMacros.h"
+
 #include "artdaq-core/Data/Fragment.hh"
+
 #include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/OpDetWaveform.h"
+
 //#include "sbnddaq-datatypes/Overlays/NevisTPCFragment.hh"
 //#include "sbnddaq-datatypes/NevisTPC/NevisTPCTypes.hh"
 //#include "sbnddaq-datatypes/NevisTPC/NevisTPCUtilities.hh"
+#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
+#include "sbndaq-artdaq-core/Overlays/Common/CAENV1730Fragment.hh"
+#include "artdaq-core/Data/Fragment.hh"
 #include "../HeaderData.hh"
 #include "../Mode.hh"
-DEFINE_ART_MODULE(daq::DaqDecoderIcarus)
+
+DEFINE_ART_MODULE(daq::DaqDecoderIcarusPMT)
+
 // constructs a header data object from a icarus header
 // construct from a icarus header
+
 /*tpcAnalysis::HeaderData daq::DaqDecoderIcarus::Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag) {
 
       icarus::PhysCrateFragment fragment(frag);
@@ -54,21 +67,22 @@ DEFINE_ART_MODULE(daq::DaqDecoderIcarus)
 
 }
 */
-daq::DaqDecoderIcarus::DaqDecoderIcarus(fhicl::ParameterSet const & param): 
+daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(fhicl::ParameterSet const & param): 
   art::EDProducer{param},
-  _tag(param.get<std::string>("raw_data_label", "daq"),param.get<std::string>("fragment_type_label", "PHYSCRATEDATA")),
+  _tag(param.get<std::string>("raw_data_label", "daq"),param.get<std::string>("fragment_type_label", "CAENV1730")),
   _config(param),
   _last_event_number(0),
   _last_trig_frame_number(0)
  {
   
   // produce stuff
-  produces<std::vector<raw::RawDigit>>();
+  produces<std::vector<raw::OpDetWaveform>>();
  // if (_config.produce_header) {
  //   produces<std::vector<tpcAnalysis::HeaderData>>();
  // }
 }
-daq::DaqDecoderIcarus::Config::Config(fhicl::ParameterSet const & param) {
+
+daq::DaqDecoderIcarusPMT::Config::Config(fhicl::ParameterSet const & param) {
   // amount of time to wait in between processing events
   // useful for debugging redis
   double wait_time = param.get<double>("wait_time", -1 /* units of seconds */);
@@ -82,69 +96,107 @@ daq::DaqDecoderIcarus::Config::Config(fhicl::ParameterSet const & param) {
   n_mode_skip = param.get<unsigned>("n_mode_skip", 1);
   // whether to subtract pedestal
   subtract_pedestal = param.get<bool>("subtract_pedestal", false);
+
   // icarus readout window length
   timesize = param.get<unsigned>("timesize", 1);
+
   // icarus tick length (for timestamp)
   // should be 1/(2.5MHz) = 0.4mus
   frame_to_dt = param.get<double>("frame_to_dt", 1);
+
   // number of channels in each slot
   channel_per_slot = param.get<unsigned>("channel_per_slot", 0);
   // index of 0th slot
   min_slot_no = param.get<unsigned>("min_slot_no", 0);
 }
-void daq::DaqDecoderIcarus::produce(art::Event & event)
+
+void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 {
+
+
   if (_config.wait_sec >= 0) {
     std::this_thread::sleep_for(std::chrono::seconds(_config.wait_sec) + std::chrono::microseconds(_config.wait_usec));
   }
-  auto const& daq_handle = event.getValidHandle<artdaq::Fragments>(_tag);
+  //auto const& daq_handle = event.getValidHandle<artdaq::Fragments>(_tag);
   
   // storage for waveform
-  std::unique_ptr<std::vector<raw::RawDigit>> product_collection(new std::vector<raw::RawDigit>);
+  std::unique_ptr<std::vector<raw::OpDetWaveform>> product_collection(new std::vector<raw::OpDetWaveform>);
   // storage for header info
  // std::unique_ptr<std::vector<tpcAnalysis::HeaderData>> header_collection(new std::vector<tpcAnalysis::HeaderData>);
-  for (auto const &rawfrag: *daq_handle) {
-    //process_fragment(event, rawfrag, product_collection, header_collection);
-process_fragment(event, rawfrag, product_collection);
-  }
-  event.put(std::move(product_collection));
+
+  /************************************************************************************************/
+  art::Handle< std::vector<artdaq::Fragment> > rawFragHandle;
+
+  if (rawFragHandle.isValid()) {
+
+    std::cout << "######################################################################\n";
+    std::cout << "Run " << event.run() << ", subrun " << event.subRun();
+
+ for (size_t idx = 0; idx < rawFragHandle->size(); ++idx) { /*loop over the fragments*/
+      //--use this fragment as a reference to the same data
+      const auto& frag((*rawFragHandle)[idx]); 
+      sbndaq::CAENV1730Fragment bb(frag);
+   //   auto const* md = bb.Metadata();
+      sbndaq::CAENV1730Event const* event_ptr = bb.Event();
+      sbndaq::CAENV1730EventHeader header = event_ptr->Header;
+
+      std::cout << "\tFrom header, event counter is "  << header.eventCounter   << "\n";
+      std::cout << "\tFrom header, triggerTimeTag is " << header.triggerTimeTag << "\n";
+
+
+     } // end loop over fragments
+
+  
+
   //if (_config.produce_header) {
  //   event.put(std::move(header_collection));
  // }
+
+}
+event.put(std::move(product_collection));
+
 }
 /*
-bool daq::DaqDecoderIcarus::is_mapped_channel(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
+bool daq::DaqDecoderIcarusPMT::is_mapped_channel(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
   // TODO: make better
   return true;
 }
 
-raw::ChannelID_t daq::DaqDecoderIcarus::get_wire_id(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
+raw::ChannelID_t daq::DaqDecoderIcarusPMT::get_wire_id(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
   // TODO: make better
   return (header->getSlot() - _config.min_slot_no) * _config.channel_per_slot + nevis_channel_id;
 }
 */
-void daq::DaqDecoderIcarus::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
+void daq::DaqDecoderIcarusPMT::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
   std::unique_ptr<std::vector<raw::RawDigit>> &product_collection) {
+
   // convert fragment to Nevis fragment
   icarus::PhysCrateFragment fragment(frag);
-        std::cout << " n boards " << fragment.nBoards() << std::endl;
+	std::cout << " n boards " << fragment.nBoards() << std::endl;
 //int channel_count=0;
 for(size_t i_b=0; i_b < fragment.nBoards(); i_b++){
-        //A2795DataBlock const& block_data = *(crate_data.BoardDataBlock(i_b));
-        for(size_t i_ch=0; i_ch < fragment.nChannelsPerBoard(); ++i_ch){
-          //raw::ChannelID_t channel_num = (i_ch & 0xff ) + (i_b << 8);
+	//A2795DataBlock const& block_data = *(crate_data.BoardDataBlock(i_b));
+
+
+	for(size_t i_ch=0; i_ch < fragment.nChannelsPerBoard(); ++i_ch){
+
+	  //raw::ChannelID_t channel_num = (i_ch & 0xff ) + (i_b << 8);
            raw::ChannelID_t channel_num = i_ch+i_b*64;
-          raw::RawDigit::ADCvector_t wvfm(fragment.nSamplesPerChannel());
-          for(size_t i_t=0; i_t < fragment.nSamplesPerChannel(); ++i_t) {
-            wvfm[i_t] = fragment.adc_val(i_b,i_ch,i_t);
+	  raw::RawDigit::ADCvector_t wvfm(fragment.nSamplesPerChannel());
+	  for(size_t i_t=0; i_t < fragment.nSamplesPerChannel(); ++i_t) {
+	    wvfm[i_t] = fragment.adc_val(i_b,i_ch,i_t);
            // if(channel_num==1855) std::cout << " sample " << i_t << " wave " << wvfm[i_t] << std::endl;
 }
      //   product_collection->emplace_back(channel_count++,fragment.nSamplesPerChannel(),wvfm);
       product_collection->emplace_back(channel_num,fragment.nSamplesPerChannel(),wvfm);
  //std::cout << " channel " << channel_num << " waveform size " << fragment.nSamplesPerChannel() << std::endl;
-        }//loop over channels
+
+	}//loop over channels
+
       }//loop over boards
       std::cout << "Total number of channels added is " << product_collection->size() << std::endl;
+
+
   /*std::unordered_map<uint16_t,sbnddaq::NevisTPC_Data_t> waveform_map;
   size_t n_waveforms = fragment.decode_data(waveform_map);
   (void)n_waveforms;
@@ -191,13 +243,15 @@ for(size_t i_b=0; i_b < fragment.nBoards(); i_b++){
   }
 */
 }
+
+
 // Computes the checksum, given a nevis tpc header
 // Ideally this would be in sbnddaq-datatypes, but it's not and I can't
 // make changes to it, so put it here for now
 //
 // Also note that this only works for uncompressed data
 /*
-uint32_t daq::DaqDecoderIcarus::compute_checksum(icarus::PhysCrateFragment &fragment) {
+uint32_t daq::DaqDecoderIcarusPMT::compute_checksum(icarus::PhysCrateFragment &fragment) {
   uint32_t checksum = 0;
 
   const sbnddaq::NevisTPC_ADC_t* data_ptr = fragment.data();
@@ -213,3 +267,7 @@ uint32_t daq::DaqDecoderIcarus::compute_checksum(icarus::PhysCrateFragment &frag
 
 }
 */
+
+
+ 
+
