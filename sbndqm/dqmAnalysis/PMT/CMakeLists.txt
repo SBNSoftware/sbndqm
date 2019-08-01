@@ -7,6 +7,7 @@ simple_plugin( CAENV1730Stream "module"
   tpcAnalysis_MODE
   artdaq-utilities_Plugins
   sbndaq-redis-plugin_redis_metric
+  sbndqm_redis_config
 )
 
 simple_plugin( CAENV1730WaveformAnalysis "module"
@@ -18,5 +19,5 @@ simple_plugin( CAENV1730WaveformAnalysis "module"
   tpcAnalysis_MODE
   artdaq-utilities_Plugins
   sbndaq-redis-plugin_redis_metric
+  sbndqm_redis_config
 )
-
