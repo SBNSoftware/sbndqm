@@ -109,6 +109,44 @@ simple_plugin( TPCWaveformCreator module
   sbndqm_redis_config
 )
 
+simple_plugin( TPCWaveformAndFftCreator module
+  tpcAnalysis_SBN
+  ${LARDATAOBJ}
+  lardataobj_RawData
+  ${ART_UTILITIES}
+  ${FHICLCPP}
+  ${ART_FRAMEWORK_CORE}
+  ${ROOT_BASIC_LIB_LIST}
+                        ${ART_FRAMEWORK_CORE}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_BASIC}
+                        art_root_io_tfile_support
+                        art_root_io_TFileService_service
+                        art_Persistency_Common
+                ${ART_FRAMEWORK_IO_SOURCES}
+  sbndqm_redis_config
+)
+
+simple_plugin( TPCWaveformAndFftRedis module
+  tpcAnalysis_SBN
+  ${LARDATAOBJ}
+  lardataobj_RawData
+  ${ART_UTILITIES}
+  ${FHICLCPP}
+  ${ART_FRAMEWORK_CORE}
+  ${ROOT_BASIC_LIB_LIST}
+                        ${ART_FRAMEWORK_CORE}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_BASIC}
+                        art_root_io_tfile_support
+                        art_root_io_TFileService_service
+                        art_Persistency_Common
+                ${ART_FRAMEWORK_IO_SOURCES}
+  sbndqm_redis_config
+)
+
 simple_plugin( OnlineAnalysis module
   tpcAnalysis_SBN
   ${LARDATAOBJ}

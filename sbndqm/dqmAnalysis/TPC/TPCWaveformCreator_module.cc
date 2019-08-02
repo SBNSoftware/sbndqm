@@ -55,30 +55,115 @@ private:
   TH1D *Times;
   TStopwatch timer;
   TStopwatch master;
+  TStopwatch first;
+  TStopwatch start;
   int Ped;
+  double setup = 0.0;
   double rSum = 0.0;
   double sSum = 0.0;
+  double fSum = 0.0;
+  double FSum = 0.0;
   float  Sum;
   float counter = 1;
   float sum = 0.0;
   double stringTime = 0.0;
+  double FFTtime = 0.0;
   double stringSum = 0.0;
   redisContext* context;
   double makeStrings(raw::RawDigit const&,int);
+  double makeFFT(raw::RawDigit const&,int);
 
   std::string fRedisHostname;
   int         fRedisPort;
 
  };
+double tpcAnalysis::TPCWaveformCreator::makeFFT(raw::RawDigit const& rd,int Ped){
+   TStopwatch sendFFT;
+   TStopwatch redisFFT;
+   int NDIM = 4096;
+   TVirtualFFT *fftr2c = TVirtualFFT::FFT(1, &NDIM, "R2C EX K");
+   sendFFT.Start();
+
+  if (rd.Channel() == 0){
+    fSum = 0;
+    FSum = 0;
+  }
+  //   sendFFT.Start();
+  // store the waveform and fft's                                                                                                                       
+  // also delete old lists                                                                                                                              
+  redisAppendCommand(context, "DEL snapshot:fft:wire:%i", rd.Channel());
+  auto val = rd.ADCs();
+  for(size_t i_t=0; i_t< rd.Samples(); ++i_t){
+    val[i_t] = rd.ADC(i_t) - Ped;
+  }
+
+  std::vector<double> doubleVec(val.begin(),val.end());
+  // std::cout << "HERE3 " << std::endl;                                                                                                             
+  //     std::cout << "Made double vec ... " << doubleVec.size() << std::endl;                                                                       
+
+  //now run the FFT ... we already set it up!                                                                                                        
+  fftr2c->SetPoints(doubleVec.data());
+  //std::cout << "HERE4 " << std::endl;                                                                                                              
+  fftr2c->Transform();
+
+  TH1 *hfft_m = 0;
+  hfft_m = TH1::TransformHisto(fftr2c,hfft_m,"MAG");
+
+  size_t buffer_len = val.size() * 40 + 50;
+  char *buffer = new char[buffer_len];
+
+  // for( size_t i_fft=1; i_fft<=h_fft_mag->GetNbinsX(); ++i_fft){
+    // float my_val = h_fft_mag->GetBinContent(i_fft);
+  // print in the base of the command                                                                                                                   
+  size_t print_len = sprintf(buffer, "RPUSH snapshot:fft:wire:%i", rd.Channel());
+  char *buffer_index = buffer + print_len;
+
+  // throw in all of the data points                                                                                                                    
+  for(int  i_fft=1; i_fft<=hfft_m->GetNbinsX()*(.5); ++i_fft){
+    float my_val = hfft_m->GetBinContent(i_fft);  
+    print_len += sprintf(buffer_index, " %f",my_val);
+    buffer_index = buffer + print_len;
+        if (print_len >= buffer_len - 1) {
+    std::cerr << "ERROR: BUFFER OVERFLOW IN FFT DATA" << std::endl;
+    std::exit(1);
+     }
+  }
+  // std::cout<<Wave value before Redis is <<rd.ADCs()                                                                                                  
+  // null terminate the string                                                                                                                          
+  *buffer_index = '\0';
+  redisAppendCommand(context, buffer);
+  sendFFT.Stop();
+   FSum = FSum + sendFFT.RealTime();
+   if (rd.Channel() == 575) {
+   std::cout<<" Time to read the FFT  to redis is "<<FSum <<" seconds."<<std::endl;
+    }
+  redisFFT.Start();
+  redisGetReply(context,NULL);
+  redisGetReply(context,NULL);
+  // delete the buffer                                                                                                                                  
+  delete buffer;
+  redisFFT.Stop();
+   fSum = fSum + redisFFT.RealTime();
+   if (rd.Channel() == 575) {
+   std::cout<<" Time to reply from FFT in redis is "<<fSum <<" seconds."<<std::endl;
+   }
+   if (rd.Channel() == 575) {
+  std::cout<<" Total time "<<fSum + FSum <<" seconds."<<std::endl;
+   }
+   double Time = fSum + FSum;
+   
+   return Time;
+}
+
 double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd,int Ped){ 
    TStopwatch sendString;
    TStopwatch redisString;
-   
+   sendString.Start();
    if (rd.Channel() == 0){
      sSum = 0;
      rSum = 0;
    }
-   sendString.Start();
+   // sendString.Start();
    // store the waveform and fft's
    // also delete old lists
    redisAppendCommand(context, "DEL snapshot:waveform:wire:%i", rd.Channel());
@@ -140,29 +225,36 @@ tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & 
   fRedisHostname(p.get<std::string>("RedisHostname","icarus-db01")),
   fRedisPort(p.get<int>("RedisPort",6379))
 {
+  first.Start();
   context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort);//to make the configure options w/ password??  later 
 
   art::ServiceHandle<art::TFileService> tfs; 
   Times = tfs->make<TH1D>("Times","Channel_Times",100,0,2);
+  first.Stop();
 }
   
 void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
+  //    first.Start();
+  //  std::cout<<first.RealTime()<< "first"<<std::endl;
+  setup = setup + first.RealTime();
+  //   std::cout<<setup << "first"<<std::endl; 
   master.Start();
+  // start.Start();
   int NDIM = 4096;
   TVirtualFFT *fftr2c = TVirtualFFT::FFT(1, &NDIM, "R2C EX K");
 
   art::EventNumber_t eventNumber = evt.id().event();
   //get the raw digits from the event
-  timer.Start();
+  // timer.Start();
   art::Handle<std::vector<raw::RawDigit>> raw_digits_handle;
   evt.getByLabel("daq", raw_digits_handle);
-  timer.Stop();
+  // timer.Stop();
   //  std::cout << " Time to read in raw digits " << timer.RealTime()<< " seconds."<<std::endl;
   //wes prefers working with vectors, but you can use the handle/pointer if you want
-  timer.Start(); 
+  // timer.Start(); 
   std::vector<raw::RawDigit> const& raw_digits_vector(*raw_digits_handle);
   // std::cout << "Size of vector is " << raw_digits_vector.size() << " or " << raw_digits_handle->size() << std::endl;
-  timer.Stop();
+  // timer.Stop();
   // std::cout << " Time to read in vector " << timer.RealTime()<<" seconds."<< std::endl;
 
   art::ServiceHandle<art::TFileService> tfs; 
@@ -173,9 +265,14 @@ void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
   // std::cout <<  "Run " << evt.run() << ", subrun " << evt.subRun()
   //        << ", event " << eventNumber << " has " << raw_digits_handle->size()
   //	     << " channels"<< std::endl;
-   timer.Start();
+  // first.Stop();
+  // std::cout<<"first "<< first.RealTime()<< " seconds."<<std::endl;
+  //  start.Stop();
+   //   std::cout <<  "s " <<start.RealTime()<<std::endl;
+   //  timer.Start();
    for(size_t i_d=0; i_d<raw_digits_vector.size(); ++i_d){ 
-     // using 'auto' here because I'm too lazy to type raw::RawDigit                                                                                 //raw::RawDigit const& rd = raw_digits_vector[i_d];
+     // using 'auto' here because I'm too lazy to type raw::RawDigit                                                                                 
+     //raw::RawDigit const& rd = raw_digits_vector[i_d];
      auto const& rd = raw_digits_vector[i_d];
      
      // std::cout<<"Channel " << rd.Channel() << ": time for the string to be created is " <<stringTime<<" seconds."<<std::endl;
@@ -276,23 +373,27 @@ void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
       hfft_re->Write();                                                                                                                          
       hfft_im->Write();                                                                                                                          
       hfft_m->Write();                                                                                                                           
-
+      //call the FFT redis function
+      FFTtime = makeFFT(rd,Ped);
+      //    std::cout<< "FFT time "<< FFTtime <<std::endl;
       // std::cout << "HERE8 " << std::endl;                                                                                                      
       delete hfft_re;
       delete hfft_im;
       delete hfft_m;
     
    }       
+   // FFTtime = makeFFT(rd,Ped);
+   //   std::cout<< "FFT time "<< FFttime <<std::endl;
 
-   timer.Stop();
-   //   std::cout << " Time to create three types of  histograms is " << timer.RealTime()<< " seconds."<< std::endl;
+   //     timer.Stop();
+     // std::cout << " Time to create three types of  histograms and everything is " << timer.RealTime()<< " seconds."<< std::endl;
 
    master.Stop();
    std::cout << " Event " << eventNumber<< " is now completed." << std::endl;
    std::cout << " The total time for this event is " << master.RealTime()<<" seconds."<< std::endl;
    sum = sum +master.RealTime();
-   std::cout  << " The overall total time accross all events is " << sum <<" seconds."<< std::endl;	    
-  
+   std::cout  << " The overall total time accross all events is " << sum + setup <<" seconds."<< std::endl;	    
+   // std::cout <<setup<<std::endl;
 }
 
 
