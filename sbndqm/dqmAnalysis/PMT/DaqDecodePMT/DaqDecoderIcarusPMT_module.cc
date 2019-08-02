@@ -179,7 +179,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 	  //value_ptr = (i_t%2 == 0) ? (index+1) : (index-1); 
           value = *(value_ptr);
           my_wf[i_t] = value;
-	  std::cout<<"Value is" << value << "and" << my_wf[i_t] << "\n";
+	  //std::cout<<"Value is" << value << "and" << my_wf[i_t] << "\n";
 	  //if (i_ch == 0 && fEvent == 0) h_wvfm_ev0_ch0->SetBinContent(i_t,value);
           //fWvfmsVec[i_ch][i_t] = value;
         } //--end loop samples

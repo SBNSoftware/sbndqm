@@ -1,5 +1,7 @@
 #include "simple_channel_info.fcl"
 
+
+
 physics:
 {
   // now also have something produce the digits and headers
@@ -29,6 +31,43 @@ physics:
       module_type: CAENV1730WaveformAnalysis
       // producer of digits and header info
       data_label: sbndaq
+      metrics: {
+  redis_metric: {
+    level: 0
+    metricPluginType: "redis"
+    reporting_interval: 30.0
+    redis_key_postfix: ":30s"
+    hostname: "sbnd-daq33.fnal.gov"
+    redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+  }
+}
+metric_config: {
+  hostname: "sbnd-daq33.fnal.gov"
+  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+
+  groups: {
+     PMT: [ [0, 30] ]
+    // "PMT": [ [0, 15], 124]
+  }
+
+  streams: ["30s"]
+  metrics: {
+    rms: {
+      units: ADC
+      title: "PMT channel %(instance)s rms"
+      display_range: [0., 100.]
+    }
+    pedestal: {
+      units: ADC
+      title: "%(group)s channel %(instance)s Pedestal"
+      display_range: [-1000, 1000]
+    }
+
+  }
+  // what happens to the title in python:
+  // title = title % ({"instance": channel_no, "group": group_name})
+
+}
 
       // channel info
      // channel_info: @local::ICARUS_simple_channel_info

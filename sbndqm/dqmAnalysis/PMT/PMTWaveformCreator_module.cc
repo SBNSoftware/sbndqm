@@ -73,7 +73,7 @@ void pmtAnalysis::PMTWaveformCreator::analyze(art::Event const & evt) {
   for(size_t i_d=0; i_d<Op_Det_vector.size(); ++i_d){
     
     auto const& rd = Op_Det_vector[i_d];
- std::cout << "Looking at " << i_d  << "rd is"<< < rd < std::endl;
+    //std::cout << "Looking at " << i_d  << "rd is"<< < rd < std::endl;
  //   stringTime = makeStrings(rd);
  //   Times->Fill(stringTime);
   }

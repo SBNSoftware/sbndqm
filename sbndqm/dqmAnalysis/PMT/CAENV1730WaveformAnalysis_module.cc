@@ -13,6 +13,9 @@
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "artdaq-core/Data/Fragment.hh"
 
+#include "../../MetricManagerShim/MetricManager.hh"
+#include "../../MetricConfig/ConfigureRedis.hh"
+
 //#include "art/Framework/Services/Optional/TFileService.h" //before art_root_io transition
 #include "art_root_io/TFileService.h"
 #include "TH1F.h"
@@ -49,6 +52,10 @@ sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet
   art::ServiceHandle<art::TFileService> tfs; //pointer to a file named tfs
   nt_header = tfs->make<TNtuple>("nt_header","CAENV1730 Header Ntuple","art_ev:caen_ev:caen_ev_tts");
   nt_wvfm = tfs->make<TNtuple>("nt_wvfm","Waveform information Ntuple","art_ev:caen_ev:caen_ev_tts:ch:ped:rms:temp");
+
+  sbndqm::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+  sbndqm::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
+
 }
 sbndaq::CAENV1730WaveformAnalysis::~CAENV1730WaveformAnalysis()
 {
@@ -56,12 +63,12 @@ sbndaq::CAENV1730WaveformAnalysis::~CAENV1730WaveformAnalysis()
 void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
 {
   
-  art::EventNumber_t eventNumber = evt.event();
+  //art::EventNumber_t eventNumber = evt.event();
   
  //   art::Handle< std::vector<artdaq::Fragment> > rawFragHandle; // it is a pointer to a vector of art fragments
  //   evt.getByLabel("daq","CAENV1730", rawFragHandle); // it says how many fragments are in an event
 
-  
+  // 
   art::Handle< std::vector<raw::OpDetWaveform> > OpdetHandle; 
   evt.getByLabel("daq", OpdetHandle); 
   
@@ -70,15 +77,37 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
   std::cout << "######################################################################" << std::endl;
   std::cout << std::endl;
   
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()
+ /* std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()
             << ", event " << eventNumber << " has " << OpdetHandle->size()
             << " fragment(s)." << std::endl;
-	    
-/*for (size_t idx = 0; idx < OpdetHandle->size(); ++idx){
- std::cout<< "Wveform is" << OpdetHandle[idx] << "\n";
+ */
+ 
+ int level = 0;
+ artdaq::MetricMode mode = artdaq::MetricMode::Average;
+ std::string group_name = "PMT";
+ 
+ std::vector<raw::OpDetWaveform> const& raw_opdet_vector(*OpdetHandle);
+ // define vector that is the address of the raw_opdet_vector (pointer to OpdetHandle
+ // 
+ // actual rms
+ // time stamp *
+ // pedestal -> fourier transformations
 
-}	    
- */ 
+ // adc count
+ // waveform length *
+
+ // adc count per channel / (integral of waveform) -> average pulse height
+
+ for (size_t idx = 0; idx < OpdetHandle->size(); ++idx){
+  // std::cout<< "Wveform is" << OpdetHandle[idx] << "\n";
+  //std::string channel_no = std::to_string();
+  auto const& rd = raw_opdet_vector[idx];
+  //
+  std::string channel_no = std::to_string(rd.ChannelNumber());
+  sbndqm::sendMetric(group_name, channel_no, "rms", idx*1, level, mode);
+  
+ }	    
+
  //  for (size_t idx = 0; idx < OpdetHandle->size(); ++idx)
   
  // for (size_t idx = 0; idx < rawFragHandle->size(); ++idx) { // loop over the fragments of an event
