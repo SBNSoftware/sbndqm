@@ -135,7 +135,7 @@ double tpcAnalysis::TPCWaveformCreator::makeFFT(raw::RawDigit const& rd,int Ped)
   sendFFT.Stop();
    FSum = FSum + sendFFT.RealTime();
    if (rd.Channel() == 575) {
-   std::cout<<" Time to read the FFT  to redis is "<<FSum <<" seconds."<<std::endl;
+   std::cout<<" Time to creat the FFT for redis is "<<FSum <<" seconds."<<std::endl;
     }
   redisFFT.Start();
   redisGetReply(context,NULL);
@@ -145,7 +145,7 @@ double tpcAnalysis::TPCWaveformCreator::makeFFT(raw::RawDigit const& rd,int Ped)
   redisFFT.Stop();
    fSum = fSum + redisFFT.RealTime();
    if (rd.Channel() == 575) {
-   std::cout<<" Time to reply from FFT in redis is "<<fSum <<" seconds."<<std::endl;
+   std::cout<<" Time to send the FFT to redis is "<<fSum <<" seconds."<<std::endl;
    }
    if (rd.Channel() == 575) {
   std::cout<<" Total time "<<fSum + FSum <<" seconds."<<std::endl;
@@ -197,7 +197,7 @@ double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd,int 
    sendString.Stop();
    sSum = sSum + sendString.RealTime();
    if (rd.Channel() == 575) {
-     std::cout<<" Time to read the buffer to redis is "<<sSum <<" seconds."<<std::endl;
+     std::cout<<" Time to create the buffer for redis is "<<sSum <<" seconds."<<std::endl;
    }
    redisString.Start();
    redisGetReply(context,NULL);
@@ -207,7 +207,7 @@ double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd,int 
    redisString.Stop();
    rSum = rSum + redisString.RealTime();
    if (rd.Channel() == 575) {
-     std::cout<<" Time to receive the replies from  redis is "<<rSum <<" seconds."<<std::endl;
+     std::cout<<" Time to send the strings to  redis is "<<rSum <<" seconds."<<std::endl;
    }
    
    if (rd.Channel() == 575) {
