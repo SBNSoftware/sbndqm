@@ -1,0 +1,217 @@
+#include "simple_channel_info.fcl"
+
+physics:
+{
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      module_type: DaqDecoderIcarus
+      // for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      // make the header
+      produce_header: true
+      baseline_calc: false
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
+      frame_to_dt: 0.5
+      // parameters for header index
+      min_slot_no: 4
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers:
+  {
+   OfflineAnalysis:
+    {
+      module_type: OfflineAnalysis
+      // producer of digits and header info
+      producer_name: daq
+
+      // channel info
+      channel_info: @local::ICARUS_simple_channel_info
+
+      // standard analysis config
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      baseline_calc: 2
+      n_mode_skip: 3
+      use_planes: false
+      refine_baseline: false
+
+      // turn on for analysis information printed out on stdin
+      verbose: false
+      // turn on for timing information printed out on stdin
+      timing: false
+
+      // turn on to calculate FFT and save them in output ChannelData
+      fft_per_channel: true
+
+      // turn on to save waveform in output ChannelData
+      fill_waveforms: false
+
+      // turn on to output ReducedChannelData objects instead of 
+      // ChannelData (will throw out waveform and FFT info)
+      reduce_data: false
+
+      // number of headers per event provided by input (will be ignored if value is negative)
+      // 10 for SBND 
+      n_headers: -1
+    }
+    OnlineAnalysis:
+     {
+      module_type: OnlineAnalysis
+      // producer of digits and header info
+      producer_name: daq
+
+      // channel info
+      channel_info: @local::ICARUS_simple_channel_info
+
+      // standard analysis config
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      baseline_calc: 2
+      n_mode_skip: 3
+      use_planes: false
+      refine_baseline: false
+
+      // turn on for analysis information printed out on stdin
+      verbose: false
+      // turn on for timing information printed out on stdin
+      timing: false
+
+      // turn on to calculate FFT and save them in output ChannelData
+      fft_per_channel: true
+
+      // turn on to save waveform in output ChannelData
+      fill_waveforms: false
+
+      // turn on to output ReducedChannelData objects instead of
+      // ChannelData (will throw out waveform and FFT info)
+      reduce_data: false
+
+      // number of headers per event provided by input (will be ignored if value is negative)
+      // 10 for SBND
+      n_headers: -1
+
+      metrics: {
+      	redis_metric_fast: {
+	  hostname: "icarus-db01.fnal.gov"
+	  // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          // period in seconds to send metric to database
+          reporting_interval: 2.0
+          verbose:false
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":fast"
+        }
+        redis_metric_slow: { 
+	 hostname: "icarus-db01.fnal.gov"
+         // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: false
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":slow"
+        }
+      }
+      metric_config: {
+        hostname: "icarus-db01.fnal.gov"
+	streams: [fast, slow]
+	  groups:     {
+            tpc_channel:[[0,576]]
+       	  }
+// groups: [tpc_channel]
+        metrics: {
+          rms: {
+            units: ADC
+            title: "TPC wire %(instance)s rms"
+	    display_range: [0, 10]
+          }
+          baseline: {
+            units: ADC
+            title: "TPC wire %(instance)s baseline"
+            display_range: [1990, 2040]
+	  }
+          next_channel_dnoise: {
+            title: "TPC wire %(instance)s next channel dnoise"
+            display_range: [0.2, 1.2]
+          }
+          mean_peak_height: {
+            units: ADC
+            title: "TPC wire %(instance)s mean peak height"
+          display_range: [0, 50]
+	  }
+          occupancy: {
+            title: "TPC wire %(instance)s occupancy"
+            display_range: [0., 1.]
+          }
+      	}
+      }
+    }
+    TPCWaveformCreator:
+    {
+    RedisHostname:"icarus-db01.fnal.gov"
+
+ module_type: TPCWaveformCreator
+      // producer of digits and header info
+      producer_name: daq
+
+      // channel info
+      channel_info: @local::ICARUS_simple_channel_info
+   }
+
+    TPCWaveformAndFftRedis:
+    {
+    RedisHostname:"icarus-db01.fnal.gov"
+
+ module_type: TPCWaveformAndFftRedis
+      // producer of digits and header info
+      producer_name: daq
+
+      // channel info
+      channel_info: @local::ICARUS_simple_channel_info
+   }
+
+   TPCWaveformAndFftCreator:
+    {
+    RedisHostname:"icarus-db01.fnal.gov"
+
+ module_type: TPCWaveformAndFftCreator
+      // producer of digits and header info
+      producer_name: daq
+
+      // channel info
+      channel_info: @local::ICARUS_simple_channel_info
+   }
+  }
+
+  my_producer_modules: [daq]
+//  a: [ OfflineAnalysis,OnlineAnalysis,TPCWaveformCreator,TPCWaveformAndFftRedis,TPCWaveformAndFftCreator]
+//  a: [ OfflineAnalysis,OnlineAnalysis,TPCWaveformAndFftCreator]
+    a:[OfflineAnalysis,OnlineAnalysis,TPCWaveformAndFftRedis ]
+// a: [ TPCWaveformCreator ]
+  end_paths: [a]
+}
+
+services:
+{
+  TFileService: { fileName: "out.root"}
+} 
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/icarus/data/users/yuntse/daq/vst/raw/run003_1.root"]
+}
+
+process_name: TPCANALYSIS
+
