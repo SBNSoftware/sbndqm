@@ -32,7 +32,7 @@ def main(args):
         except:
             print "Error: key (%s) has mis-formed value" % key
             return
-        if lastval == None:
+        if len(lastval) == 0:
             print "Key (%s) has no prior values" % key
             last_seen_ids[key] = "0-0"
         else:
