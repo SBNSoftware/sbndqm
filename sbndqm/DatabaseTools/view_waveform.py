@@ -18,6 +18,7 @@ def main(args):
         return 
     if len(waveform) == 0:
         print "ERROR: Waveform is empty -- the specified key is not setup in redis."
+        return
     else:
         print "Non empty waveform found."
     xs = range(len(waveform))
