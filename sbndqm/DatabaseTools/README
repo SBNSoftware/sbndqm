@@ -89,6 +89,19 @@ python monitor_streams.py -g tpc_channel -i 45
 # monitor the "rms" metric on all groups, all instance, and all streams
 python monitor_streams.py -m rms
 
+VIEWING WAVEFORMS:
+view_waveform.py: Given a user-supplied key, the script loads the
+                  waveform from redis and plots the waveform in
+                  matplotlib. Will fail if the key does not exist or is
+                  unfilled.
+
+ARGUMENTS:
+	-k	The key of the waveform to plot.
+
+EXAMPLES:
+# plot a waveform with the key "snapshot:waveform:PMT:4"
+python view_waveform.py -k snapshot:waveform:PMT:4
+
 
 
 
