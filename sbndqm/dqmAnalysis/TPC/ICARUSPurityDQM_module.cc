@@ -47,6 +47,9 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/raw.h"
 
+//Database Connection Files
+#include "../../MetricManagerShim/MetricManager.hh"
+#include "../../MetricConfig/ConfigureRedis.hh"
 
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -144,6 +147,13 @@ namespace cluster{
       std::string fileName = fClusterModuleLabel + ".tru";
       outFile.open(fileName);
     }
+
+    //Initialise metrics manager and configuration
+    // GRAY: initialize metric manager
+    sbndqm::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+    // GRAY: initialize metric config
+    sbndqm::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
+    
   
   }
   
@@ -926,6 +936,12 @@ namespace cluster{
 
 			std::cout << -1/slope_purity_exo2 << " " << -1/slope_purity_exo << " TUTTTI I VALUES " << -slope_purity_exo2*1000. << " " << -slope_purity_exo*1000. << std::endl;
 
+			float purityS= -1./(slope_purity_2*1000); //actual value we are interested in.
+			
+			
+			sbndqm::sendMetric("TPC", std::to_string(tpc_number), "purity",
+					   purityS, 0, artdaq::MetricMode::Average);
+			
                         TCanvas c2 ("c2", "coll 1 ind 2", 10, 10, 700, 700);
                         c2.Range(-79.46542,0.7467412,586.8952,3.249534);
                         c2.SetFillColor(0);
