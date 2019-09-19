@@ -4,6 +4,7 @@ simple_plugin( CAENV1730Stream "module"
   ${ROOT_BASIC_LIB_LIST}
   sbndaq-artdaq-core_Overlays_Common 
   tpcAnalysis_MODE
+	artdaq-core_Utilities
   artdaq-utilities_Plugins
   sbndaq-redis-plugin_redis_metric
 )
