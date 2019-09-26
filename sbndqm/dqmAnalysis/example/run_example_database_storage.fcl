@@ -1,0 +1,24 @@
+physics:
+{
+  analyzers:
+  {
+    ExampleDatabaseStorage: {
+      module_type: ExampleDatabaseStorage
+      HistogramKey: histogram_example
+      RedisServer: localhost # NOTE: change this to the server you want to connect to 
+      sleep_time: 1
+    }
+
+  }
+
+  a: [ExampleDatabaseStorage]
+  end_paths: [a]
+}
+
+source:
+{
+  module_type: EmptyEvent
+}
+
+
+process_name: EXAMPLE
