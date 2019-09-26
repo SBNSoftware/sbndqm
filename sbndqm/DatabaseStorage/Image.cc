@@ -6,11 +6,11 @@
 #include "Image.h"
 #include "Binary.h"
 
-int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH1 *hist, size_t buffer_x, size_t buffer_y, size_t size_x, size_t size_y) {
+int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH1 *hist, size_t padding_x, size_t padding_y, size_t size_x, size_t size_y) {
   TCanvas *c = new TCanvas;
   hist->Draw();
   TImage *img = TImage::Create();
-  img->FromPad(c, buffer_x, buffer_y, size_x, size_y);
+  img->FromPad(c, padding_x, padding_y, size_x, size_y);
   char *image_data = NULL;
   int image_len = -1;
 
@@ -21,11 +21,11 @@ int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH1 *hist
   return ret;
 }
 
-int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH2 *hist, size_t buffer_x, size_t buffer_y, size_t size_x, size_t size_y) {
+int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH2 *hist, size_t padding_x, size_t padding_y, size_t size_x, size_t size_y) {
   TCanvas *c = new TCanvas;
   hist->Draw();
   TImage *img = TImage::Create();
-  img->FromPad(c, buffer_x, buffer_y, size_x, size_y);
+  img->FromPad(c, padding_x, padding_y, size_x, size_y);
   char *image_data = NULL;
   int image_len = -1;
 
