@@ -1,5 +1,5 @@
-#ifndef _sbndqm_Image_h_
-#define _sbndqm_Image_h_
+#ifndef _sbndqm_Histogram_h_
+#define _sbndqm_Histogram_h_
 
 #include <string>
 

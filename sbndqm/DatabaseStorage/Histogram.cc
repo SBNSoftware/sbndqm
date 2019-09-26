@@ -3,7 +3,7 @@
 #include "TCanvas.h"
 #include "TImage.h"
 
-#include "Image.h"
+#include "Histogram.h"
 #include "Binary.h"
 
 int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH1 *hist, size_t padding_x, size_t padding_y, size_t size_x, size_t size_y) {

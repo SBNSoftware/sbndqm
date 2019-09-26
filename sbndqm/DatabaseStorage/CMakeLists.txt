@@ -1,6 +1,6 @@
 cet_make_library(LIBRARY_NAME sbndqm_datbase_storage
   SOURCE
-    Image.cc Binary.cc
+    Histogram.cc Binary.cc
   LIBRARIES
     sbndaq_redis_plugin_hiredis
     ${ROOT_BASIC_LIB_LIST}
