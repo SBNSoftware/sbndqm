@@ -15,7 +15,7 @@ int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH1 *hist
   int image_len = -1;
 
   img->GetImageBuffer(&image_data, &image_len); 
-  int ret = SaveBinary(redis, key, image_data, image_len);
+  int ret = SendBinary(redis, key, image_data, image_len);
   delete c; 
   delete img;
   return ret;
@@ -30,7 +30,7 @@ int sbndqm::SendHistogram(redisContext *redis, const std::string &key, TH2 *hist
   int image_len = -1;
 
   img->GetImageBuffer(&image_data, &image_len); 
-  int ret = SaveBinary(redis, key, image_data, image_len);
+  int ret = SendBinary(redis, key, image_data, image_len);
   delete c; 
   delete img;
   return ret;

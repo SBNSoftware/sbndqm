@@ -5,7 +5,7 @@
 
 #include "Binary.h"
 
-int sbndqm::SaveBinary(redisContext *redis, const std::string &key, char *data, unsigned length) {
+int sbndqm::SendBinary(redisContext *redis, const std::string &key, char *data, unsigned length) {
   void *reply = redisCommand(redis, "SET %s %b", key.c_str(), data, length);
   (void) reply;
   return 0;

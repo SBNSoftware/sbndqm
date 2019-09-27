@@ -5,7 +5,7 @@
 class redisContext;
 
 namespace sbndqm {
-  int SaveBinary(redisContext *redis, const std::string &key, char *data, unsigned length);
+  int SendBinary(redisContext *redis, const std::string &key, char *data, unsigned length);
 }
 
 
