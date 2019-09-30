@@ -5,6 +5,7 @@ find_ups_product(sbndaq_artdaq_core)
 simple_plugin( DaqDecoderIcarusPMT module
   sbndaq-artdaq-core_Overlays_ICARUS 
   
+  artdaq-core_Utilities  
   ${LARDATAOBJ}
   lardataobj_RawData
   ${ART_UTILITIES}

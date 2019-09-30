@@ -18,6 +18,7 @@ simple_plugin( CAENV1730WaveformAnalysis "module"
   art_root_io_TFileService_service
   sbndaq-artdaq-core_Overlays_Common 
   tpcAnalysis_MODE
+  artdaq-core_Utilities
   artdaq-utilities_Plugins
   sbndaq-redis-plugin_redis_metric
   sbndqm_redis_config
