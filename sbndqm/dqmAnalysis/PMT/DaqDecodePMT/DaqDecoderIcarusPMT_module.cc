@@ -120,7 +120,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
   //auto const& daq_handle = event.getValidHandle<artdaq::Fragments>(_tag);
   
   // storage for waveform
-  std::unique_ptr<std::vector<raw::OpDetWaveform>> product_collection(new std::vector<raw::OpDetWaveform>);
+  std::unique_ptr<std::vector<raw::OpDetWaveform>> product_collection(new std::vector<raw::OpDetWaveform>());
   // storage for header info
  // std::unique_ptr<std::vector<tpcAnalysis::HeaderData>> header_collection(new std::vector<tpcAnalysis::HeaderData>);
 
@@ -170,7 +170,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
       ch_offset = i_ch * wfm_length;
       
       raw::OpDetWaveform my_wf(0.00, i_ch, wfm_length);
-      
+      my_wf.resize(wfm_length);
       // Loop over waveform
       
       for(size_t i_t=0; i_t<wfm_length; ++i_t){ 
@@ -185,10 +185,16 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
         } //--end loop samples
  
       product_collection->push_back(my_wf);
+      std::cout<<"waveform size"<<my_wf.size()<<"\n";
+     
+/*      for (size_t i_n=0; i_n<wfm_length; ++i_n){
+        std::cout<<"waveform is"<<my_wf[i_n]<<"\n";
       
+      }
+  */    
       }// end loop over channels
 
-
+    std::cout<<"product collection"<<product_collection->back().size()<<"\n";
      } // end loop over fragments
 
   

@@ -35,15 +35,18 @@ physics:
   redis_metric: {
     level: 0
     metricPluginType: "redis"
-    reporting_interval: 30.0
+    reporting_interval: 1.0
     redis_key_postfix: ":30s"
-    hostname: "sbnd-daq33.fnal.gov"
-    redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+    hostname: "icarus-db01.fnal.gov"
+   // hostname: "sbnd-daq33.fnal.gov"
+   // redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
   }
 }
 metric_config: {
-  hostname: "sbnd-daq33.fnal.gov"
-  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+
+  hostname: "icarus-db01.fnal.gov"
+ // hostname: "sbnd-daq33.fnal.gov"
+//  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
 
   groups: {
      PMT: [ [0, 30] ]
@@ -115,7 +118,7 @@ metric_config: {
 
 services:
 {
-  TFileService: { fileName: "waveformtest01.root"}
+  TFileService: { fileName: "waveformwithLEDRun1118_test.root"}
 } 
 
 source:
