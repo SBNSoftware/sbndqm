@@ -6,6 +6,7 @@ simple_plugin( DaqDecoderIcarus module
   tpcAnalysis_MODE
   sbndaq-artdaq-core_Overlays_ICARUS 
   
+	artdaq-core_Utilities
   ${LARDATAOBJ}
   lardataobj_RawData
   ${ART_UTILITIES}

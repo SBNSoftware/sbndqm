@@ -1,0 +1,116 @@
+This directory contains a number of scripts for interfacing with online
+monitoring data stored in a redis databse.
+
+*** SETUP ***
+
+To use these scripts, you will first need to setup a python environment.
+To do this, run (all inside this directory):
+
+virtualenv env
+. env/bin/activate
+pip install -r requirements.txt
+
+
+In the future, you will need to run just the command:
+
+. env/bin/activate
+
+to setup the environment.
+
+
+*** USAGE ***
+
+All scripts use the following arguments:
+	-s	Which server the redis database is on (default:
+		localhost)
+	-p	Which port the redis database is on (default: 6379)
+	-pw	Specify a password to connect to the database (optional)
+	-pf	Specify a file containing a password to connect to the
+		database (optional)
+
+If the database is behind a password, you will need to either use the
+"-pw" or "-pf" arguments to supply one
+
+GETTING GROUP CONFIGURATION:
+group_config.py: Prints the configuration associated with the specified
+                 group, as saved in the redis database.
+ARGUMENTS:
+	-g	Which group to view the configuration of (required)	
+
+EXAMPLES:
+# print out the configuration associated with the TPC
+python group_config.py -g TPC
+
+# print out the configuration associated with the TPC as stored
+# on the server "icarus-db01.fnal.gov"
+python group_config. -g TPC -s "icarus-db01.fnal.gov"
+
+MONITORING DATA STREAMS:
+monitor_streams.py: Gets the last value from a set of specified streams
+                    and also monitors the database for any new values. 
+                    Type "Ctrl-C" to exit. NOTE: this command can be run
+                    in two different modes. Either by directly
+                    specifying the key or by specifying the
+                    group/metric/stream/instance. In the second case,
+                    you can neglect any/all of the arguments. The script
+                    will monitor all keys that match the specified arguments.
+
+ARGUMENTS:
+	-k	The key of the stream to monitor (optional). If not
+		supplied, the script will look at the specified
+		group/metric/stream/instance values
+	-g	The group to monitor (optional). Defaults to a wildcard
+		(*).
+	-m	The metric to monitor (optional). Defaults to a wildcard
+		(*).
+	-st	The steam to monitor (optional). Defaults to a wildcard
+		(*).
+	-i	The instance to monitor (optional). Defaults to a wildcard
+		(*).
+
+EXAMPLES:
+# monitor the single data stream named "example"
+python monitor_streams.py -k example
+
+# monitor the data stream associated with tpc_channel 45 rms, on the
+# "fast" stream 
+pythin monitor_streams.py -g tpc_channel -i 45 -m rms -st fast
+
+# monitor the data stream associated with tpc_channel 45 rms, on all
+# streams
+python monitor_streams.py -g tpc_channel -i 45 -m rms
+
+# monitor the "rms" metric on all tpc_channel instances on all streams
+python monitor_streams.py -g tpc_channel -m rms
+
+# monitor all metrics on all streams for tpc channel 45
+python monitor_streams.py -g tpc_channel -i 45
+
+# monitor the "rms" metric on all groups, all instance, and all streams
+python monitor_streams.py -m rms
+
+VIEWING WAVEFORMS:
+view_waveform.py: Given a user-supplied key, the script loads the
+                  waveform from redis and plots the waveform in
+                  matplotlib. Will fail if the key does not exist or is
+                  unfilled.
+
+ARGUMENTS:
+	-k	The key of the waveform to plot.
+
+EXAMPLES:
+# plot a waveform with the key "snapshot:waveform:PMT:4"
+python view_waveform.py -k snapshot:waveform:PMT:4
+
+VIEWING A PNG SAVED IN THE DATABASE:
+view_png.py:	Displays a PNG file stored as raw binary in a redis
+		database. 
+ARGUMENTS:
+	-k 	The key of the PNG to plot.
+EXAMPLES:
+# view a PNG with the key "example_png"
+python view_png.py -k example_png
+
+
+
+
