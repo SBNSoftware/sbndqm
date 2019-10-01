@@ -23,6 +23,7 @@
 
 #include "sbndaq-redis-plugin/Utilities.h"
 #include "sbndqm/DatabaseStorage/Histogram.h"
+#include "sbndqm/DatabaseStorage/Waveform.h"
 
 namespace sbndqm {
   class ExampleDatabaseStorage;
@@ -36,8 +37,12 @@ class sbndqm::ExampleDatabaseStorage : public art::EDAnalyzer {
 
   private:
     void SendHistogram();
+    void SendWaveform();
+    void SendSplitWaveform();
     redisContext *fRedis;
     std::string fHistogramKey;
+    std::string fWaveformKey;
+    std::string fSplitWaveformKey;
     unsigned fSleepTime;
 };
 
@@ -50,6 +55,10 @@ sbndqm::ExampleDatabaseStorage::ExampleDatabaseStorage(fhicl::ParameterSet const
   // get the key for this histogram
   fHistogramKey = pset.get<std::string>("HistogramKey");
 
+  // key for waveforms
+  fWaveformKey = pset.get<std::string>("WaveformKey", "waveform_example");
+  fSplitWaveformKey = pset.get<std::string>("SplitWaveformKey", "split_waveform_example");
+
 }
 
 sbndqm::ExampleDatabaseStorage::~ExampleDatabaseStorage() {}
@@ -58,6 +67,8 @@ sbndqm::ExampleDatabaseStorage::~ExampleDatabaseStorage() {}
 void sbndqm::ExampleDatabaseStorage::analyze(art::Event const & evt)
 {
   SendHistogram();
+  SendWaveform();
+  SendSplitWaveform();
   if (fSleepTime > 0) {
     std::cout << "sleeping... " << std::endl;
     // sleep for a bit to simulate time between triggers
@@ -76,5 +87,24 @@ void sbndqm::ExampleDatabaseStorage::SendHistogram() {
 
   delete h;
 }
+
+
+void sbndqm::ExampleDatabaseStorage::SendWaveform() {
+  std::vector<unsigned> waveform { 1, 2, 3, 4, 5};
+  int result = sbndqm::SendWaveform(fRedis, fWaveformKey, waveform);
+  (void) result;
+}
+
+void sbndqm::ExampleDatabaseStorage::SendSplitWaveform() {
+  std::vector<std::vector<unsigned>> waveforms { {1, 2, 3}, {3, 4, 5} , {5, 6, 7}};
+  std::vector<float> offsets { 1., 2.3};
+
+  int result = sbndqm::SendSplitWaveform(fRedis, fSplitWaveformKey, waveforms, offsets);
+  (void) result;
+
+
+}
+
+
 
 DEFINE_ART_MODULE(sbndqm::ExampleDatabaseStorage)
