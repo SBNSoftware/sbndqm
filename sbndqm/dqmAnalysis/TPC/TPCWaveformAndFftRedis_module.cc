@@ -32,6 +32,8 @@
 
 #include "sbndaq-redis-plugin/Utilities.h"
 
+#include "sbndqm/DatabaseStorage/Waveform.h"
+
 /* Uses the Analysis class to print stuff to file
 */
 namespace tpcAnalysis {
