@@ -110,6 +110,7 @@ simple_plugin( TPCWaveformCreator module
 )
 
 simple_plugin( OnlineAnalysis module
+  sbndqm_datbase_storage
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
