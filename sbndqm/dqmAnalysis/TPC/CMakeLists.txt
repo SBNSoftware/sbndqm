@@ -7,26 +7,10 @@ find_library(FFTW fftw3 HINTS $ENV{FFTW_LIBRARY})
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
 
-# check if we have sbnddaq-datatypes locally
-# TODO: Better way to do this?????
-if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
-# subdirectory for SBND decoder
-  add_subdirectory(SBNDDecode)
-endif()
-
-if (DEFINED ENV{ICARUS_ARTDAQ_BASE_VERSION} )
-    add_subdirectory(ICARUSDecode)
-endif()
-
 # install fcl
 add_subdirectory(fcl)
 
 art_dictionary(DICTIONARY_LIBRARIES tpcAnalysis_SBN)
-
-cet_make_library( LIBRARY_NAME tpcAnalysis_MODE
-	SOURCE
-		Mode.cc
-)
 
 cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 	SOURCE  Analysis.cc
@@ -35,7 +19,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		PeakFinder.cc
 		ChannelData.cc
 	LIBRARIES
-		tpcAnalysis_MODE
+		sbndaqMode
 		${LARDATAOBJ} 
 		lardataobj_RawData
 		lardata_Utilities

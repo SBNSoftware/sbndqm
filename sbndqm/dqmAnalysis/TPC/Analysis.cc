@@ -41,11 +41,11 @@
 
 #include "Analysis.hh"
 #include "ChannelData.hh"
-#include "HeaderData.hh"
+#include "sbndaq-decode/TPC/HeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 #include "PeakFinder.hh"
-#include "Mode.hh"
+#include "sbndaq-decode/Mode/Mode.hh"
 
 using namespace tpcAnalysis;
 
