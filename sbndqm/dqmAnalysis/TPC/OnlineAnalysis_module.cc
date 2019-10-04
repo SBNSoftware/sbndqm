@@ -19,8 +19,8 @@
 
 #include "../../MetricManagerShim/MetricManager.hh"
 #include "../../MetricConfig/ConfigureRedis.hh"
-#include "../../DatabaseStorage/Waveform.h"
-#include "sbndaq-redis-plugin/Utilities.h"
+#include "sbndaq-online/helpers/Waveform.h"
+#include "sbndaq-online/helpers/Utilities.h"
 
 /*
  * Uses the Analysis class to print stuff to file
@@ -49,7 +49,6 @@ private:
   void SendSparseWaveforms();
   tpcAnalysis::Analysis _analysis;
   double _tick_period;
-  redisContext *fRedis;
   bool _send_sparse_waveforms;
 };
 
@@ -60,10 +59,6 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   sbndqm::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
   sbndqm::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   _tick_period = p.get<double>("tick_period", 500 /* ns */);
-  fRedis = sbndaq::Connect2Redis(
-    p.get<std::string>("RedisHostname", "localhost"),
-    p.get<int>("RedisPort",6379),
-    p.get<std::string>("RedisPassword", ""));
   _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", true);
 }
 
@@ -113,7 +108,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
       offsets.push_back(peak.start_loose * _tick_period);
     } 
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);
-    sbndqm::SendSplitWaveform(fRedis, key, sparse_waveforms, offsets, _tick_period, false); 
+    sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period); 
   } 
 }
 

@@ -11,7 +11,7 @@ cet_make_library(LIBRARY_NAME sbndqm_redis_config
     ${CETLIB_EXCEPT}
     ${MF_MESSAGELOGGER}
     ${MF_UTILITIES}
-    sbndaq_redis_plugin_hiredis
+    sbndaq_online_hiredis
     ${JSONCPP}
 )
 

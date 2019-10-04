@@ -2,8 +2,8 @@
 #include <string>
 #include <experimental/optional>
 
-#include "sbndaq-redis-plugin/hiredis/hiredis.h"
-#include "sbndaq-redis-plugin/hiredis/async.h"
+#include "sbndaq-online/hiredis/hiredis.h"
+#include "sbndaq-online/hiredis/async.h"
 
 #include "fhiclcpp/ParameterSet.h"
 

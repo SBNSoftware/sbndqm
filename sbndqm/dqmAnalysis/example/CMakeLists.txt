@@ -11,6 +11,6 @@ simple_plugin( ExampleDatabaseStorage "module"
 #  art_Framework_Services_Optional
   ${ROOT_BASIC_LIB_LIST}
   sbndqm_redis_config
-  sbndqm_datbase_storage
+  sbndaq_online_storage
 )
 

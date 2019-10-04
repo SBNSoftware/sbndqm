@@ -9,7 +9,7 @@
 #include "fhiclcpp/ParameterSetWalker.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "sbndaq-redis-plugin/Utilities.h"
+#include "sbndaq-online/helpers/Utilities.h"
 
 #include "json/json.h"
 #include "json/writer.h"

@@ -6,6 +6,5 @@ simple_plugin( CAENV1730Stream "module"
 	artdaq-core_Utilities
   sbndaqMode
   artdaq-utilities_Plugins
-  sbndaq-redis-plugin_redis_metric
 )
 
