@@ -12,8 +12,8 @@
 
 #include "canvas/Utilities/Exception.h"
 
-#include "../../MetricManagerShim/MetricManager.hh"
-#include "../../MetricConfig/ConfigureRedis.hh"
+#include "sbndaq-online/helpers/SBNMetricManager.h"
+#include "sbndaq-online/helpers/MetricConfig.h"
 
 #include <algorithm>
 #include <cassert>
@@ -49,10 +49,10 @@ sbndqm::ExampleTimeStream::ExampleTimeStream(fhicl::ParameterSet const & pset)
       _sleep_time(pset.get<unsigned>("sleep_time", 0))  {
 
   // Intiailize the metric manager
-  sbndqm::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+  sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
 
   // Initialize the config
-  sbndqm::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
 }
 
 sbndqm::ExampleTimeStream::~ExampleTimeStream() {}
@@ -82,7 +82,7 @@ void sbndqm::ExampleTimeStream::SendSingleMetric() {
   // value of metric
   double value = 5.;
   // send a metric 
-  sbndqm::sendMetric(name, value, level, mode);
+  sbndaq::sendMetric(name, value, level, mode);
 }
 
 void sbndqm::ExampleTimeStream::SendGroupMetrics() {
@@ -103,7 +103,7 @@ void sbndqm::ExampleTimeStream::SendGroupMetrics() {
     std::string instance = std::to_string(i);
     // metric value
     double value = (double) i;
-    sbndqm::sendMetric(group_name, instance, metric_name, value, level, mode); 
+    sbndaq::sendMetric(group_name, instance, metric_name, value, level, mode); 
   }
 }
 

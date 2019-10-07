@@ -16,7 +16,7 @@
 #include "artdaq-core/Data/Fragment.hh"
 
 #include "sbndaq-decode/Mode/Mode.hh"
-#include "../../MetricManagerShim/MetricManager.hh"
+#include "sbndaq-online/helpers/SBNMetricManager.h"
 
 #include "TH1F.h"
 #include "TNtuple.h"
@@ -48,7 +48,7 @@ class sbndaq::CAENV1730Stream : public art::EDAnalyzer {
 
 sbndaq::CAENV1730Stream::CAENV1730Stream(fhicl::ParameterSet const & pset)
     : EDAnalyzer(pset)  {
-  sbndqm::InitializeMetricManager(pset);
+  sbndaq::InitializeMetricManager(pset);
 }
 
 sbndaq::CAENV1730Stream::~CAENV1730Stream() {}
@@ -88,7 +88,7 @@ void sbndaq::CAENV1730Stream::analyze(art::Event const & evt)
       // double rms = RMS(data, ch_size, baseline);
 
       // send the metric
-      sbndqm::sendMetric("n_channels", (long unsigned int) n_channels, 3, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("n_channels", (long unsigned int) n_channels, 3, artdaq::MetricMode::Average);
 
     }
   }

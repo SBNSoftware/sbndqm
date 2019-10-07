@@ -75,6 +75,7 @@ simple_plugin( OfflineAnalysis module
 )
 
 simple_plugin( TPCWaveformCreator module
+  sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -90,7 +91,6 @@ simple_plugin( TPCWaveformCreator module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-  sbndqm_redis_config
 )
 
 simple_plugin( OnlineAnalysis module
@@ -111,7 +111,6 @@ simple_plugin( OnlineAnalysis module
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
-  sbndqm_redis_config
 )
 
 simple_plugin( ICARUSPurityDQM module
@@ -131,7 +130,6 @@ simple_plugin( ICARUSPurityDQM module
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
-  sbndqm_redis_config
 )
 
 install_headers()

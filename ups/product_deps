@@ -41,7 +41,6 @@ icarus_artdaq_base	v0_08_03 - optional
 sbndaq_artdaq_core	v0_02_06
 artdaq_utilities	v1_05_00
 fftw		v3_3_8
-jsoncpp		v1_7_7c
 smc_compiler            v6_6_0          -nq-    only_for_build
 xmlrpc_c                v1_39_10d
 sbndaq_online	v0_02_06
@@ -51,9 +50,9 @@ cetbuildtools   v7_13_02 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes". 
-qualifier	larsoft		artdaq_core	sbndaq_artdaq_core	artdaq_utilities	fftw	jsoncpp	    sbndaq_online	icarus_artdaq_base	xmlrpc_c	sbndaq_decode	notes
-e17:prof:s83	e17:prof	e17:prof:s83	e17:prof:s83		e17:prof:s83		prof	e17:prof    e17:prof:s83	e17:prof		e17:prof	e17:prof:s83
-e17:debug:s83	e17:debug	e17:debug:s83	e17:debug:s83		e17:debug:s83		debug	e17:debug   e17:debug:s83	e17:debug		e17:debug	e17:debug:s83
+qualifier	larsoft		artdaq_core	sbndaq_artdaq_core	artdaq_utilities	fftw	    sbndaq_online	icarus_artdaq_base	xmlrpc_c	sbndaq_decode	notes
+e17:prof:s83	e17:prof	e17:prof:s83	e17:prof:s83		e17:prof:s83		prof    e17:prof:s83	e17:prof		e17:prof	e17:prof:s83
+e17:debug:s83	e17:debug	e17:debug:s83	e17:debug:s83		e17:debug:s83		debug   e17:debug:s83	e17:debug		e17:debug	e17:debug:s83
 end_qualifier_list
 
 # table fragment to set FW_SEARCH_PATH needed to find XML files:
