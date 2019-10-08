@@ -1,0 +1,9 @@
+BEGIN_PROLOG
+
+redis_connection: {
+  # Flush redis calls after every event
+  message_buffer_size: -1
+}
+
+
+END_PROLOG

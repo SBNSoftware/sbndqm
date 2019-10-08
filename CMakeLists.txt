@@ -63,6 +63,8 @@ include(BuildPlugins)
 # ADD SOURCE CODE SUBDIRECTORIES HERE
 add_subdirectory(sbndqm)
 
+add_subdirectory(fcl)
+
 # tests
 add_subdirectory(test)
 

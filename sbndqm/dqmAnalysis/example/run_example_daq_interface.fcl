@@ -1,3 +1,4 @@
+#include "redis_connection.fcl"
 
 physics: {
   analyzers:
@@ -117,6 +118,11 @@ source:
       }
     }
   }
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
 }
 
 process_name: EXAMPLESTREAMMonitor

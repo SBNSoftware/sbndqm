@@ -1,3 +1,5 @@
+#include "redis_connection.fcl"
+
 physics:
 {
   analyzers:
@@ -75,5 +77,9 @@ source:
   module_type: EmptyEvent
 }
 
+services:
+{
+  RedisConnection: @local::redis_connection
+}
 
 process_name: EXAMPLESTREAM
