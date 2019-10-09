@@ -2,7 +2,7 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent sbndqm v00_02_06
+parent sbndqm v00_02_07
 defaultqual e17:s83
 
 # These optional lines define the installed directories where headers,
@@ -43,8 +43,8 @@ artdaq_utilities	v1_05_00
 fftw		v3_3_8
 smc_compiler            v6_6_0          -nq-    only_for_build
 xmlrpc_c                v1_39_10d
-sbndaq_online	v0_02_06
-sbndaq_decode	v00_02_06
+sbndaq_online	v0_02_07
+sbndaq_decode	v00_02_07
 
 cetbuildtools   v7_13_02 - only_for_build
 
