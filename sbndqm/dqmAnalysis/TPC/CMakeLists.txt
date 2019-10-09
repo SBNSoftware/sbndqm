@@ -95,6 +95,8 @@ simple_plugin( TPCWaveformCreator module
 
 simple_plugin( OnlineAnalysis module
   sbndaq_online_storage
+  sbndaq_online_redis_connection
+  sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
