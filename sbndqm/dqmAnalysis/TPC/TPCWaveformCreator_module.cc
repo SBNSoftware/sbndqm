@@ -25,10 +25,10 @@
 #include "art_root_io/TFileService.h"
 
 #include "ChannelData.hh"
-#include "HeaderData.hh"
+#include "sbndaq-decode/TPC/HeaderData.hh"
 #include "Analysis.hh"
 
-#include "sbndaq-redis-plugin/Utilities.h"
+#include "sbndaq-online/helpers/Utilities.h"
 
 /* Uses the Analysis class to print stuff to file
 */

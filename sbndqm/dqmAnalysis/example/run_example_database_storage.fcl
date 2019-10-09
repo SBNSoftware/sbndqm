@@ -1,0 +1,30 @@
+#include "redis_connection.fcl"
+
+physics:
+{
+  analyzers:
+  {
+    ExampleDatabaseStorage: {
+      module_type: ExampleDatabaseStorage
+      HistogramKey: histogram_example
+      sleep_time: 1
+    }
+
+  }
+
+  a: [ExampleDatabaseStorage]
+  end_paths: [a]
+}
+
+source:
+{
+  module_type: EmptyEvent
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
+}
+
+
+process_name: EXAMPLE

@@ -9,11 +9,6 @@
   <class name="art::Wrapper<tpcAnalysis::ReducedChannelData>"/>
   <class name="art::Wrapper<std::vector<tpcAnalysis::ReducedChannelData>>"/>
 
-  <class name="tpcAnalysis::HeaderData"/>
-  <class name="std::vector<tpcAnalysis::HeaderData>"/>
-  <class name="art::Wrapper<tpcAnalysis::HeaderData>"/>
-  <class name="art::Wrapper<std::vector<tpcAnalysis::HeaderData>>"/>
-
   <class name="std::vector<std::vector<short>>"/>
   <class name="art::Wrapper<std::vector<std::vector<short>>>"/>
 </lcgdict>

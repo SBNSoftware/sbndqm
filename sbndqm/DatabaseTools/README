@@ -102,6 +102,15 @@ EXAMPLES:
 # plot a waveform with the key "snapshot:waveform:PMT:4"
 python view_waveform.py -k snapshot:waveform:PMT:4
 
+VIEWING A PNG SAVED IN THE DATABASE:
+view_png.py:	Displays a PNG file stored as raw binary in a redis
+		database. 
+ARGUMENTS:
+	-k 	The key of the PNG to plot.
+EXAMPLES:
+# view a PNG with the key "example_png"
+python view_png.py -k example_png
+
 
 
 
