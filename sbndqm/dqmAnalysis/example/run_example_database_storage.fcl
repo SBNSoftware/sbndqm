@@ -1,3 +1,5 @@
+#include "redis_connection.fcl"
+
 physics:
 {
   analyzers:
@@ -5,7 +7,6 @@ physics:
     ExampleDatabaseStorage: {
       module_type: ExampleDatabaseStorage
       HistogramKey: histogram_example
-      RedisServer: localhost # NOTE: change this to the server you want to connect to 
       sleep_time: 1
     }
 
@@ -18,6 +19,11 @@ physics:
 source:
 {
   module_type: EmptyEvent
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
 }
 
 

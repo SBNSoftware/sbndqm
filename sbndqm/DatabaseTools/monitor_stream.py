@@ -1,11 +1,17 @@
 import argparse
 import util
 from datetime import datetime
+import signal
+import sys
+
+def handle_user_stop(signum, frame):
+    print "User Ctrl-C, shutting down..."
+    sys.exit(0)
 
 def value_display(datum):
     timestamp = int(datum[0].split("-")[0]) / 1000 # ms -> s
     timestr = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-    value = datum[1]["dat"]
+    value = util.read_datum(datum[1])
     return "%s at time %s" % (value, timestr)
 
 def main(args):
@@ -40,6 +46,8 @@ def main(args):
             last_seen_ids[key] = lastval[0][0]
 
     print "Listening for new values"
+    # setup to exit nice on Ctrl-C
+    signal.signal(signal.SIGINT, handle_user_stop)
     # now listen for new values
     while True:
         value = redis.xread(last_seen_ids)

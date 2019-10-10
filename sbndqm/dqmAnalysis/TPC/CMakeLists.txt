@@ -7,26 +7,10 @@ find_library(FFTW fftw3 HINTS $ENV{FFTW_LIBRARY})
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
 
-# check if we have sbnddaq-datatypes locally
-# TODO: Better way to do this?????
-if( DEFINED ENV{SBNDDAQ_DATATYPES_VERSION} )
-# subdirectory for SBND decoder
-  add_subdirectory(SBNDDecode)
-endif()
-
-if (DEFINED ENV{ICARUS_ARTDAQ_BASE_VERSION} )
-    add_subdirectory(ICARUSDecode)
-endif()
-
 # install fcl
 add_subdirectory(fcl)
 
 art_dictionary(DICTIONARY_LIBRARIES tpcAnalysis_SBN)
-
-cet_make_library( LIBRARY_NAME tpcAnalysis_MODE
-	SOURCE
-		Mode.cc
-)
 
 cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 	SOURCE  Analysis.cc
@@ -35,7 +19,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		PeakFinder.cc
 		ChannelData.cc
 	LIBRARIES
-		tpcAnalysis_MODE
+		sbndaqMode
 		${LARDATAOBJ} 
 		lardataobj_RawData
 		lardata_Utilities
@@ -91,6 +75,7 @@ simple_plugin( OfflineAnalysis module
 )
 
 simple_plugin( TPCWaveformCreator module
+  sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -106,10 +91,10 @@ simple_plugin( TPCWaveformCreator module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-  sbndqm_redis_config
 )
 
 simple_plugin( OnlineAnalysis module
+  sbndaq_online_storage
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -126,7 +111,6 @@ simple_plugin( OnlineAnalysis module
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
-  sbndqm_redis_config
 )
 
 simple_plugin( ICARUSPurityDQM module
@@ -146,7 +130,6 @@ simple_plugin( ICARUSPurityDQM module
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
-  sbndqm_redis_config
 )
 simple_plugin( TPCWaveformAndFftRedis module
   tpcAnalysis_SBN

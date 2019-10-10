@@ -22,7 +22,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "ChannelData.hh"
-#include "HeaderData.hh"
+#include "sbndaq-decode/TPC/HeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 
@@ -150,6 +150,8 @@ public:
   std::vector<tpcAnalysis::NoiseSample> _noise_samples;
   std::vector<tpcAnalysis::HeaderData> _header_data;
   std::vector<RunningThreshold> _thresholds;
+  // raw digits container for each event
+  art::Handle<std::vector<raw::RawDigit>> _raw_digits_handle;
 
 private:
   unsigned _event_ind;
@@ -157,8 +159,6 @@ private:
   // keep track of timing data (maybe)
   tpcAnalysis::Timing _timing;
 
-  // raw digits container for each event
-  art::Handle<std::vector<raw::RawDigit>> _raw_digits_handle;
   // header data container for each event
   art::Handle<std::vector<tpcAnalysis::HeaderData>> _header_data_handle;
 };

@@ -1,3 +1,5 @@
+#include "redis_connection.fcl"
+
 physics:
 {
   analyzers:
@@ -14,7 +16,6 @@ physics:
           reporting_interval: 2.0
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":fast" 
-          redis_passfile: "/var/adm/krb5/redis_password"
         }
         redis_metric_slow: { // can be named anything
           level: 3
@@ -22,12 +23,10 @@ physics:
           reporting_interval: 10.0
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":slow" 
-          redis_passfile: "/var/adm/krb5/redis_password"
         }
       }
 
       metric_config: {
-        redis_passfile: "/var/adm/krb5/redis_password"
         // Each group name, mapping to the list of instances for this group
         // The list of instances are the set of instances that you send metrics
         // to in this group. To make the config more concise, if using instance
@@ -77,6 +76,11 @@ source:
 {
   module_type: EmptyEvent
 }
+services:
+{
+  RedisConnection: @local::redis_connection
+}
 
+services.RedisConnection.passfile: "/var/adm/krb5/redis_password"
 
 process_name: EXAMPLESTREAM

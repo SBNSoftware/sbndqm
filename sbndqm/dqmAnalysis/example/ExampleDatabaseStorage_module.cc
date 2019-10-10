@@ -21,9 +21,9 @@
 
 #include "TH1F.h"
 
-#include "sbndaq-redis-plugin/Utilities.h"
-#include "sbndqm/DatabaseStorage/Histogram.h"
-#include "sbndqm/DatabaseStorage/Waveform.h"
+#include "sbndaq-online/helpers/Utilities.h"
+#include "sbndaq-online/helpers/Histogram.h"
+#include "sbndaq-online/helpers/Waveform.h"
 
 namespace sbndqm {
   class ExampleDatabaseStorage;
@@ -39,7 +39,6 @@ class sbndqm::ExampleDatabaseStorage : public art::EDAnalyzer {
     void SendHistogram();
     void SendWaveform();
     void SendSplitWaveform();
-    redisContext *fRedis;
     std::string fHistogramKey;
     std::string fWaveformKey;
     std::string fSplitWaveformKey;
@@ -49,9 +48,6 @@ class sbndqm::ExampleDatabaseStorage : public art::EDAnalyzer {
 sbndqm::ExampleDatabaseStorage::ExampleDatabaseStorage(fhicl::ParameterSet const & pset)
     : EDAnalyzer(pset),
       fSleepTime(pset.get<unsigned>("SleepTime", 0))  {
-  // Initialize the redis connection
-  fRedis = sbndaq::Connect2Redis(pset.get<std::string>("RedisServer", "localhost"), pset.get<int>("RedisPort", 6379), pset.get<std::string>("RedisPassword", ""));
-
   // get the key for this histogram
   fHistogramKey = pset.get<std::string>("HistogramKey");
 
@@ -83,7 +79,7 @@ void sbndqm::ExampleDatabaseStorage::SendHistogram() {
   h->FillRandom("gaus", 10000);
 
   // draw it
-  sbndqm::SendHistogram(fRedis, fHistogramKey, h, 10, 10, 300, 300);
+  sbndaq::SendHistogram(fHistogramKey, h, 10, 10, 300, 300);
 
   delete h;
 }
@@ -91,16 +87,14 @@ void sbndqm::ExampleDatabaseStorage::SendHistogram() {
 
 void sbndqm::ExampleDatabaseStorage::SendWaveform() {
   std::vector<unsigned> waveform { 1, 2, 3, 4, 5};
-  int result = sbndqm::SendWaveform(fRedis, fWaveformKey, waveform);
-  (void) result;
+  sbndaq::SendWaveform(fWaveformKey, waveform);
 }
 
 void sbndqm::ExampleDatabaseStorage::SendSplitWaveform() {
   std::vector<std::vector<unsigned>> waveforms { {1, 2, 3}, {3, 4, 5} , {5, 6, 7}};
   std::vector<float> offsets { 1., 2.3};
 
-  int result = sbndqm::SendSplitWaveform(fRedis, fSplitWaveformKey, waveforms, offsets);
-  (void) result;
+  sbndaq::SendSplitWaveform(fSplitWaveformKey, waveforms, offsets);
 
 
 }

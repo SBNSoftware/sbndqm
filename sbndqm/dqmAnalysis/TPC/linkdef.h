@@ -11,8 +11,6 @@
 #pragma link C++ class std::vector<std::vector<short>>+;
 #pragma link C++ class ReducedChannelData+;
 #pragma link C++ class std::vector<ReducedChannelData>+;
-#pragma link C++ class HeaderData+;
-#pragma link C++ class std::vector<HeaderData>+;
 #pragma link C++ class Noise+;
 #pragma link C++ class FFT+;
 #endif
