@@ -29,6 +29,7 @@
 #include "ChannelData.hh"
 #include "HeaderData.hh"
 #include "Analysis.hh"
+#include "Connection.cc"
 
 #include "sbndaq-redis-plugin/Utilities.h"
 
@@ -75,8 +76,8 @@ private:
   double makeStrings(raw::RawDigit const&,int);
   double makeFFT(raw::RawDigit const&,int);
 
-  std::string fRedisHostname;
-  int         fRedisPort;
+  //  std::string fRedisHostname;
+  //int         fRedisPort;
 
  };
 double tpcAnalysis::TPCWaveformAndFftRedis::makeFFT(raw::RawDigit const& rd,int Ped){

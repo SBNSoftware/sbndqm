@@ -1,3 +1,5 @@
+#include "sbndaq-redis-plugin/Utilities.h"
+
 #include "WaveformAndRedis_module.cc"
 
 
