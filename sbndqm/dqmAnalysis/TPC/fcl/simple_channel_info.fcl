@@ -13,4 +13,27 @@ ICARUS_simple_channel_info:
 //collection_channels: [ [0,831]  ]
 //induction_channels: [ [1024,1855] ]
 }
+
+ICARUS_simulation_channel_info:
+{
+  n_channels: 49024
+  induction_channels: [ 
+    [0, 1056],  // plane 0
+    [1056, 6656], // plane 1
+    [12256, 13312], // plane 3
+    [13312, 18912], // plane 4
+    [24512, 25568], // plane 6
+    [25568, 31168], // plane 7
+    [36768, 37824], // plane 9
+    [37824, 43424] // plane 10
+  ]
+  collection_channels: [
+    [6656, 12256], // plane 2 
+    [18912, 24512], // plane 5
+    [31168, 36768], // plane 8
+    [43424, 49024] // plane 11
+  ]
+}
+
+
 END_PROLOG
