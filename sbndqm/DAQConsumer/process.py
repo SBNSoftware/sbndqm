@@ -12,6 +12,7 @@ class ProcessFhiclException(Exception):
 class ConsumerProcess(object):
     def __init__(self, port, config_file_path, overwrite_path, output_file=None):
         self.config_file_path = config_file_path
+        self.name = os.path.split(config_file_path)[-1]
         self.overwrite_path = overwrite_path
         self.port = port
         self.n_restart = 0
@@ -23,7 +24,7 @@ class ConsumerProcess(object):
             with open(self.config_file_path) as f:
                 text = f.read()
         except:
-            raise ProcessFhiclException("Error: couldn't read fhicl file (%s)" % self.config_file_path)
+            raise ProcessFhiclException("Couldn't read fhicl file (%s)" % self.config_file_path)
         self.temp_file = tempfile.NamedTemporaryFile() 
         self.temp_file.write(text)
         self.temp_file.write("\n\n%s: %i" % (self.overwrite_path, self.port))

@@ -13,15 +13,16 @@ PROCESSES = {}
 logger = None # set in main()
 
 def clean_exit(signum, frame):
+    logger.info("Received SIGINT.")
     do_clean_exit()
 
 def do_clean_exit():
-    logger.info("Received SIGINT. Attempting to shutdown subprocesses cleanly.")
+    logger.info("Cleaning up.")
     for _, process_list in PROCESSES.items(): 
         for process in process_list:
             retcode = process.force_exit()
             process.cleanup()
-            logger.info("Process with config %s on port %i exited with code %i" % (process.config_file_path, process.port, retcode)) 
+            logger.info("Process with config %s on port %i exited with code %i" % (process.name, process.port, retcode)) 
     logger.info("Finished cleaning up subprocesses. Exiting.")
     sys.exit(0)
 
@@ -55,7 +56,9 @@ def main(args):
             if port not in old_dispatchers:
                 PROCESSES[port] = []
                 for config in args.fhicl_configuration:
-                    log_file = None if args.log_dir is None else os.path.join(args.log_dir, config.split(".")[0] + "_" + str(port) + "_" + str(int(time.time())) + ".log")
+                    log_file = None if args.log_dir is None else \
+                        os.path.join(args.log_dir, os.path.split(config)[-1].split(".")[0] + "_" + str(port) + "_" + str(int(time.time())) + ".log")
+                    logger.info("Starting process with config %s on port %i. Output will be logged to %s." % (config, port, log_file))
                     try:
                         process = ConsumerProcess(port, config, args.overwrite_path, log_file)
                     except ProcessFhiclException as err:
@@ -74,12 +77,12 @@ def check_process(process, args):
     retcode = process.check_exit()
     if retcode is not None:
         process.cleanup()
-        logger.info("Process with config %s on port %i exited with code %i" % (process.config_file_path, process.port, retcode)) 
+        logger.info("Process with config %s on port %i exited with code %i" % (process.name, process.port, retcode)) 
 	if retcode != 0 and (process.n_restart < args.restart or args.restart < 0):
-            logger.info("Restarting process with config %s on port %i. Process has been restarted %i times." % (process.config_file_path, process.port, process.n_restart))
+            logger.info("Restarting process with config %s on port %i. Process has been restarted %i times." % (process.name, process.port, process.n_restart))
 	    process.restart()
 	else:
-            logger.info("Removing process with config %s on port %i." % (process.config_file_path, process.port))
+            logger.info("Removing process with config %s on port %i." % (process.name, process.port))
             return False
     return True
 
