@@ -32,8 +32,9 @@
 
 #include "sbndaq-redis-plugin/Utilities.h"
 
-#include "sbndaq-online/helpers/Waveform.h"
 
+#include "sbndqm/DatabaseStorage/Waveform.h"
+//#include "sbndqm/DatabaseStorage/Connect.h"
 /* Uses the Analysis class to print stuff to file
 */
 namespace tpcAnalysis {
@@ -59,7 +60,7 @@ private:
   TStopwatch first;
   int a = 0;
   int Ped;
-  char option[20];
+  //char option[20];
   double setup = 0.0;
   double rSum = 0.0;
   double sSum = 0.0;
@@ -71,13 +72,16 @@ private:
   double stringTime = 0.0;
   double FFTtime = 0.0;
   double stringSum = 0.0;
+  void SendWaveform(raw::RawDigit const&);
   redisContext* context;
   double makeStrings(raw::RawDigit const&,int);
   double makeFFT(raw::RawDigit const&,int);
-
+ 
   std::string fRedisHostname;
   int         fRedisPort;
-
+  std::string fOption;
+  bool        fPedestal;
+  std::string fWaveformKey;
  };
 double tpcAnalysis::TPCWaveformAndFftRedis::makeFFT(raw::RawDigit const& rd,int Ped){
    TStopwatch sendFFT;
@@ -88,7 +92,7 @@ double tpcAnalysis::TPCWaveformAndFftRedis::makeFFT(raw::RawDigit const& rd,int 
 
   if (rd.Channel() == 0){
     fSum = 0;
-    FSum = 0;
+Sum = 0;
   }
    sendFFT.Start();
   // store the waveform and also delete old lists                                                                                           
@@ -141,6 +145,12 @@ double tpcAnalysis::TPCWaveformAndFftRedis::makeFFT(raw::RawDigit const& rd,int 
    double Time = fSum + FSum;
    
    return Time;
+}
+void tpcAnalysis::TPCWaveformAndFftRedis::SendWaveform(raw::RawDigit const& rd) {
+  
+  std::vector<unsigned> waveform { rd.Channel()};
+  int result = sbndqm::SendWaveform(context, fWaveformKey, waveform);
+  (void)result;
 }
 
 double tpcAnalysis::TPCWaveformAndFftRedis::makeStrings(raw::RawDigit const& rd,int Ped){ 
@@ -202,8 +212,15 @@ tpcAnalysis::TPCWaveformAndFftRedis::TPCWaveformAndFftRedis(fhicl::ParameterSet 
   art::EDAnalyzer::EDAnalyzer(p), 
   _analysis(p),
 
-  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db01")),
-  fRedisPort(p.get<int>("RedisPort",6379))
+  //fRedis = sbndaq::Connect2Redis(pset.get<std::string>("RedisServer", "icarus-db02"), pset.get<int>("RedisPort", 6379), pset.get<std::string>("RedisPassword", ""));
+
+  //fWaveformKey = pset.get<std::string>("WaveformKey", "waveform"); 
+  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02")),
+  fRedisPort(p.get<int>("RedisPort",6379)),
+  fOption(p.get<std::string>("Option","both")),
+  fPedestal(p.get<bool>("Pedestal",true)),
+  fWaveformKey(p.get<std::string>("WaveformKey", "waveform"))
+
 {
   first.Start();
   context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort);//to make the configure options w/ password??  later 
@@ -213,11 +230,11 @@ tpcAnalysis::TPCWaveformAndFftRedis::TPCWaveformAndFftRedis(fhicl::ParameterSet 
 void tpcAnalysis::TPCWaveformAndFftRedis::analyze(art::Event const & evt) {
     master.Start();  
    
-    char waveform[] = "waveform";
-    char fft[] = "fft";
-    char both[] = "both";
+    //    char waveform[] = "waveform";
+    //char fft[] = "fft";
+    //char both[] = "both";
     
-  
+    /*
     while (a < 1){
       std::cout << "Do you want to read in the waveform, fft, or both? Please respond with waveform, fft, or both. ";
       std::cin.getline (option,20);
@@ -229,6 +246,9 @@ void tpcAnalysis::TPCWaveformAndFftRedis::analyze(art::Event const & evt) {
 	a++;
       }
     }
+    */
+
+
   setup = setup + first.RealTime(); 
   art::EventNumber_t eventNumber = evt.id().event();
   //get the raw digits from the event
@@ -265,23 +285,26 @@ void tpcAnalysis::TPCWaveformAndFftRedis::analyze(art::Event const & evt) {
       }
       //loop for pedestal subtraction and storing that as the waveforms                                                                         
       for(size_t i_t=0; i_t< rd.Samples(); ++i_t){
+	if (fPedestal){
 	Ped = Sum/(counter);
 	//std::cout<<Ped<<std::endl;
-      
+	}      
       }
-	
-      if (strcmp (waveform,option) == 0){    
+      if (fOption == "waveform"){
+	//if (strcmp (waveform,fOption) == 0){    
       //calling the Redis string function
-      stringTime = makeStrings(rd,Ped);
-      
+	//      stringTime = makeStrings(rd,Ped);
+         SendWaveform(rd);
       }
-      else if (strcmp (fft,option) == 0){
+      else if (fOption == "FFT"){ 
+	//if (strcmp (fft,fOption) == 0){
       //FFT to call the FFT redis function
       FFTtime = makeFFT(rd,Ped);
      
       }
       
-      else  if (strcmp (both,option) == 0){
+      else  if (fOption == "both"){
+	//(strcmp (both,fOption) == 0){
 	//calling the Redis string function
 	stringTime = makeStrings(rd,Ped);
 	//FFT to call the FFT redis function 
