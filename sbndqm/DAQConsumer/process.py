@@ -38,7 +38,8 @@ class ConsumerProcess(object):
             self.process = subprocess.Popen(command, stdout=output_file, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError, err:
             self.retcode = err.code
-        output_file.close()
+        if self.output_file is not None:
+            output_file.close()
 
     def cleanup(self):
         pass

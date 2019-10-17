@@ -54,6 +54,7 @@ def main(args):
         dispatchers = get_dispatchers() 
         for port in dispatchers:
             if port not in old_dispatchers:
+                logger.info("New dispatcher instance on port: %i" % port)
                 PROCESSES[port] = []
                 for config in args.fhicl_configuration:
                     log_file = None if args.log_dir is None else \
@@ -88,7 +89,6 @@ def check_process(process, args):
 
 # find all of the instances of the dispatcher running
 def get_dispatchers():
-    return set([5])
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
     dispatcher_ports = set()
     for pid in pids:
