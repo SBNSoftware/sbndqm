@@ -59,5 +59,5 @@ def parse_binary(binary, typename):
 
 def read_datum(dat):
     for key, val in dat.items():
-        if key == "val": return val
+        if key == "dat": return val
         return parse_binary(val, key)[0]
