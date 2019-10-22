@@ -37,7 +37,7 @@ public:
       end_loose = 0;
     }
 
-    std::string Print();
+    std::string Print() const;
 
   };
 

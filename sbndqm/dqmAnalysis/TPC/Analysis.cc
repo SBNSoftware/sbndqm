@@ -140,6 +140,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     _per_channel_data[i].fft_real.clear();
     _per_channel_data[i].fft_imag.clear();
     _per_channel_data[i].peaks.clear();
+    _per_channel_data[i].empty = true; // make empty by default 
   }
 
   // get the raw digits
