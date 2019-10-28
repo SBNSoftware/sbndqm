@@ -99,14 +99,24 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
 void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
   // use analysis hit-finding to determine interesting regions of hits
-  for (const tpcAnalysis::ChannelData &data: _analysis._per_channel_data) {
+  for (auto const& digits: *_analysis._raw_digits_handle) {
+    const ChannelData &data = _analysis._per_channel_data.at(digits.Channel());
     std::vector<std::vector<int16_t>> sparse_waveforms;
     std::vector<float> offsets;
-    const std::vector<int16_t> &adcs = _analysis._raw_digits_handle->at(data.channel_no).ADCs();
-    for (const tpcAnalysis::PeakFinder::Peak &peak: data.peaks) {
-      sparse_waveforms.emplace_back(adcs.begin() + peak.start_loose, adcs.begin() + peak.end_loose); 
-      offsets.push_back(peak.start_loose * _tick_period);
-    } 
+    const std::vector<int16_t> &adcs = digits.ADCs();
+    for (unsigned i = 0; i < data.peaks.size(); i++) {
+      // don't make a new waveform is this peak is adjacent to the last one
+      if (i > 0 && data.peaks[i].start_loose <= data.peaks[i-1].end_loose - 1) {
+        sparse_waveforms[sparse_waveforms.size()-1].insert(
+          sparse_waveforms[sparse_waveforms.size()-1].end(), 
+          adcs.begin() + data.peaks[i-1].end_loose, adcs.begin() + data.peaks[i].end_loose);
+      }
+      else {
+        const PeakFinder::Peak &peak = data.peaks[i];
+        sparse_waveforms.emplace_back(adcs.begin() + peak.start_loose, adcs.begin() + peak.end_loose);
+        offsets.push_back(peak.start_loose * _tick_period);
+      }
+    }
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);
     sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period); 
   } 
