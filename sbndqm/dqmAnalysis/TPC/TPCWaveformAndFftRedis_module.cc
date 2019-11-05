@@ -30,10 +30,9 @@
 #include "sbndaq-decode/TPC/HeaderData.hh"
 #include "Analysis.hh"
 
-#include "sbndaq-redis-plugin/Utilities.h"
+#include "sbndaq-online/helpers/Waveform.h"
+#include "sbndaq-online/helpers/Utilities.h"
 
-
-#include "sbndqm/DatabaseStorage/Waveform.h"
 //#include "sbndqm/DatabaseStorage/Connect.h"
 /* Uses the Analysis class to print stuff to file
 */
@@ -53,7 +52,6 @@ public:
    virtual void analyze(art::Event const & e) override;
 
 private:
-  tpcAnalysis::Analysis _analysis;
   TTree *_output;
   TStopwatch timer;
   TStopwatch master;
@@ -74,15 +72,14 @@ private:
   double stringSum = 0.0;
   void SendWaveform(raw::RawDigit const&);
   redisContext* context;
-  double makeStrings(raw::RawDigit const&,int);
   double makeFFT(raw::RawDigit const&,int);
  
-  std::string fRedisHostname;
-  int         fRedisPort;
   std::string fOption;
   bool        fPedestal;
   std::string fWaveformKey;
+  double fTickPeriod;
  };
+
 double tpcAnalysis::TPCWaveformAndFftRedis::makeFFT(raw::RawDigit const& rd,int Ped){
    TStopwatch sendFFT;
    TStopwatch redisFFT;
@@ -146,108 +143,27 @@ Sum = 0;
    
    return Time;
 }
+
 void tpcAnalysis::TPCWaveformAndFftRedis::SendWaveform(raw::RawDigit const& rd) {
+  std::string key = "snapshot:" + fWaveformKey + ":wire:" + std::to_string(rd.Channel());
   
-  std::vector<unsigned> waveform { rd.Channel()};
-  int result = sbndqm::SendWaveform(context, fWaveformKey, waveform);
-  (void)result;
+  sbndaq::SendWaveform(key, rd.ADCs());
 }
 
-double tpcAnalysis::TPCWaveformAndFftRedis::makeStrings(raw::RawDigit const& rd,int Ped){ 
-   TStopwatch sendString;
-   TStopwatch redisString;
-   // std::cout<<"Now Ped"<<Ped<<std::endl;   
-   if (rd.Channel() == 0){
-     sSum = 0;
-     rSum = 0;
-   }
-   sendString.Start();
-   // store the waveform and also delete old lists
-   redisAppendCommand(context, "DEL snapshot:waveform:wire:%i", rd.Channel());
-   // we're gonna put the whole waveform into one very large list 
-   // allocate enough space for it 
-   // Assume at max 4 chars per int plus a space each plus another 50 chars to store the base of the command
-   auto waveform =  rd.ADCs();
-   size_t buffer_len = waveform.size() * 10 + 50;
-   char *buffer = new char[buffer_len];
-      // print in the base of the command
-   size_t print_len = sprintf(buffer, "RPUSH snapshot:waveform:wire:%i", rd.Channel());
-   char *buffer_index = buffer + print_len;
-   // throw in all of the data points
-   for (int16_t dat: waveform) {
-     print_len += sprintf(buffer_index, " %i", dat - Ped); 
-     buffer_index = buffer + print_len;
-     if (print_len >= buffer_len - 1) {
-       std::cerr << "ERROR: BUFFER OVERFLOW IN WAVEFORM DATA" << std::endl;
-       std::exit(1);
-     }
-   }
-   // null terminate the string
-   *buffer_index = '\0';
-   redisAppendCommand(context, buffer);
-   sendString.Stop();
-   sSum = sSum + sendString.RealTime();
-   if (rd.Channel() == 575) {
-     //  std::cout<<" Time to create the buffer for  redis is "<<sSum <<" seconds."<<std::endl;
-   }
-   redisString.Start();
-   redisGetReply(context,NULL);
-   redisGetReply(context,NULL);                                                                                                
-   // delete the buffer                                                                                                                         
-   delete buffer;
-   redisString.Stop();
-   rSum = rSum + redisString.RealTime();
-   if (rd.Channel() == 575) {
-     //  std::cout<<" Time to send the strings to redis is "<<rSum <<" seconds."<<std::endl;
-   }
-   if (rd.Channel() == 575) {
-     std::cout<<" Total time "<<sSum + rSum <<" seconds."<<std::endl;
-   }
-   double time = rSum + sSum;
- 
-   return time;
-}
 
 tpcAnalysis::TPCWaveformAndFftRedis::TPCWaveformAndFftRedis(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p), 
-  _analysis(p),
-
-  //fRedis = sbndaq::Connect2Redis(pset.get<std::string>("RedisServer", "icarus-db02"), pset.get<int>("RedisPort", 6379), pset.get<std::string>("RedisPassword", ""));
-
-  //fWaveformKey = pset.get<std::string>("WaveformKey", "waveform"); 
-  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02")),
-  fRedisPort(p.get<int>("RedisPort",6379)),
   fOption(p.get<std::string>("Option","both")),
   fPedestal(p.get<bool>("Pedestal",true)),
-  fWaveformKey(p.get<std::string>("WaveformKey", "waveform"))
+  fWaveformKey(p.get<std::string>("WaveformKey", "waveform")),
+  fTickPeriod(p.get<double>("TickPeriod", 0.5))
 
 {
-  first.Start();
-  context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort);//to make the configure options w/ password??  later 
-  first.Stop();
 }
   
 void tpcAnalysis::TPCWaveformAndFftRedis::analyze(art::Event const & evt) {
     master.Start();  
    
-    //    char waveform[] = "waveform";
-    //char fft[] = "fft";
-    //char both[] = "both";
-    
-    /*
-    while (a < 1){
-      std::cout << "Do you want to read in the waveform, fft, or both? Please respond with waveform, fft, or both. ";
-      std::cin.getline (option,20);
-      for ( int t = 0; t < (signed)strlen(option); t++){
-	option[t] = tolower(option[t]);
-      }
-	strcpy (option, option);
-      if( (strcmp (waveform,option) == 0) || (strcmp (fft,option) == 0) || (strcmp (both,option) == 0)){
-	a++;
-      }
-    }
-    */
-
 
   setup = setup + first.RealTime(); 
   art::EventNumber_t eventNumber = evt.id().event();
@@ -306,7 +222,7 @@ void tpcAnalysis::TPCWaveformAndFftRedis::analyze(art::Event const & evt) {
       else  if (fOption == "both"){
 	//(strcmp (both,fOption) == 0){
 	//calling the Redis string function
-	stringTime = makeStrings(rd,Ped);
+         SendWaveform(rd);
 	//FFT to call the FFT redis function 
 	FFTtime = makeFFT(rd,Ped);
        

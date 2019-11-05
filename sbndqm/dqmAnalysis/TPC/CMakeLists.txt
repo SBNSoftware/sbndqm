@@ -150,8 +150,7 @@ simple_plugin( TPCWaveformAndFftRedis module
                         art_Persistency_Common
                 ${ART_FRAMEWORK_IO_SOURCES}
   artdaq-utilities_Plugins
-  sbndqm_redis_config
-  sbndqm_datbase_storage
+  sbndaq_online_storage
 )
 
 install_headers()
