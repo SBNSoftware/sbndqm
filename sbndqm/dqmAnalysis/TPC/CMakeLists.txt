@@ -152,6 +152,7 @@ simple_plugin( TPCWaveformAndFftRedis module
   artdaq-utilities_Plugins
   sbndaq_online_storage
   sbndaq_online_hiredis
+  sbndaq_online_redis_connection
 )
 
 install_headers()
