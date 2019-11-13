@@ -105,15 +105,29 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
     std::vector<float> offsets;
     const std::vector<int16_t> &adcs = digits.ADCs();
     for (unsigned i = 0; i < data.peaks.size(); i++) {
-      // don't make a new waveform is this peak is adjacent to the last one
+      // don't make a new waveform if this peak is adjacent to the last one
       if (i > 0 && data.peaks[i].start_loose <= data.peaks[i-1].end_loose - 1) {
-        sparse_waveforms[sparse_waveforms.size()-1].insert(
-          sparse_waveforms[sparse_waveforms.size()-1].end(), 
+        size_t waveform_ind = sparse_waveforms.size()-1;
+        size_t start_size = sparse_waveforms[waveform_ind].size();
+
+        sparse_waveforms[waveform_ind].insert(
+          sparse_waveforms[waveform_ind].end(), 
           adcs.begin() + data.peaks[i-1].end_loose, adcs.begin() + data.peaks[i].end_loose);
+
+        // baseline subtract
+        for (unsigned j = start_size; j < sparse_waveforms[waveform_ind].size(); j++) {
+           sparse_waveforms[waveform_ind][j] -= data.baseline;
+        }
       }
       else {
         const PeakFinder::Peak &peak = data.peaks[i];
         sparse_waveforms.emplace_back(adcs.begin() + peak.start_loose, adcs.begin() + peak.end_loose);
+
+        size_t waveform_ind = sparse_waveforms.size()-1;
+        // baseline subtract
+        for (unsigned j = 0; j < sparse_waveforms[waveform_ind].size(); j++) {
+          sparse_waveforms[waveform_ind][j] -= data.baseline; 
+        } 
         offsets.push_back(peak.start_loose * _tick_period);
       }
     }
