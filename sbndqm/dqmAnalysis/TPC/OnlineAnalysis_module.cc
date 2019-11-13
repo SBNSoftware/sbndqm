@@ -59,7 +59,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
   sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   _tick_period = p.get<double>("tick_period", 500 /* ns */);
-  _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", true);
+  _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
 }
 
 void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
@@ -100,6 +100,9 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
   // use analysis hit-finding to determine interesting regions of hits
   for (auto const& digits: *_analysis._raw_digits_handle) {
+    // Don't process if we didn't record this channel
+    if (digits.Channel() >= _analysis._per_channel_data.size()) continue;
+
     const ChannelData &data = _analysis._per_channel_data.at(digits.Channel());
     std::vector<std::vector<int16_t>> sparse_waveforms;
     std::vector<float> offsets;
