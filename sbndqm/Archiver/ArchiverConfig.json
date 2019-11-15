@@ -1,49 +1,20 @@
 {
-    "config": {
-        "hostname": "localhost", 
-        "port": 6379, 
-        "timeout": 1
+    "postgresql": {
+        "database": "sbnteststand", 
+        "hostname": "cdpgsdev", 
+        "port": 5488, 
+        "user": "mueller",
+	"metric_config": "monitor_map"
     }, 
-    "streams": {
-        "test0": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test1": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test2": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test3": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test4": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test5": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test6": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test7": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test8": {
-            "time": 59000, 
-            "type": "mean"
-        }, 
-        "test9": {
-            "time": 59000, 
-            "type": "mean"
-        }
+    "redis": {
+        "hostname": "sbnd-daq33", 
+        "monitor_time": 3, 
+        "port": 6379, 
+        "timeout": 30
+    },
+    "logging": {
+	"directory": "/home/nfs/mueller/Archiver/srcs/sbndqm/sbndqm/Archiver",
+	"name": "archiver.log",
+	"overwrite": true
     }
 }
