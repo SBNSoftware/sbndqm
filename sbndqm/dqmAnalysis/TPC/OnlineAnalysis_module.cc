@@ -59,7 +59,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
   sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   _tick_period = p.get<double>("tick_period", 500 /* ns */);
-  _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", true);
+  _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
 }
 
 void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
@@ -99,14 +99,41 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
 void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
   // use analysis hit-finding to determine interesting regions of hits
-  for (const tpcAnalysis::ChannelData &data: _analysis._per_channel_data) {
+  for (auto const& digits: *_analysis._raw_digits_handle) {
+    // Don't process if we didn't record this channel
+    if (digits.Channel() >= _analysis._per_channel_data.size()) continue;
+
+    const ChannelData &data = _analysis._per_channel_data.at(digits.Channel());
     std::vector<std::vector<int16_t>> sparse_waveforms;
     std::vector<float> offsets;
-    const std::vector<int16_t> &adcs = _analysis._raw_digits_handle->at(data.channel_no).ADCs();
-    for (const tpcAnalysis::PeakFinder::Peak &peak: data.peaks) {
-      sparse_waveforms.emplace_back(adcs.begin() + peak.start_loose, adcs.begin() + peak.end_loose); 
-      offsets.push_back(peak.start_loose * _tick_period);
-    } 
+    const std::vector<int16_t> &adcs = digits.ADCs();
+    for (unsigned i = 0; i < data.peaks.size(); i++) {
+      // don't make a new waveform if this peak is adjacent to the last one
+      if (i > 0 && data.peaks[i].start_loose <= data.peaks[i-1].end_loose - 1) {
+        size_t waveform_ind = sparse_waveforms.size()-1;
+        size_t start_size = sparse_waveforms[waveform_ind].size();
+
+        sparse_waveforms[waveform_ind].insert(
+          sparse_waveforms[waveform_ind].end(), 
+          adcs.begin() + data.peaks[i-1].end_loose, adcs.begin() + data.peaks[i].end_loose);
+
+        // baseline subtract
+        for (unsigned j = start_size; j < sparse_waveforms[waveform_ind].size(); j++) {
+           sparse_waveforms[waveform_ind][j] -= data.baseline;
+        }
+      }
+      else {
+        const PeakFinder::Peak &peak = data.peaks[i];
+        sparse_waveforms.emplace_back(adcs.begin() + peak.start_loose, adcs.begin() + peak.end_loose);
+
+        size_t waveform_ind = sparse_waveforms.size()-1;
+        // baseline subtract
+        for (unsigned j = 0; j < sparse_waveforms[waveform_ind].size(); j++) {
+          sparse_waveforms[waveform_ind][j] -= data.baseline; 
+        } 
+        offsets.push_back(peak.start_loose * _tick_period);
+      }
+    }
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);
     sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period); 
   } 

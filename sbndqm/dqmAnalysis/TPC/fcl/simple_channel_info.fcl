@@ -1,11 +1,11 @@
 BEGIN_PROLOG
-SBND_simple_channel_info: 
+SBND_simple_channel_info:
 {
   n_channels: 640
   collection_channels: [ [0, 320] ]
   induction_channels: [ [320, 640] ]
 }
-ICARUS_simple_channel_info: 
+ICARUS_simple_channel_info:
 {
   n_channels: 512
   collection_channels: [ [0, 255 ] ]
@@ -17,7 +17,7 @@ ICARUS_simple_channel_info:
 ICARUS_simulation_channel_info:
 {
   n_channels: 49024
-  induction_channels: [ 
+  induction_channels: [
     [0, 1056],  // plane 0
     [1056, 6656], // plane 1
     [12256, 13312], // plane 3
@@ -28,7 +28,7 @@ ICARUS_simulation_channel_info:
     [37824, 43424] // plane 10
   ]
   collection_channels: [
-    [6656, 12256], // plane 2 
+    [6656, 12256], // plane 2
     [18912, 24512], // plane 5
     [31168, 36768], // plane 8
     [43424, 49024] // plane 11

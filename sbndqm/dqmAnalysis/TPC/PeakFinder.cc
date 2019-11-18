@@ -200,7 +200,7 @@ PeakFinder::Peak PeakFinder::FinishPeak(PeakFinder::Peak peak, std::vector<int16
   return peak;
 }
 
-// match up peak - down peak pairs for collection planes
+// match up peak - down peak pairs for induction planes
 void PeakFinder::matchPeaks(unsigned match_range) {
   std::vector<PeakFinder::Peak> pruned_peaks;
 
@@ -223,7 +223,7 @@ void PeakFinder::matchPeaks(unsigned match_range) {
 }
 
 // Print for debugging purposes
-std::string PeakFinder::Peak::Print() {
+std::string PeakFinder::Peak::Print() const {
   std::stringstream buffer;
   buffer << "    amplitude: " << amplitude << std::endl;
   buffer << "    peak_index: " << peak_index << std::endl;

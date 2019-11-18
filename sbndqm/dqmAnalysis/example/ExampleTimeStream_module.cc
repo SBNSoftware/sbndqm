@@ -38,6 +38,7 @@ class sbndqm::ExampleTimeStream : public art::EDAnalyzer {
 
 	private:
           void SendSingleMetric();
+          void SendSingleInvertedMetric();
           void SendGroupMetrics();
 
           unsigned _sleep_time;
@@ -61,6 +62,7 @@ sbndqm::ExampleTimeStream::~ExampleTimeStream() {}
 void sbndqm::ExampleTimeStream::analyze(art::Event const & evt)
 {
   SendSingleMetric();
+  SendSingleInvertedMetric();
   SendGroupMetrics();
   if (_sleep_time > 0) {
     std::cout << "sleeping... " << std::endl;
@@ -82,6 +84,18 @@ void sbndqm::ExampleTimeStream::SendSingleMetric() {
   // value of metric
   double value = 5.;
   // send a metric 
+  sbndaq::sendMetric(name, value, level, mode);
+}
+
+// Same as before -- but this metric will be inverted after being stored in the database
+void sbndqm::ExampleTimeStream::SendSingleInvertedMetric() {
+  int level = 3;
+  artdaq::MetricMode mode = artdaq::MetricMode::Average;
+  // The INVERT directive instructs the front end website to invert the metric for display.
+  // During averaging and storage the metric will not be altered. 
+  // Also -- the "INVERT/" substring will be stripped when storing in redis
+  const char *name = "INVERT/example_metric_inverted";
+  double value = 5.;
   sbndaq::sendMetric(name, value, level, mode);
 }
 
