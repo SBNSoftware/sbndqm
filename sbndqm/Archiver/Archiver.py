@@ -48,9 +48,8 @@ def main(args):
     logging.info('Connection to the PostgreSQL database has been successfully established on server (%s) port (%i)' % (Config['postgresql']['hostname'], Config['postgresql']['port']))
 
     #This next bit deletes the record of streams that have been completed. This is for testing purposes only.
-    #for key in r.scan_iter("*_LatestCompleted"):
-    #    r.delete(key)
-    
+    for key in r.scan_iter("*_LatestCompleted"):
+        r.delete(key)
 
     #Now we split the job into multiple processes that each handle some portion of the streams.
     cur.execute('SELECT * FROM ' + Config['postgresql']['metric_config'] + ';')
@@ -58,10 +57,12 @@ def main(args):
     ProcessCount = int(args.processes)
     ProcessList = []
     for i in range(ProcessCount):
-        #KeyList = [ x[0] + ':' + str(x[2]) + ':' + x[1] + ':' + 'slow' for x in StreamConfig ][i::ProcessCount]
-        KeyList = [ 'example:' + str(x[2]) + ':rms:archiving' for x in StreamConfig[0:5] ][i::ProcessCount]
-        ProcessList.append(Process(target=ProcessStreams, args=(r, p, cur, { x : GetLatest(r, x) for x in KeyList}, {'example:'+str(x[2])+':rms:archiving' : x for x in StreamConfig[i::ProcessCount]})))
+        KeyList = [ x[0] + ':' + str(x[2]) + ':' + x[1] + ':' + 'archiving' for x in StreamConfig ][i::ProcessCount]
+        #KeyList = [ 'example:' + str(x[2]) + ':rms:archiving' for x in StreamConfig[0:5] ][i::ProcessCount]
+        ProcessList.append(Process(target=ProcessStreams, args=(r, p, cur, { x : GetLatest(r, x) for x in KeyList }, { x[0] + ':' + str(x[2]) + ':' + x[1] + ':' + 'archiving' : x for x in StreamConfig[i::ProcessCount]})))
+        #ProcessList.append(Process(target=ProcessStreams, args=(r, p, cur, { x : GetLatest(r, x) for x in KeyList}, {'example:'+str(x[2])+':rms:archiving' : x for x in StreamConfig[i::ProcessCount]})))
     ProcessList.append(Process(target=Monitor, args=(r, Config)))
+    print(KeyList)
     for i in range(ProcessCount):
         ProcessList[i].start()
     for i in range(ProcessCount):
@@ -93,8 +94,7 @@ def ProcessStreams(r, p, cur, StreamDict, Config):
                     #Case for "mean" averaging.
                     if Config[StreamObject[0]][3] == 0:
                         SetLatest(r, StreamObject[0], MetricDict[StreamObject[0]][0])
-                        #WritePostgres(p, cur, Config[StreamObject[0]][4], Config[StreamObject[0]][2], MetricDict[StreamObject[0]][1], int(MetricDict[StreamObject[0]][0].split('-')[0]))
-                        WritePostgres(p, cur, 'tpc_rms_mean_monitor', Config[StreamObject[0]][2], MetricDict[StreamObject[0]][1], int(MetricDict[StreamObject[0]][0].split('-')[0]))
+                        WritePostgres(p, cur, Config[StreamObject[0]][4], Config[StreamObject[0]][2], MetricDict[StreamObject[0]][1], int(MetricDict[StreamObject[0]][0].split('-')[0]))
                         MetricDict[StreamObject[0]] = []
                     #Case for "median" averaging.
                     elif Config[StreamObject[0]][3] == 1:
@@ -237,6 +237,7 @@ def WritePostgres(p, cur, Table, Channel, Value, Time):
     p.commit()
 
 def Monitor(r, Config):
+    print("Monitor is running.")
     Time = time.time()
     while True:
         pipeline = r.pipeline()

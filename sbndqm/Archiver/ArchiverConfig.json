@@ -4,7 +4,7 @@
         "hostname": "cdpgsdev", 
         "port": 5488, 
         "user": "mueller",
-	"metric_config": "monitor_map"
+	"metric_config": "example_monitor_map"
     }, 
     "redis": {
         "hostname": "sbnd-daq33", 
