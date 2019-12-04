@@ -22,14 +22,14 @@ def connect_to_redis(hostname, port, password=None, passfile=None):
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("-p", "--port", type=int, default=6379)
-    argparser.add_argument("-s", "--server", default="localhost")
-    argparser.add_argument("-pw", "--password", default=None)
-    argparser.add_argument("-pf", "--passfile", default=None)
-    argparser.add_argument("-S", "--sleep", type=float, default=5)
-    argparser.add_argument("-k", "--key", required=True)
+    argparser.add_argument("-p", "--port", type=int, default=6379, help="Port of redis server to connect to. Default is 6379.", metavar="<port number>")
+    argparser.add_argument("-s", "--server", default="localhost",  help="Host name of redis server to connect to. Default is localhost", metavar="<hostname>")
+    argparser.add_argument("-pw", "--password", default=None, help="Password used to connect to redis server. Default is no password", metavar="<password>")
+    argparser.add_argument("-pf", "--passfile", default=None, help="Location of file containing password to connect to redis server. Default is no password", metavar="</path/to/password/file>")
+    argparser.add_argument("-S", "--sleep", type=float, default=5, help="Time to sleep in between checking process and sending message to redis in seconds. Default is 5s.", metavar="<sleep time (s)>")
+    argparser.add_argument("-k", "--key", required=True, help="REQUIRED. Key name to store in redis.", metavar="<keyname>")
 
-    argparser.add_argument("-c", "--command", required=True)
+    argparser.add_argument("-c", "--command", required=True, help="REQUIRED. Shell command to run/monitor. Use quotes for any spaces", metavar='<"shell command">')
 
     args = argparser.parse_args()
     main(args)
