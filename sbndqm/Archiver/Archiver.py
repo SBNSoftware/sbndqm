@@ -18,14 +18,16 @@ def main(args):
     #Load configuration information from the configuration file.
     with open('ArchiverConfig.json') as JSONFile:
         Config = json.load(JSONFile)
-        logging.info('Configuration file loaded.')
 
+    mode = 'a'
+    if(Config['logging']['overwrite'] == True): mode = 'w'
     logging.basicConfig(filename=Config['logging']['directory'] + Config['logging']['name'], 
                         level=logging.INFO,
-                        filemode='w',
+                        filemode=mode,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info('Starting Archiver.')
+    logging.info('Configuration loaded. Starting Archiver...')
+    
     #Connect to the Redis database.
     r = redis.Redis(host=Config['redis']['hostname'], port=Config['redis']['port'], password=args.password)
     try:
@@ -56,13 +58,11 @@ def main(args):
     StreamConfig = cur.fetchall()
     ProcessCount = int(args.processes)
     ProcessList = []
+    #Start the Monitor process, which monitors CPU usage, memory, and sends a heartbeat to Redis.
+    Process(target=Monitor, args=(r, Config)).start()
     for i in range(ProcessCount):
         KeyList = [ x[0] + ':' + str(x[2]) + ':' + x[1] + ':' + 'archiving' for x in StreamConfig ][i::ProcessCount]
-        #KeyList = [ 'example:' + str(x[2]) + ':rms:archiving' for x in StreamConfig[0:5] ][i::ProcessCount]
         ProcessList.append(Process(target=ProcessStreams, args=(r, p, cur, { x : GetLatest(r, x) for x in KeyList }, { x[0] + ':' + str(x[2]) + ':' + x[1] + ':' + 'archiving' : x for x in StreamConfig[i::ProcessCount]})))
-        #ProcessList.append(Process(target=ProcessStreams, args=(r, p, cur, { x : GetLatest(r, x) for x in KeyList}, {'example:'+str(x[2])+':rms:archiving' : x for x in StreamConfig[i::ProcessCount]})))
-    ProcessList.append(Process(target=Monitor, args=(r, Config)))
-    print(KeyList)
     for i in range(ProcessCount):
         ProcessList[i].start()
     for i in range(ProcessCount):
@@ -71,6 +71,7 @@ def main(args):
 def ProcessStreams(r, p, cur, StreamDict, Config):
     MetricDict = { x : [] for x in StreamDict.keys()}
 
+    logging.info('Archiver in ProcessStreams.')
     #We now begin to continuously query these streams for new metrics, archiving them when possible.
     while True:
         #ReadStream is a list of stream object which have new entries that have yet to be archived.
@@ -237,7 +238,7 @@ def WritePostgres(p, cur, Table, Channel, Value, Time):
     p.commit()
 
 def Monitor(r, Config):
-    print("Monitor is running.")
+    logging.info('Monitor is running.')
     Time = time.time()
     while True:
         pipeline = r.pipeline()
@@ -246,7 +247,7 @@ def Monitor(r, Config):
             Time = time.time()
         CPUs = psutil.cpu_percent(interval=Config['redis']['monitor_time'], percpu=True)
         CPUAverage = psutil.cpu_percent(interval=Config['redis']['monitor_time'])
-        Mem = psutile.virtual_memory()[2]
+        Mem = psutil.virtual_memory()[2]
         for i in range(len(CPUs)): pipeline.xadd('archiver_cpu'+str(i), {'float': struct.pack('f', CPUs[i])})
         pipeline.xadd('archiver_cpu_average', {'float': struct.pack('f', CPUAverage)})
         pipeline.xadd('archiver_mem', {'float': struct.pack('f', Mem)})
