@@ -5,10 +5,12 @@ import argparse
 import os
 import signal
 import sys
+import xmlrpclib
 
 from process import ConsumerProcess, ProcessFhiclException
 
 PROCESSES = {}
+ALL_DISPATCHERS = {}
 
 logger = None # set in main()
 
@@ -49,11 +51,21 @@ def main(args):
 
     # cleanup on sigint
     signal.signal(signal.SIGINT, clean_exit)
-    old_dispatchers = set()
+    dispatchers = {}
     while True:
-        dispatchers = get_dispatchers() 
-        for port in dispatchers:
-            if port not in old_dispatchers:
+        this_dispatchers = get_dispatchers() 
+        new_dispatchers = {}
+        for port in this_dispatchers:
+            if port in dispatchers:
+                new_dispatchers[port] = dispatchers[port]
+            else:
+                new_dispatchers[port] = "Starting"
+        dispatchers = new_dispatchers
+        check_dispatchers(dispatchers)
+
+        setters = []
+        for port, status in dispatchers.items():
+            if status == "Initialize":
                 logger.info("New dispatcher instance on port: %i" % port)
                 PROCESSES[port] = []
                 for config in args.fhicl_configuration:
@@ -66,7 +78,9 @@ def main(args):
                         logger.error("Process Fhicl Error for file (%s): %s" % (config, err.message))
                         do_clean_exit()
                     PROCESSES[port].append(process)
-        old_dispatchers = dispatchers
+                setters.append( (port, "Running") )
+        for port, status in setters:
+            dispatchers[port] = status
         manage_processes(args)
         time.sleep(args.sleep)
 
@@ -86,6 +100,19 @@ def check_process(process, args):
             logger.info("Removing process with config %s on port %i." % (process.name, process.port))
             return False
     return True
+
+def check_dispatchers(dispatchers):
+    setters = []
+    for port, status in dispatchers.items():
+        if status == "Starting":
+            connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+            daq_status = connect.daq.status()
+            logger.info("Checking dispatcher port %i. Reported status: %s." % (port, daq_status))
+            if connect.daq.status() == "Running":
+                logger.info("Dispatcher port %i ready for connections." % port)
+                setters.append( (port, "Initialize") )
+    for port, status in setters:
+        dispatchers[port] = status
 
 # find all of the instances of the dispatcher running
 def get_dispatchers():

@@ -99,14 +99,11 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
 void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
   // use analysis hit-finding to determine interesting regions of hits
-  for (auto const& digits: *_analysis._raw_digits_handle) {
-    // Don't process if we didn't record this channel
-    if (digits.Channel() >= _analysis._per_channel_data.size()) continue;
-
-    const ChannelData &data = _analysis._per_channel_data.at(digits.Channel());
+  for (auto const& data: _analysis._per_channel_data) {
     std::vector<std::vector<int16_t>> sparse_waveforms;
     std::vector<float> offsets;
-    const std::vector<int16_t> &adcs = digits.ADCs();
+    const std::vector<int16_t> &adcs = _analysis._raw_digits_handle->at(_analysis._channel_index_map[data.channel_no]).ADCs();
+
     for (unsigned i = 0; i < data.peaks.size(); i++) {
       // don't make a new waveform if this peak is adjacent to the last one
       if (i > 0 && data.peaks[i].start_loose <= data.peaks[i-1].end_loose - 1) {

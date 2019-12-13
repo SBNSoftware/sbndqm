@@ -146,6 +146,12 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   // get the raw digits
   event.getByLabel(_config.daq_tag, _raw_digits_handle);
 
+  // exit if the data isn't present
+  if (!_raw_digits_handle.isValid()) {
+    std::cerr << "Error: missing digits with producer (" << _config.daq_tag.label() << ") instance (" << _config.daq_tag.instance() << ")" << std::endl;
+    return;
+  }
+
   unsigned index = 0;
   // calculate per channel stuff 
   for (auto const& digits: *_raw_digits_handle) {
