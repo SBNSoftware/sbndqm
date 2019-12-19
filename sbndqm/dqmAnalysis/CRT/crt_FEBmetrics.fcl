@@ -1,0 +1,92 @@
+process_name: Dump
+
+services: {
+  TFileService: { fileName: "crt_test_1.root" }
+  RedisConnection: {
+    host: "icarus-db01.fnal.gov"
+  }
+#  message: @local::standard_debug
+}
+
+#source is a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:   9999999        # Number of events to create
+}
+
+outputs:
+{
+}
+
+physics:
+{
+
+ producers:{}
+
+ filters:{}
+
+ analyzers:{
+
+   crtana: {
+     module_type: BernCRTZMQAna
+
+    metrics: {
+        redis_metric_fast: { // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          // period in seconds to send metric to database
+          reporting_interval: 2.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":fast"
+        }
+        redis_metric_slow: { // can be named anything
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":slow"
+        }
+      }
+    metric_board_config: {
+	groups:{
+		CRT_board:[[0,8]] //8 crt boards
+		}
+	streams:[slow,fast]
+		
+	metrics:{
+		TS0:{}
+		TS1:{}
+		n_events:{}
+		MaxADCValue:{}
+		baseline:{}	
+}
+}
+    metric_channel_config: {
+	groups:{
+                CRT_channel:[[0,256]]
+	}
+	streams:[slow,fast]
+
+        metrics:{
+                ADC:{
+			display_range: [0, 5000]
+		}
+		}	
+	}
+
+}
+
+ }
+
+
+ #define the output stream, there could be more than one if using filters 
+ stream1:  [ ]
+ ana: [ crtana ]
+
+ #end_paths is a keyword and contains the paths that do not modify the art::Event, 
+ #ie analyzers and output streams.  these all run simultaneously
+ end_paths:     [ ana ]  
+}
