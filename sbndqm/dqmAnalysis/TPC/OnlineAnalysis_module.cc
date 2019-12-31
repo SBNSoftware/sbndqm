@@ -131,9 +131,9 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 }
 
 void tpcAnalysis::OnlineAnalysis::SendWaveforms() {
-  for (auto const& digits: *_analysis._raw_digits_handle) {
-    const std::vector<int16_t> &adcs = digits.ADCs();
-     std::string redis_key = "snapshot:waveform:wire:" + std::to_string(digits.Channel());
+  for (auto const& digits: _analysis._raw_digits_handle) {
+    const std::vector<int16_t> &adcs = digits->ADCs();
+     std::string redis_key = "snapshot:waveform:wire:" + std::to_string(digits->Channel());
      sbndaq::SendWaveform(redis_key, adcs, 0.4 /* tick period in us */);
   }
 }
@@ -161,7 +161,6 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
       continue;
     }
 
-    // const std::vector<int16_t> &adcs = _analysis._raw_digits_handle.at(_analysis._channel_index_map[data.channel_no])->ADCs();
     const std::vector<int16_t> &adcs = _analysis._raw_digits_handle[_analysis._channel_index_map[data.channel_no]]->ADCs();
 
     for (unsigned i = 0; i < data.peaks.size(); i++) {
