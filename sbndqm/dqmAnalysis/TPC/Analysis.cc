@@ -139,6 +139,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     _per_channel_data[i].waveform.clear();
     _per_channel_data[i].fft_real.clear();
     _per_channel_data[i].fft_imag.clear();
+    _per_channel_data[i].fft_mag.clear();
     _per_channel_data[i].peaks.clear();
     _per_channel_data[i].empty = true; // make empty by default 
   }
@@ -240,6 +241,9 @@ void Analysis::ProcessHeader(const tpcAnalysis::HeaderData &header) {
 void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   auto channel = digits.Channel();
   if (channel >= _channel_info.NChannels()) return;
+  // don't process the same channel twice
+  if (!_per_channel_data[channel].empty) return;
+
   // handle empty events
   if (digits.NADC() == 0) {
     // default constructor handles empty event
@@ -309,6 +313,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     for (int i = 0; i < adc_fft_size; i++) {
       _per_channel_data[channel].fft_real.push_back(_fft_manager.ReOutputAt(i));
       _per_channel_data[channel].fft_imag.push_back(_fft_manager.ImOutputAt(i));
+      _per_channel_data[channel].fft_mag.push_back(sqrt(_fft_manager.ReOutputAt(i) * _fft_manager.ReOutputAt(i)) + sqrt(_fft_manager.ImOutputAt(i) * _fft_manager.ImOutputAt(i)));
     } 
   }
   if (_config.timing) {
