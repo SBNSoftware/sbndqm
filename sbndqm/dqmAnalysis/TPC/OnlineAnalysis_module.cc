@@ -99,10 +99,20 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
 void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
   // use analysis hit-finding to determine interesting regions of hits
-  for (auto const& data: _analysis._per_channel_data) {
+  for (unsigned channel = 0; channel < _analysis._per_channel_data.size(); channel++) {
+    const ChannelData &data = _analysis._per_channel_data[channel];
     std::vector<std::vector<int16_t>> sparse_waveforms;
     std::vector<float> offsets;
-    const std::vector<int16_t> &adcs = _analysis._raw_digits_handle->at(_analysis._channel_index_map[data.channel_no]).ADCs();
+
+    // empty channel -- jsut reset the waveform and continue
+    if (data.empty) {
+      std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(channel);
+      sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period);
+      continue;
+    }
+
+    // const std::vector<int16_t> &adcs = _analysis._raw_digits_handle.at(_analysis._channel_index_map[data.channel_no])->ADCs();
+    const std::vector<int16_t> &adcs = _analysis._raw_digits_handle[_analysis._channel_index_map[data.channel_no]]->ADCs();
 
     for (unsigned i = 0; i < data.peaks.size(); i++) {
       // don't make a new waveform if this peak is adjacent to the last one
@@ -128,7 +138,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
         for (unsigned j = 0; j < sparse_waveforms[waveform_ind].size(); j++) {
           sparse_waveforms[waveform_ind][j] -= data.baseline; 
         } 
-        offsets.push_back(peak.start_loose * _tick_period);
+        offsets.push_back(peak.start_loose); // * _tick_period);
       }
     }
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);

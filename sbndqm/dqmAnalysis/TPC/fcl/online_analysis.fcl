@@ -9,7 +9,8 @@ physics:
     {
       module_type: OnlineAnalysis
       // producer of digits and header info
-      producer_name: daq
+      raw_digit_producers: [daq]
+      header_producer: ""
 
       // channel info
       channel_info: @local::SBND_simple_channel_info
