@@ -89,7 +89,8 @@ public:
     public:
     std::string output_file_name;
     bool verbose;
-    art::InputTag daq_tag;
+    std::vector<std::string> producers;
+    std::string header_producer;
     int static_input_size;
 
     int n_headers;
@@ -151,7 +152,7 @@ public:
   std::vector<tpcAnalysis::HeaderData> _header_data;
   std::vector<RunningThreshold> _thresholds;
   // raw digits container for each event
-  art::Handle<std::vector<raw::RawDigit>> _raw_digits_handle;
+  std::vector<art::Ptr<raw::RawDigit>> _raw_digits_handle;
 
 private:
   unsigned _event_ind;

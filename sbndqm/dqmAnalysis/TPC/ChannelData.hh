@@ -19,8 +19,9 @@ public:
   float next_channel_dnoise;
   float threshold;
   std::vector<int16_t> waveform;
-  std::vector<double> fft_real;
-  std::vector<double> fft_imag;
+  std::vector<float> fft_real;
+  std::vector<float> fft_imag;
+  std::vector<float> fft_mag;
   std::vector<PeakFinder::Peak> peaks;
   std::vector<std::array<unsigned, 2>> noise_ranges;
 
