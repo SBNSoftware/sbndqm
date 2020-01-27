@@ -1,12 +1,14 @@
 #include "simple_channel_info.fcl"
 
+
+
 physics:
 {
   // now also have something produce the digits and headers
   producers:
   {
     daq: {
-      module_type: DaqDecoder
+      module_type: DaqDecoderIcarusPMT
       // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
       // make the header
@@ -24,15 +26,54 @@ physics:
 
   analyzers:
   {
-    OfflineAnalysis:
+   CAENV1730WaveformAnalysis:
     {
-      module_type: OfflineAnalysis
+      module_type: CAENV1730WaveformAnalysis
       // producer of digits and header info
-      raw_digit_producers: [daq]
-      header_producer: ""
+      data_label: sbndaq
+      metrics: {
+  redis_metric: {
+    level: 0
+    metricPluginType: "redis"
+    reporting_interval: 1.0
+    redis_key_postfix: ":30s"
+    hostname: "icarus-db01.fnal.gov"
+   // hostname: "sbnd-daq33.fnal.gov"
+   // redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+  }
+}
+metric_config: {
+
+  hostname: "icarus-db01.fnal.gov"
+ // hostname: "sbnd-daq33.fnal.gov"
+//  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+
+  groups: {
+     PMT: [ [0, 30] ]
+    // "PMT": [ [0, 15], 124]
+  }
+
+  streams: ["30s"]
+  metrics: {
+    rms: {
+      units: ADC
+      title: "PMT channel %(instance)s rms"
+      display_range: [0., 100.]
+    }
+    pedestal: {
+      units: ADC
+      title: "%(group)s channel %(instance)s Pedestal"
+      display_range: [-1000, 1000]
+    }
+
+  }
+  // what happens to the title in python:
+  // title = title % ({"instance": channel_no, "group": group_name})
+
+}
 
       // channel info
-      channel_info: @local::SBND_simple_channel_info
+     // channel_info: @local::ICARUS_simple_channel_info
 
       // standard analysis config
       threshold_calc: 3
@@ -41,7 +82,7 @@ physics:
       n_smoothing_samples: 1
       baseline_calc: 2
       n_mode_skip: 3
-      use_planes: true
+      use_planes: false
       refine_baseline: false
 
       // turn on for analysis information printed out on stdin
@@ -61,25 +102,29 @@ physics:
 
       // number of headers per event provided by input (will be ignored if value is negative)
       // 10 for SBND 
-      n_headers: 10
+      n_headers: -1
     }
   }
 
+
   my_producer_modules: [daq]
-  a: [OfflineAnalysis]
+  trigger_paths: [my_producer_modules]
+  
+   a: [CAENV1730WaveformAnalysis]
   end_paths: [a]
-}
+
+ }
+
 
 services:
 {
-  TFileService: { fileName: "out.root"}
+  TFileService: { fileName: "waveformtest.root"}
 } 
 
 source:
 {
   module_type: RootInput
-  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/fragments.root"]
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
 }
 
-process_name: TPCANALYSIS
-
+process_name: DaqDecoderIcarusPMT

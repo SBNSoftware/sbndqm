@@ -28,7 +28,8 @@ physics:
     {
       module_type: OfflineAnalysis
       // producer of digits and header info
-      producer_name: daq
+      raw_digit_producers: [daq]
+      header_producer: ""
 
       // channel info
       channel_info: @local::ICARUS_simple_channel_info

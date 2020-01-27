@@ -125,12 +125,14 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   timing = param.get<bool>("timing", false);
 
   // name of producer of raw::RawDigits
-  std::string producer = param.get<std::string>("producer_name");
-  daq_tag = art::InputTag(producer, "");
+  //std::string producers = param.get<std::string>("producer_name");
+  producers = param.get<std::vector<std::string>>("raw_digit_producers");
+  std::string header_producer = param.get<std::string>("header_producer");
 
 }
 
 void Analysis::AnalyzeEvent(art::Event const & event) {
+  _raw_digits_handle.clear();
 
   _event_ind ++;
 
@@ -139,26 +141,30 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     _per_channel_data[i].waveform.clear();
     _per_channel_data[i].fft_real.clear();
     _per_channel_data[i].fft_imag.clear();
+    _per_channel_data[i].fft_mag.clear();
     _per_channel_data[i].peaks.clear();
-    _per_channel_data[i].empty = true; // make empty by default 
+    _per_channel_data[i] = ChannelData(i); // reset data
   }
 
   // get the raw digits
-  event.getByLabel(_config.daq_tag, _raw_digits_handle);
-
-  // exit if the data isn't present
-  if (!_raw_digits_handle.isValid()) {
-    std::cerr << "Error: missing digits with producer (" << _config.daq_tag.label() << ") instance (" << _config.daq_tag.instance() << ")" << std::endl;
-    return;
+  for (const std::string &prod: _config.producers) {
+    art::Handle<std::vector<raw::RawDigit>> digit_handle;
+    event.getByLabel(prod, digit_handle);
+    // exit if the data isn't present
+    if (!digit_handle.isValid()) {
+      std::cerr << "Error: missing digits with producer (" << prod << ")" << std::endl;
+      return;
+    }
+    art::fill_ptr_vector(_raw_digits_handle, digit_handle);
   }
 
   unsigned index = 0;
   // calculate per channel stuff 
-  for (auto const& digits: *_raw_digits_handle) {
+  for (auto const& digits: _raw_digits_handle) {
     // ignore channels over limit
-    if (digits.Channel() >= _channel_info.NChannels()) continue;
-    _channel_index_map[digits.Channel()] = index;
-    ProcessChannel(digits);
+    if (digits->Channel() >= _channel_info.NChannels()) continue;
+    _channel_index_map[digits->Channel()] = index;
+    ProcessChannel(*digits);
     index++;
   }
 
@@ -189,7 +195,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
       unsigned raw_digits_i = _channel_index_map[i];
       unsigned raw_digits_next_channel = _channel_index_map[next_channel];
       float unscaled_dnoise = _noise_samples[i].DNoise(
-          (*_raw_digits_handle)[raw_digits_i].ADCs(), _noise_samples[next_channel], (*_raw_digits_handle)[raw_digits_next_channel].ADCs());
+          _raw_digits_handle[raw_digits_i]->ADCs(), _noise_samples[next_channel], _raw_digits_handle[raw_digits_next_channel]->ADCs());
       // Don't use same noise sample to scale dnoise
       // This should probably be ok, as long as the dnoise sample is large enough
 
@@ -218,7 +224,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   // deal with the header
   if (_config.n_headers > 0) {
     // get the header data
-    event.getByLabel(_config.daq_tag, _header_data_handle);
+    event.getByLabel(_config.header_producer, _header_data_handle);
     for (const tpcAnalysis::HeaderData &header: *_header_data_handle) {
       ProcessHeader(header);
     }
@@ -246,6 +252,10 @@ void Analysis::ProcessHeader(const tpcAnalysis::HeaderData &header) {
 void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   auto channel = digits.Channel();
   if (channel >= _channel_info.NChannels()) return;
+
+  // don't process the same channel twice
+  if (!_per_channel_data[channel].empty) return;
+
   // handle empty events
   if (digits.NADC() == 0) {
     // default constructor handles empty event
@@ -253,7 +263,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _noise_samples[channel] = NoiseSample();
     return;
   }
-   
+
   // if there are ADC's, the channel isn't empty
   _per_channel_data[channel].empty = false;
  
@@ -315,6 +325,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     for (int i = 0; i < adc_fft_size; i++) {
       _per_channel_data[channel].fft_real.push_back(_fft_manager.ReOutputAt(i));
       _per_channel_data[channel].fft_imag.push_back(_fft_manager.ImOutputAt(i));
+      _per_channel_data[channel].fft_mag.push_back(sqrt(_fft_manager.ReOutputAt(i) * _fft_manager.ReOutputAt(i)) + sqrt(_fft_manager.ImOutputAt(i) * _fft_manager.ImOutputAt(i)));
     } 
   }
   if (_config.timing) {
@@ -406,8 +417,8 @@ bool Analysis::EmptyEvent() {
 float Analysis::Correlation(unsigned channel_i, unsigned channel_j) {
   unsigned digits_i = _channel_index_map[channel_i];
   unsigned digits_j = _channel_index_map[channel_j];
-  return _noise_samples[channel_i].Correlation((*_raw_digits_handle)[digits_i].ADCs(), 
-    _noise_samples[channel_j], (*_raw_digits_handle)[digits_j].ADCs());
+  return _noise_samples[channel_i].Correlation(_raw_digits_handle[digits_i]->ADCs(), 
+    _noise_samples[channel_j], _raw_digits_handle[digits_j]->ADCs());
 }
 
 std::vector<std::vector<float>> Analysis::CorrelationMatrix() {
