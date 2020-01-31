@@ -28,11 +28,12 @@ class ConsumerProcess(object):
         self.temp_file = tempfile.NamedTemporaryFile() 
         self.temp_file.write(text)
         self.temp_file.write("\n\n%s: %i" % (self.overwrite_path, self.port))
+        self.temp_file.flush()
 
         self.process = None
-        # command = ["lar", "-c", new_config.name]     
+        command = ["lar", "-c", self.temp_file.name] 
         # command = ["while", "sleep 1;", "ls", "-ltr"]
-        command = ["run_temp.sh"]
+        # command = ["run_temp.sh"]
         output_file = sys.stdout.fileno() if self.output_file is None else open(self.output_file, "w+")
         try:
             self.process = subprocess.Popen(command, stdout=output_file, stderr=subprocess.STDOUT)

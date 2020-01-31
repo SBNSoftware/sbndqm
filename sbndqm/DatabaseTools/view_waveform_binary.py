@@ -37,11 +37,8 @@ def main(args):
         offsets = [0]
 
     xs = []
-    total_offset = 0
     for size, offset in zip(sizes, offsets):
-        total_offset += offset
-        xs += [i * period + total_offset for i in range(size)]
-        total_offset += size * period
+        xs += [i * period + offset*period for i in range(size)]
 
     plt.plot(xs, data)
     plt.title(args.key)

@@ -7,7 +7,7 @@ def connect_to_redis_args(args):
 def connect_to_redis(hostname, port, password=None, passfile=None):
     if passfile is not None:
         with open(passfile) as f:
-            password = f.read()
+            password = f.read().rstrip("\n")
     return redis.Redis(hostname, port, password=password)
 
 

@@ -1,0 +1,20 @@
+{
+    "postgresql": {
+        "database": "sbnteststand", 
+        "hostname": "cdpgsdev", 
+        "port": 5488, 
+        "user": "mueller",
+	"metric_config": "example_monitor_map"
+    }, 
+    "redis": {
+        "hostname": "sbnd-daq33", 
+        "monitor_time": 3, 
+        "port": 6379, 
+        "timeout": 30
+    },
+    "logging": {
+	"directory": "/home/nfs/mueller/Archiver/srcs/sbndqm/sbndqm/Archiver",
+	"name": "archiver.log",
+	"overwrite": true
+    }
+}
