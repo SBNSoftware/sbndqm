@@ -22,6 +22,7 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 #include "sbndaq-online/helpers/Waveform.h"
 #include "sbndaq-online/helpers/Utilities.h"
+#include "sbndaq-online/helpers/EventMeta.h"
 
 /*
  * Uses the Analysis class to print stuff to file
@@ -47,14 +48,18 @@ public:
   // Required functions.
   void analyze(art::Event const & e) override;
 private:
-  void SendSparseWaveforms();
-  void SendWaveforms();
-  void SendFFTs();
+  void SendSparseWaveforms(const art::Event &e);
+  void SendWaveforms(const art::Event &e);
+  void SendFFTs(const art::Event &e);
+  void SendTimeAvgFFTs(const art::Event &e);
+
   tpcAnalysis::Analysis _analysis;
   double _tick_period;
   bool _send_sparse_waveforms;
   bool _send_waveforms;
   bool _send_ffts;
+  bool _send_time_avg_ffts;
+  int _n_evt_fft_avg;
   bool _send_metrics;
   int _wait_period;
   int _last_time;
@@ -74,6 +79,9 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
   _send_waveforms = p.get<bool>("send_waveforms", false);
   _send_ffts = p.get<bool>("send_ffts", false);
+  _send_time_avg_ffts = p.get<bool>("send_time_avg_ffts", false);
+  _n_evt_fft_avg = p.get<unsigned>("n_evt_fft_avg", 1);
+  assert(_n_evt_fft_avg > 0);
   _send_metrics = p.get<bool>("send_metrics", true);
   _wait_period = p.get<int>("wait_period", -1);
   _last_time = -1;
@@ -97,11 +105,13 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   // _analysis.CorrelationMatrix()
 
   // Save zero-suppressed waveforms -- use hitfinding to determine interesting regions
-  if (_send_sparse_waveforms) SendSparseWaveforms();
+  if (_send_sparse_waveforms) SendSparseWaveforms(e);
  
-  if (_send_waveforms) SendWaveforms();
+  if (_send_waveforms) SendWaveforms(e);
   
-  if (_send_ffts) SendFFTs();
+  if (_send_ffts) SendFFTs(e);
+
+  if (_send_time_avg_ffts) SendTimeAvgFFTs(e);
 
   // Save metrics
   if (_send_metrics) {
@@ -130,24 +140,81 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   }
 }
 
-void tpcAnalysis::OnlineAnalysis::SendWaveforms() {
+void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {
   for (auto const& digits: _analysis._raw_digits_handle) {
     const std::vector<int16_t> &adcs = digits->ADCs();
      std::string redis_key = "snapshot:waveform:wire:" + std::to_string(digits->Channel());
      sbndaq::SendWaveform(redis_key, adcs, 0.4 /* tick period in us */);
+     sbndaq::SendEventMeta(redis_key + "_meta", e); 
   }
 }
 
-void tpcAnalysis::OnlineAnalysis::SendFFTs() {
+void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
+  static std::vector<std::vector<float>> waveforms(_analysis._channel_info.NChannels());
+  static int event_ind = 0;
+
+  static bool first = true;
+  // first time setup -- set the size of each waveform
+  if (first) {
+    unsigned n_ticks = _analysis._raw_digits_handle[0]->NADC();
+    for (unsigned i = 0; i < waveforms.size(); i++) {
+      waveforms[i] = std::vector<float>(n_ticks, 0.);
+    }
+    first = false;
+  }
+
+  
+  if (event_ind == _n_evt_fft_avg) {
+    // Do send
+    for (unsigned i = 0; i < waveforms.size(); i++) {
+      std::vector<float> fft;
+      for (float adc: waveforms[i]) {
+        // fill up the FFT array
+        double *input = _analysis._fft_manager.InputAt(i);
+        *input = (double) adc;
+      }
+      // Execute the FFT
+      _analysis._fft_manager.Execute();
+      int adc_fft_size = _analysis._fft_manager.OutputSize();
+      // save the data
+      for (int i = 0; i < adc_fft_size; i++) {
+        fft.push_back( 
+          sqrt(_analysis._fft_manager.ReOutputAt(i) * _analysis._fft_manager.ReOutputAt(i) + 
+               _analysis._fft_manager.ImOutputAt(i) * _analysis._fft_manager.ImOutputAt(i)) );
+      }
+
+      // send it out
+      std::string redis_key = "snapshot:avgfft:wire: " + std::to_string(i);
+      sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendEventMeta(redis_key + "_meta", e); 
+    }
+    event_ind = 0;
+  }
+  else {
+    // Do avg
+    for (auto const& digits: _analysis._raw_digits_handle) {
+      const std::vector<int16_t> &adcs = digits->ADCs();
+      std::vector<float> &wvf = waveforms.at(digits->Channel());
+      for (unsigned i = 0; i < wvf.size(); i++) {
+        wvf[i] = (adcs[i] + wvf[i] * event_ind) / (event_ind+1);
+      } 
+    }
+    event_ind ++; 
+  }
+
+}
+
+void tpcAnalysis::OnlineAnalysis::SendFFTs(const art::Event &e) {
   for (const ChannelData &chan: _analysis._per_channel_data) {
     if (chan.fft_mag.size()) {
       std::string redis_key = "snapshot:fft:wire:" + std::to_string(chan.channel_no);
       sbndaq::SendWaveform(redis_key, chan.fft_mag, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendEventMeta(redis_key + "_meta", e); 
     }
   }
 }
 
-void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
+void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms(const art::Event &e) {
   // use analysis hit-finding to determine interesting regions of hits
   for (unsigned channel = 0; channel < _analysis._per_channel_data.size(); channel++) {
     const ChannelData &data = _analysis._per_channel_data[channel];
@@ -158,6 +225,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
     if (data.empty) {
       std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(channel);
       sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period);
+      sbndaq::SendEventMeta(key + "_meta", e); 
       continue;
     }
 
@@ -192,6 +260,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms() {
     }
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);
     sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period); 
+    sbndaq::SendEventMeta(key + "_meta", e); 
   } 
 }
 
