@@ -145,7 +145,7 @@ void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {
     const std::vector<int16_t> &adcs = digits->ADCs();
      std::string redis_key = "snapshot:waveform:wire:" + std::to_string(digits->Channel());
      sbndaq::SendWaveform(redis_key, adcs, 0.4 /* tick period in us */);
-     sbndaq::SendEventMeta(redis_key + "_meta", e); 
+     sbndaq::SendEventMeta(redis_key, e); 
   }
 }
 
@@ -186,7 +186,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
       // send it out
       std::string redis_key = "snapshot:avgfft:wire: " + std::to_string(i);
       sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
-      sbndaq::SendEventMeta(redis_key + "_meta", e); 
+      sbndaq::SendEventMeta(redis_key, e); 
     }
     event_ind = 0;
   }
@@ -209,7 +209,7 @@ void tpcAnalysis::OnlineAnalysis::SendFFTs(const art::Event &e) {
     if (chan.fft_mag.size()) {
       std::string redis_key = "snapshot:fft:wire:" + std::to_string(chan.channel_no);
       sbndaq::SendWaveform(redis_key, chan.fft_mag, 2.5 /* tick freq. in MHz */);
-      sbndaq::SendEventMeta(redis_key + "_meta", e); 
+      sbndaq::SendEventMeta(redis_key, e); 
     }
   }
 }
@@ -225,7 +225,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms(const art::Event &e) {
     if (data.empty) {
       std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(channel);
       sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period);
-      sbndaq::SendEventMeta(key + "_meta", e); 
+      sbndaq::SendEventMeta(key, e); 
       continue;
     }
 
@@ -260,7 +260,7 @@ void tpcAnalysis::OnlineAnalysis::SendSparseWaveforms(const art::Event &e) {
     }
     std::string key = "snapshot:sparse_waveform:wire:" + std::to_string(data.channel_no);
     sbndaq::SendSplitWaveform(key, sparse_waveforms, offsets, _tick_period); 
-    sbndaq::SendEventMeta(key + "_meta", e); 
+    sbndaq::SendEventMeta(key, e); 
   } 
 }
 
