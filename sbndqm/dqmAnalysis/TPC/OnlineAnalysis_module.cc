@@ -66,6 +66,14 @@ private:
   std::string fFFTName;
   std::string fWaveformName;
   std::string fGroupName;
+
+  // fields used to compute time averaged FFT's
+  class {
+  public:
+    std::vector<std::vector<float>> waveforms;
+    int event_ind;
+    bool first;
+  } fAvgFFTData;
 };
 
 tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
@@ -88,6 +96,8 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   _send_metrics = p.get<bool>("send_metrics", true);
   _wait_period = p.get<int>("wait_period", -1);
   _last_time = -1;
+
+  fAvgFFTData.first = true;
 
   fFFTName = p.get<std::string>("fft_name", "fft");
   fGroupName = p.get<std::string>("group_name", "tpc_channel");
@@ -158,25 +168,26 @@ void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {
 }
 
 void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
-  static std::vector<std::vector<float>> waveforms(_analysis._channel_info.NChannels());
-  static int event_ind = 0;
 
-  static bool first = true;
   // first time setup -- set the size of each waveform
-  if (first) {
+  if (fAvgFFTData.first) {
+    // set the waveform size to the number of channels
+    std::fill_n(std::back_inserter(fAvgFFTData.waveforms), _analysis._channel_info.NChannels(), std::vector<float>());
+    fAvgFFTData.event_ind = 0;
+
     unsigned n_ticks = _analysis._raw_digits_handle[0]->NADC();
-    for (unsigned i = 0; i < waveforms.size(); i++) {
-      waveforms[i] = std::vector<float>(n_ticks, 0.);
+    for (unsigned i = 0; i < fAvgFFTData.waveforms.size(); i++) {
+      fAvgFFTData.waveforms[i] = std::vector<float>(n_ticks, 0.);
     }
-    first = false;
+    fAvgFFTData.first = false;
   }
 
   
-  if (event_ind == _n_evt_fft_avg) {
+  if (fAvgFFTData.event_ind == _n_evt_fft_avg) {
     // Do send
-    for (unsigned i = 0; i < waveforms.size(); i++) {
+    for (unsigned i = 0; i < fAvgFFTData.waveforms.size(); i++) {
       std::vector<float> fft;
-      for (float adc: waveforms[i]) {
+      for (float adc: fAvgFFTData.waveforms[i]) {
         // fill up the FFT array
         double *input = _analysis._fft_manager.InputAt(i);
         *input = (double) adc;
@@ -196,18 +207,18 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
       sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
     }
-    event_ind = 0;
+    fAvgFFTData.event_ind = 0;
   }
   else {
     // Do avg
     for (auto const& digits: _analysis._raw_digits_handle) {
       const std::vector<int16_t> &adcs = digits->ADCs();
-      std::vector<float> &wvf = waveforms.at(digits->Channel());
+      std::vector<float> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
       for (unsigned i = 0; i < wvf.size(); i++) {
-        wvf[i] = (adcs[i] + wvf[i] * event_ind) / (event_ind+1);
+        wvf[i] = (adcs[i] + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
       } 
     }
-    event_ind ++; 
+    fAvgFFTData.event_ind ++; 
   }
 
 }
