@@ -212,6 +212,8 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
   else {
     // Do avg
     for (auto const& digits: _analysis._raw_digits_handle) {
+      if (digits->Channel() >= fAvgFFTData.waveforms.size()) continue;
+
       const std::vector<int16_t> &adcs = digits->ADCs();
       std::vector<float> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
       for (unsigned i = 0; i < wvf.size(); i++) {
