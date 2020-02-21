@@ -10,12 +10,13 @@ class ProcessFhiclException(Exception):
     pass
 
 class ConsumerProcess(object):
-    def __init__(self, port, config_file_path, overwrite_path, output_file=None):
+    def __init__(self, port, ID, config_file_path, overwrite_path, output_file=None):
         self.config_file_path = config_file_path
         self.name = os.path.split(config_file_path)[-1]
         self.overwrite_path = overwrite_path
         self.port = port
         self.n_restart = 0
+        self.ID = ID
         self.output_file = output_file
         self.start()
 

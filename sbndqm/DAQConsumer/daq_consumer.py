@@ -24,7 +24,7 @@ def do_clean_exit():
         for process in process_list:
             retcode = process.force_exit()
             process.cleanup()
-            logger.info("Process with config %s on port %i exited with code %i" % (process.name, process.port, retcode)) 
+            logger.info("Process with config %s ID %i on port %i exited with code %i" % (process.name, process.ID, process.port, retcode)) 
     logger.info("Finished cleaning up subprocesses. Exiting.")
     sys.exit(0)
 
@@ -60,6 +60,9 @@ def main(args):
                 new_dispatchers[port] = dispatchers[port]
             else:
                 new_dispatchers[port] = "Starting"
+        for port,_ in dispatchers.items():
+            if port not in new_dispatchers:
+                logger.info("Removing dispatcher on port %i" % port)
         dispatchers = new_dispatchers
         check_dispatchers(dispatchers)
 
@@ -67,13 +70,18 @@ def main(args):
         for port, status in dispatchers.items():
             if status == "Initialize":
                 logger.info("New dispatcher instance on port: %i" % port)
+                # if there are still processes on this port, end them
+                if port in PROCESSES:
+                    for p in PROCESSES[port]: end_process(p)
+
                 PROCESSES[port] = []
                 for config in args.fhicl_configuration:
+                    ID = int(time.time())
                     log_file = None if args.log_dir is None else \
-                        os.path.join(args.log_dir, os.path.split(config)[-1].split(".")[0] + "_" + str(port) + "_" + str(int(time.time())) + ".log")
-                    logger.info("Starting process with config %s on port %i. Output will be logged to %s." % (config, port, log_file))
+                        os.path.join(args.log_dir, os.path.split(config)[-1].split(".")[0] + "_" + str(port) + "_" + str(ID) + ".log")
+                    logger.info("Starting process with config %s ID %i on port %i. Output will be logged to %s." % (config, ID, port, log_file))
                     try:
-                        process = ConsumerProcess(port, config, args.overwrite_path, log_file)
+                        process = ConsumerProcess(port, ID, config, args.overwrite_path, log_file)
                     except ProcessFhiclException as err:
                         logger.error("Process Fhicl Error for file (%s): %s" % (config, err.message))
                         do_clean_exit()
@@ -88,31 +96,64 @@ def manage_processes(args):
     for port in PROCESSES.keys():
         PROCESSES[port] = [p for p in PROCESSES[port] if check_process(p, args)]
 
+def end_process(process):
+    logger.info("Ending process with config %s ID %i on port %i" % (process.name, process.ID, process.port))
+    retcode = process.force_exit()
+    process.cleanup()
+    logger.info("Process with config %s ID %i on port %i exited with code %i" % (process.name, process.ID, process.port, retcode)) 
+
 def check_process(process, args):
     retcode = process.check_exit()
     if retcode is not None:
         process.cleanup()
-        logger.info("Process with config %s on port %i exited with code %i" % (process.name, process.port, retcode)) 
+        logger.info("Process with config %s ID %i on port %i exited with code %i" % (process.name, process.ID, process.port, retcode)) 
 	if retcode != 0 and (process.n_restart < args.restart or args.restart < 0):
-            logger.info("Restarting process with config %s on port %i. Process has been restarted %i times." % (process.name, process.port, process.n_restart))
+            logger.info("Restarting process with config %s ID %i on port %i. Process has been restarted %i times." % (process.name, process.ID, process.port, process.n_restart))
 	    process.restart()
 	else:
-            logger.info("Removing process with config %s on port %i." % (process.name, process.port))
+            logger.info("Removing process with config %s ID %i on port %i." % (process.name, process.ID, process.port))
             return False
     return True
 
 def check_dispatchers(dispatchers):
     setters = []
+    removers = []
     for port, status in dispatchers.items():
         if status == "Starting":
-            connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
-            daq_status = connect.daq.status()
+            try:
+                logger.info("De-registering old monitoring process with unique_label %s" % "OnlineMonitor")
+                connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+                connect.daq.unregister_monitor("OnlineMonitor") # Added BH to test... Unregister monitor if it's already registered.
+                daq_status = connect.daq.status()
+                logger.info("Done attempting de-register.")
+            # connection failed -- remove the dispatcher
+            except:
+                logger.info("Failed to connect to dispatcher XMLRPC server on port %i. Removing." % port)
+                removers.append(port)
+                continue
+                
             logger.info("Checking dispatcher port %i. Reported status: %s." % (port, daq_status))
-            if connect.daq.status() == "Running":
+            if daq_status == "Running":
                 logger.info("Dispatcher port %i ready for connections." % port)
                 setters.append( (port, "Initialize") )
+        elif status == "Running":
+            try:
+                connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+                daq_status = connect.daq.status()
+            except:
+                logger.info("Failed to connect to dispatcher XMLRPC server on port %i. Removing." % port)
+                removers.append(port)
+                continue
+
+            if daq_status == "Ready":
+                setters.append( (port, "Starting") )
+                logger.info("Dispatcher on port %i back to 'Ready' state." % port)
+
     for port, status in setters:
         dispatchers[port] = status
+
+    for port in removers:
+        del dispatchers[port]
 
 # find all of the instances of the dispatcher running
 def get_dispatchers():
