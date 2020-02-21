@@ -187,6 +187,10 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
     // Do send
     for (unsigned i = 0; i < fAvgFFTData.waveforms.size(); i++) {
       std::vector<float> fft;
+      if (_analysis._fft_manager.InputSize() != fAvgFFTData.waveforms[i].size()) {
+        _analysis._fft_manager.Set(digits.NADC());
+      }
+
       for (float adc: fAvgFFTData.waveforms[i]) {
         // fill up the FFT array
         double *input = _analysis._fft_manager.InputAt(i);
@@ -203,9 +207,12 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
       }
 
       // send it out
-      std::string redis_key = "snapshot:avgfft:wire: " + std::to_string(i);
+      std::string redis_key = "snapshot:avgfft:wire:" + std::to_string(i);
       sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
+
+      std::string redis_key_wvf = "snapshot:avgwvf:wire:" + std::to_string(i);
+      sbndaq::SendWaveform(redis_key_wvf, fAvgFFTData.waveforms[i], _tick_period); 
     }
     fAvgFFTData.event_ind = 0;
   }
@@ -217,7 +224,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
       const std::vector<int16_t> &adcs = digits->ADCs();
       std::vector<float> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
       for (unsigned i = 0; i < wvf.size(); i++) {
-        wvf[i] = (adcs[i] + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
+        wvf[i] = ((float)adcs[i] + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
       } 
     }
     fAvgFFTData.event_ind ++; 
