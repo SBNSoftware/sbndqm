@@ -7,7 +7,7 @@ simple_plugin( TrigFilter module
         canvas
         cetlib_except
         lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
-        nutools_RandomUtils_NuRandomService_service
+				#nutools_RandomUtils_NuRandomService_service
         ${ART_FRAMEWORK_SERVICES_REGISTRY}
         ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
         ${ART_ROOT_IO_TFILESERVICE_SERVICE}
