@@ -325,7 +325,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     for (int i = 0; i < adc_fft_size; i++) {
       _per_channel_data[channel].fft_real.push_back(_fft_manager.ReOutputAt(i));
       _per_channel_data[channel].fft_imag.push_back(_fft_manager.ImOutputAt(i));
-      _per_channel_data[channel].fft_mag.push_back(sqrt(_fft_manager.ReOutputAt(i) * _fft_manager.ReOutputAt(i)) + sqrt(_fft_manager.ImOutputAt(i) * _fft_manager.ImOutputAt(i)));
+      _per_channel_data[channel].fft_mag.push_back(sqrt(_fft_manager.ReOutputAt(i) * _fft_manager.ReOutputAt(i) + _fft_manager.ImOutputAt(i) * _fft_manager.ImOutputAt(i)));
     } 
   }
   if (_config.timing) {

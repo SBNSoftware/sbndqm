@@ -62,14 +62,6 @@ modules:
   - timing (bool): Whether to print out timing info on analysis.
   - producer (string): Name of digits producer
 - `OnlineAnalysis` options:
-  - stream_take (vector<unsigned>): List of time scales to average
-    metrics over when sending to Redis.
-  - stream_expire (vector<unsigned>): List of times to keep metrics in
-    redis. Must be same length as stream_take. If a value is 0, it will
-    be saved to redis forever.
-  - snapshot_time (unsigned): Time scale (seconds) in between taking
-    snapshots.
-  - hostname (string): Name of host of Redis database.
 - `VSTAnalysis` options:
   - no additional options
 

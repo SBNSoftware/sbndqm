@@ -137,10 +137,8 @@ public:
   // if the containers filled by the analysis are ready to be processed
   bool EmptyEvent();
 
-private:
-  ChannelInfo _channel_info; //!< Information about TPC channels
-
 public:
+  ChannelInfo _channel_info; //!< Information about TPC channels
   // configuration is available publicly
   AnalysisConfig _config;
   // keeping track of wire id to index into stuff from Decoder
@@ -153,10 +151,10 @@ public:
   std::vector<RunningThreshold> _thresholds;
   // raw digits container for each event
   std::vector<art::Ptr<raw::RawDigit>> _raw_digits_handle;
+  FFTManager _fft_manager;
 
 private:
   unsigned _event_ind;
-  FFTManager _fft_manager;
   // keep track of timing data (maybe)
   tpcAnalysis::Timing _timing;
 
