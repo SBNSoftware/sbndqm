@@ -125,7 +125,7 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
 //    uint64_t fragment_id = frag.fragmentID();
 
     //data from FEB:
-//    int mac5     = evt->MAC5();
+    int mac5     = evt->MAC5();
 //    int flags    = evt->flags;
 //    int lostcpu  = evt->lostcpu;
 //    int lostfpga = evt->lostfpga;
@@ -156,8 +156,6 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
     size_t ADCchannel = 0;
 
 
-    //grab the pointer to the event
-
     //    std::string FEBID_str = std::to_string(fragment_id);
     //    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
 
@@ -176,8 +174,7 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
       std::cout<<i<<": "<<adc[i]<<std::endl;
       totaladc  += adc[i];
       ADCchannel = adc[i];
-      std::string readout_number_channel_str = std::to_string(i);
-      sbndaq::sendMetric("CRT_channel", readout_number_channel_str, "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
       if(adc[i] > max){
         max = adc[i];
       }
