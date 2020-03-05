@@ -4,8 +4,8 @@
 my_quals="e19:prof:s94:py2"
 my_version="v0_05_00"
 my_env="sbn-fd"
-my_gitbranch="release/v0_05_00"
-my_devdir=$(date +"DAQ_%d%b%C")
+my_gitbranch="develop"
+my_devdir=$(date +"DQM_%d%b%C")
 my_projname=sbndqm
 my_new=False
 my_redishost=icarus-db01.fnal.gov
@@ -25,7 +25,7 @@ while [[ "$#" -gt 0 ]]; do case $1 in
 esac; shift; done
 
 my_swdir=/daq/software
-my_daqarea=${HOME}/DAQ_DevAreas
+my_daqarea=${HOME}/DQM_DevAreas
 unset PRODUCTS
 
 printf "Options:\n"

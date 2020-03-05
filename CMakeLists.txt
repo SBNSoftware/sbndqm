@@ -68,6 +68,9 @@ add_subdirectory(fcl)
 # tests
 add_subdirectory(test)
 
+# tools - utility scripts
+add_subdirectory(tools)
+
 # ups - table and config files
 add_subdirectory(ups)
 
