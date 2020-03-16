@@ -52,6 +52,7 @@ private:
   void SendWaveforms(const art::Event &e);
   void SendFFTs(const art::Event &e);
   void SendTimeAvgFFTs(const art::Event &e);
+  void SendCorrelationMatrix(const art::Event &e);
 
   tpcAnalysis::Analysis _analysis;
   double _tick_period;
@@ -59,6 +60,7 @@ private:
   bool _send_waveforms;
   bool _send_ffts;
   bool _send_time_avg_ffts;
+  bool _send_correlation_matrix;
   int _n_evt_fft_avg;
   bool _send_metrics;
   int _wait_period;
@@ -68,6 +70,8 @@ private:
   std::string fGroupName;
   std::string fAvgFFTName;
   std::string fAvgWvfName;
+  std::string fCorrelationMatrixName;
+  unsigned fNCorrelationMatrixSamples;
 
   // fields used to compute time averaged FFT's
   class {
@@ -105,6 +109,8 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   _n_evt_send_rawdata = p.get<unsigned>("n_evt_send_rawdata", 1);
   assert(_n_evt_send_rawdata > 1);
 
+  _send_correlation_matrix = p.get<bool>("send_correlation_matrix", false);
+
   fAvgFFTData.first = true;
 
   fFFTName = p.get<std::string>("fft_name", "fft");
@@ -112,6 +118,8 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   fWaveformName = p.get<std::string>("waveform_name", "waveform");
   fAvgFFTName = p.get<std::string>("avgfft_name", "avgfft");
   fAvgWvfName = p.get<std::string>("avgwvf_name", "avgwvf");
+  fCorrelationMatrixName = p.get<std::string>("correlation_matrix_name", "correlation");
+  fNCorrelationMatrixSamples = p.get<unsigned>("n_correlation_matrix_samples", UINT_MAX);
 
   event_ind = 0;
 }
@@ -130,10 +138,8 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   event_ind ++;
 
   _analysis.AnalyzeEvent(e);
-  // calculate correlations here if you want to:
-  // e.g. _analysis.Correlation(channel_i, channel_j);
-  // or calculate the whole matrix:
-  // _analysis.CorrelationMatrix()
+
+  if (_send_correlation_matrix  && event_ind % _n_evt_send_rawdata == 0) SendCorrelationMatrix(e);
 
   // Save zero-suppressed waveforms -- use hitfinding to determine interesting regions
   if (_send_sparse_waveforms) SendSparseWaveforms(e);
@@ -169,6 +175,13 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
       sbndaq::sendMetric(fGroupName, instance, "occupancy", value, level, mode);
     }
   }
+}
+
+void tpcAnalysis::OnlineAnalysis::SendCorrelationMatrix(const art::Event &e) {
+  std::vector<float> matrix = _analysis.CorrelationMatrix(fNCorrelationMatrixSamples);
+  std::string redis_key = "snapshot:" + fCorrelationMatrixName;
+  sbndaq::SendWaveform(redis_key, matrix);
+  sbndaq::SendEventMeta(redis_key, e);
 }
 
 void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {

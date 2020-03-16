@@ -80,9 +80,9 @@ public:
 
   // calculate the correlation between two channels
   // Call after AnalyzeEvent()
-  float Correlation(unsigned channel_i, unsigned channel_j);
+  float Correlation(unsigned channel_i, unsigned channel_j, unsigned max_sample=UINT_MAX);
   // and build the whole matrix
-  std::vector<std::vector<float>> CorrelationMatrix();
+  std::vector<float> CorrelationMatrix(unsigned max_sample=UINT_MAX);
 
   // configuration
   struct AnalysisConfig {

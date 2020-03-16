@@ -29,7 +29,7 @@ NoiseSample::NoiseSample(std::vector<PeakFinder::Peak>& peaks, int16_t baseline,
   _baseline = baseline;
 }
 
-float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline) {
+float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline, unsigned max_sample) {
   unsigned n_samples = 0;
   int ret = 0;
   // iterate over the regions w/out signal
@@ -37,6 +37,10 @@ float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<st
     for (unsigned i = range[0]; i <= range[1]; i++) {
       n_samples ++;
       ret += (wvfm_self[i] - baseline) * (wvfm_self[i] - baseline);
+
+      if (n_samples == max_sample) {
+        return sqrt((float)ret / n_samples);
+      }
     }
   }
   return sqrt((float)ret / n_samples);
@@ -65,7 +69,7 @@ NoiseSample NoiseSample::DoIntersection(NoiseSample &me, NoiseSample &other, int
   return NoiseSample(ranges, baseline);
 }
 
-float NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+float NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample) {
   NoiseSample joint = Intersection(other);
   unsigned n_samples = 0;
   int ret = 0;
@@ -74,18 +78,21 @@ float NoiseSample::Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample
     for (unsigned i = range[0]; i <= range[1]; i++) {
       n_samples ++;
       ret += (wvfm_self[i] - _baseline) * (wvfm_other[i] - other._baseline);
+      if (n_samples == max_sample) {
+        return ((float)ret) / n_samples;
+      }
     }
   }
   return ((float)ret) / n_samples;
 }
 
-float NoiseSample::Correlation(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+float NoiseSample::Correlation(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample) {
   NoiseSample joint = Intersection(other);
-  float scaling = CalcRMS(wvfm_self, joint._ranges, _baseline) * CalcRMS(wvfm_other, joint._ranges, other._baseline);
-  return Covariance(wvfm_self, other, wvfm_other) / scaling;
+  float scaling = CalcRMS(wvfm_self, joint._ranges, _baseline, max_sample) * CalcRMS(wvfm_other, joint._ranges, other._baseline, max_sample);
+  return Covariance(wvfm_self, other, wvfm_other, max_sample) / scaling;
 }
 
-float NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+float NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample) {
   NoiseSample joint = Intersection(other);
   unsigned n_samples = 0;
   int ret = 0;
@@ -95,12 +102,15 @@ float NoiseSample::SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &ot
       n_samples ++;
       int16_t val = wvfm_self[i] - _baseline + wvfm_other[i] - other._baseline;
       ret += val * val;
+      if (n_samples == max_sample) {
+        return sqrt(((float)ret) / n_samples);
+      }
     }
   }
   return sqrt(((float)ret) / n_samples);
 }
 
-float NoiseSample::ScaledSumRMS(std::vector<NoiseSample *>& noises, std::vector<const std::vector<int16_t> *>& waveforms) {
+float NoiseSample::ScaledSumRMS(std::vector<NoiseSample *>& noises, std::vector<const std::vector<int16_t> *>& waveforms, unsigned max_sample) {
   // calculate the joint noise sample over all n samples
   // n must be >= 2
   NoiseSample joint = DoIntersection(*noises[0], *noises[1]);
@@ -119,13 +129,15 @@ float NoiseSample::ScaledSumRMS(std::vector<NoiseSample *>& noises, std::vector<
         sample += (*waveforms[wvfm_ind])[i] - noises[wvfm_ind]->_baseline;
       }
       ret += sample * sample;
+      if (n_samples == max_sample) break;
     }
+    if (n_samples == max_sample) break;
   }
   float sum_rms = ((float)ret) / n_samples; 
 
   float rms_all = 0;
   for (unsigned wvfm_ind = 0; wvfm_ind < noises.size(); wvfm_ind++) {
-    rms_all += CalcRMS(*waveforms[wvfm_ind], joint._ranges, noises[wvfm_ind]->_baseline);
+    rms_all += CalcRMS(*waveforms[wvfm_ind], joint._ranges, noises[wvfm_ind]->_baseline, max_sample);
   }
   // send uncorrelated sum-rms value to 0
   float scale_sub = rms_all * sqrt((float) noises.size());
@@ -135,7 +147,7 @@ float NoiseSample::ScaledSumRMS(std::vector<NoiseSample *>& noises, std::vector<
   return (sum_rms - scale_sub) / scale_div; 
 }
 
-float NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other) {
+float NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample) {
   NoiseSample joint = Intersection(other);
 
   unsigned n_samples = 0;
@@ -146,10 +158,12 @@ float NoiseSample::DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &ot
       n_samples ++;
       int16_t val = (wvfm_self[i] - _baseline) - (wvfm_other[i] - other._baseline);
       noise += val * val;
+      if (n_samples == max_sample) {
+        return sqrt(((float) noise) / n_samples);
+      }
     }
   }
   return sqrt(((float) noise) / n_samples);
-
 }
 
 // calculated the mean of all adc values in noise ranges, and sets that as baseline

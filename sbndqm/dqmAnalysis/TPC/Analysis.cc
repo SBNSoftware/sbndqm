@@ -414,26 +414,32 @@ bool Analysis::EmptyEvent() {
   return _per_channel_data[0].empty;
 }
 
-float Analysis::Correlation(unsigned channel_i, unsigned channel_j) {
+float Analysis::Correlation(unsigned channel_i, unsigned channel_j, unsigned max_sample) {
   unsigned digits_i = _channel_index_map[channel_i];
   unsigned digits_j = _channel_index_map[channel_j];
   return _noise_samples[channel_i].Correlation(_raw_digits_handle[digits_i]->ADCs(), 
-    _noise_samples[channel_j], _raw_digits_handle[digits_j]->ADCs());
+    _noise_samples[channel_j], _raw_digits_handle[digits_j]->ADCs(), max_sample);
 }
 
-std::vector<std::vector<float>> Analysis::CorrelationMatrix() {
+std::vector<float> Analysis::CorrelationMatrix(unsigned max_sample) {
+  _timing.StartTime();
   unsigned n_channels = _channel_info.NChannels();
-  std::vector<std::vector<float>> ret(n_channels, std::vector<float>(n_channels, 0));
+  std::vector<float> ret(n_channels * n_channels, 0);
   for (unsigned i = 0; i < n_channels; i++) {
     for (unsigned j = 0; j <= i; j++) {
-      if (i == j) ret[i][j] = 1.;
+      unsigned set = i * n_channels + j;
+      unsigned set_diag = j * n_channels + i;
+      if (i == j) ret[set] = 1.;
       else {
-        float corr = Correlation(i, j);
-        ret[i][j] = corr;
-        ret[j][i] = corr;
+        float corr = Correlation(i, j, max_sample);
+        ret[set] = corr;
+        ret[set_diag] = corr;
       }
     }
   }
+  float delta = 0.;
+  _timing.EndTime(&delta);
+  std::cout << "Correlation matrix took: " << delta << " [ms]\n";
   return ret;
 }
 
