@@ -43,7 +43,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
                            lardata_Utilities
                            lardataobj_RawData
                            lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
-                           nutools_RandomUtils_NuRandomService_service
+													 #nutools_RandomUtils_NuRandomService_service
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
                            canvas
