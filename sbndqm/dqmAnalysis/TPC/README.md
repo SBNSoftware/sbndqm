@@ -3,7 +3,24 @@
 Code for online analysis of TPC data for use by ICARUS and SBN. The code
 takes as input raw data files in the art-ROOT format and sends
 monitoring metrics and raw data of individual TPC channels to a
-database. The code is organized into three art modules:
+database. 
+
+Metrics that the online analysis calculates:
+baseline: The baseline/pedestal ADC value of the waveform
+rms: The rms of the noise of the waveform (signal-remvoed)
+occupancy: The mean number of hits per readout
+mean_peak_amplitude: The mean amplitude of each hit
+next_channel_dnoise: A measure of noise correlation between subsequent channels
+
+The online analysis also stores a 'snapshot' of the detector every few
+events. This snapshot includes:
+-Noise correlation (signal-removed) of each pair of channels
+-Waveform of each channel
+-FFT of each channel
+-Waveform of each channel averaged over previous events
+-FFT of each channel averaged over previous events
+
+The code is organized into three art modules:
 
 - `DaqDecoder` (a producer) takes in an art root file with
   NevisTPCFragments and produces and art root file including rawDigits
