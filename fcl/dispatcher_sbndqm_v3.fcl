@@ -175,12 +175,13 @@ services:
 {
   RedisConnection: @local::redis_connection
   ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
+// ArtdaqFragmentNamingServiceInterface: { service_provider: IcarusFragmentNamingService }
 }
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 
 source:
 {
-  module_type: ArtdaqInput
+  module_type: TransferInput
   register_fragment_types: false
   # The timeout shouldn't be much smaller than the period between events, otherwise
   # there's a spew of timeout messages

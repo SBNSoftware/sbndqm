@@ -79,6 +79,9 @@ physics:
       send_time_avg_ffts: true
       n_evt_fft_avg: 50
       n_evt_send_rawdata: 50
+      // send_correlation_matrix: true
+      // correlation_matrix_name: correlation
+      // n_correlation_matrix_samples: 100
     }
 
     OnlineAnalysis:
@@ -171,13 +174,15 @@ physics:
 services:
 {
   RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
+// ArtdaqFragmentNamingServiceInterface: { service_provider: IcarusFragmentNamingService }
 }
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 
 source:
 {
   module_type: TransferInput
-
+  register_fragment_types: false
   # The timeout shouldn't be much smaller than the period between events, otherwise
   # there's a spew of timeout messages
   timeoutInUsecs: 10000000
