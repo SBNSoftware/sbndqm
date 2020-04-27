@@ -172,10 +172,10 @@ def get_dispatchers():
                     try:
                         port = int(cmd.split(" ")[1])
                     except:
-                        logger.error("Error parsing command line arguments for dispatcher instnace: %s" % " ".join(cmdline))
+                        logger.error("Error parsing command line arguments for dispatcher instance: %s" % " ".join(cmdline))
                     break
             else:
-                logger.error("Error: Bad command line arguments for dispatcher instnace: %s" % " ".join(cmdline))
+                logger.error("Error: Bad command line arguments for dispatcher instance: %s" % " ".join(cmdline))
         if port in dispatcher_ports:
             logger.error("Error: Duplicate dispatcher id (%i) for dispatcher instance: %s" % (port, " ".join(cmdline)))
         if port:
