@@ -1,0 +1,207 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+BEGIN_PROLOG
+analysis_config: {
+  // producer of digits and header info
+  raw_digit_producers: [daq]
+  header_producer: ""
+  
+  // channel info
+  channel_info: {
+    n_channels: 1024 # 16 crates
+    collection_channels: [[0,1014]] # no signal -- plane is arbitrary
+    induction_channels: []
+  }
+  
+  // standard analysis config
+  threshold_calc: 3
+  threshold_sigma: 5
+  noise_range_sampling: 1
+  n_smoothing_samples: 1
+  baseline_calc: 2
+  n_mode_skip: 3
+  use_planes: false
+  refine_baseline: false
+  
+  // turn on for analysis information printed out on stdin
+  verbose: false
+  // turn on for timing information printed out on stdin
+  timing: false
+  
+  // turn on to save waveform in output ChannelData
+  fill_waveforms: false
+  
+  // turn on to output ReducedChannelData objects instead of
+  // ChannelData (will throw out waveform and FFT info)
+  reduce_data: false
+  
+  // number of headers per event provided by input (will be ignored if value is negative)
+  // 10 for SBND
+  n_headers: -1
+}
+END_PROLOG
+
+physics:
+{
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      module_type: SBNDTPCDecoder
+      // for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      // make the header
+      produce_header: false
+      baseline_calc: false
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
+      frame_to_dt: 0.5
+      // parameters for header index
+      min_slot_no: 3
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers:
+  {
+    OnlineAnalysisRawData: {
+      module_type: OnlineAnalysis
+      @table::analysis_config
+      send_metrics: false
+      send_waveforms: true
+      send_ffts: false
+      fft_name: fft
+      waveform_name: waveform
+      fft_per_channel: false # don't calculate FFT's
+      wait_period: 10 # s 
+      send_time_avg_ffts: false
+      n_evt_fft_avg: 50
+      n_evt_send_rawdata: 1
+      // send_correlation_matrix: true
+      // correlation_matrix_name: correlation
+      // n_correlation_matrix_samples: 100
+    }
+
+    OnlineAnalysis:
+     {
+      module_type: OnlineAnalysis
+      group_name: tpc_channel
+      @table::analysis_config
+      metrics: {
+
+        redis_metric_10s: {    
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":10s"
+        }
+        redis_metric_archive: {
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 30.0 # 30s
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":archiving"
+        }
+
+      }
+      metric_config: {
+        streams: [archiving, 10s]
+        groups: {
+	  tpc_channel:[[0,1024]] # 8 crates
+        }
+        metrics: {
+          rms: {
+            units: ADC
+            #title: "TPC wire %(instance)s rms"
+            display_range: [0, 5]
+          }
+          baseline: {
+            units: ADC
+            #title: "TPC wire %(instance)s baseline"
+            display_range: [1990, 2040]
+          }
+          next_channel_dnoise: {
+            #title: "TPC wire %(instance)s next channel dnoise"
+            display_range: [0.2, 1.2]
+          }
+          mean_peak_height: {
+            units: ADC
+            #title: "TPC wire %(instance)s mean peak height"
+            display_range: [0, 50]
+          }
+          occupancy: {
+            #title: "TPC wire %(instance)s occupancy"
+            display_range: [0., 1.]
+          }
+      	}
+      }
+    }
+  }
+
+  my_producer_modules: [daq]
+  a: [OnlineAnalysis, OnlineAnalysisRawData]
+//  end_paths: [a]
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
+}
+
+services.RedisConnection.host: "sbnd-daq33.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
+
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "OnlineMonitorTPC"
+      transferPluginType: Shmem
+      shm_key: 0x40471454
+      max_fragment_size_words: 33554432
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "OnlineMonitorTPC"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "OnlineMonitorTPC"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471454
+
+            max_fragment_size_words: 33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+process_name: TPCANALYSIS
+
