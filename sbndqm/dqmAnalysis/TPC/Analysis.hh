@@ -106,6 +106,8 @@ public:
     unsigned n_noise_samples;
     unsigned n_smoothing_samples;
     unsigned n_above_threshold;
+    unsigned n_max_noise_samples;
+    bool find_signal;
 
     bool fft_per_channel;
     bool fill_waveforms;
