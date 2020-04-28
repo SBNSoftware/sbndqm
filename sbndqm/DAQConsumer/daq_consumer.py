@@ -6,6 +6,7 @@ import os
 import signal
 import sys
 import xmlrpclib
+import socket
 
 from process import ConsumerProcess, ProcessFhiclException
 
@@ -47,7 +48,8 @@ def main(args):
     global logger
     logger = logging.getLogger("DAQConsumerMaster")
 
-    logger.info("New DAQ Consumer Master starting.")
+    hostname = socket.gethostname()
+    logger.info("New DAQ Consumer Master starting on hostname: %s." % hostname)
 
     # cleanup on sigint
     signal.signal(signal.SIGINT, clean_exit)
