@@ -22,7 +22,9 @@ analysis_config: {
   baseline_calc: 2
   n_mode_skip: 3
   use_planes: false
+  // n_max_noise_samples: 100
   refine_baseline: false
+  find_signal: false
   
   // turn on for analysis information printed out on stdin
   verbose: false
@@ -118,12 +120,12 @@ physics:
           rms: {
             units: ADC
             #title: "TPC wire %(instance)s rms"
-            display_range: [0, 5]
+            #display_range: [0, 5]
           }
           baseline: {
             units: ADC
             #title: "TPC wire %(instance)s baseline"
-            display_range: [1990, 2040]
+            #display_range: [1990, 2040]
           }
           next_channel_dnoise: {
             #title: "TPC wire %(instance)s next channel dnoise"
