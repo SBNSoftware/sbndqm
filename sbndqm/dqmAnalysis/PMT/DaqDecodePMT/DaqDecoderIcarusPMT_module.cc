@@ -138,20 +138,20 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
       sbndaq::CAENV1730Event const* event_ptr = bb.Event();
       sbndaq::CAENV1730EventHeader header = event_ptr->Header;
 
-      std::cout << "\tFrom header, event counter is "  << header.eventCounter   << "\n";
-      std::cout << "\tFrom header, triggerTimeTag is " << header.triggerTimeTag << "\n";
+      //      std::cout << "\tFrom header, event counter is "  << header.eventCounter   << "\n";
+      //      std::cout << "\tFrom header, triggerTimeTag is " << header.triggerTimeTag << "\n";
       std::vector< std::vector<uint16_t> >  fWvfmsVec;
       size_t nChannels = md->nChannels;
-      std::cout <<"\tFrom header , no of channel is" << nChannels << "\n";
+      //      std::cout <<"\tFrom header , no of channel is" << nChannels << "\n";
       
       uint32_t ev_size_quad_bytes = header.eventSize;
-      std::cout << "Event size in quad bytes is: " << ev_size_quad_bytes << "\n";
+      //   std::cout << "Event size in quad bytes is: " << ev_size_quad_bytes << "\n";
       uint32_t evt_header_size_quad_bytes = sizeof(sbndaq::CAENV1730EventHeader)/sizeof(uint32_t);
       uint32_t data_size_double_bytes = 2*(ev_size_quad_bytes - evt_header_size_quad_bytes);
       uint32_t wfm_length = data_size_double_bytes/nChannels;
 
       //--note, needs to take into account channel mask
-      std::cout << "Channel waveform length = " << wfm_length << "\n";
+      //   std::cout << "Channel waveform length = " << wfm_length << "\n";
 
       const uint16_t* data_begin = reinterpret_cast<const uint16_t*>(frag.dataBeginBytes() 
                                  + sizeof(sbndaq::CAENV1730EventHeader));
@@ -183,7 +183,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
         } //--end loop samples
  
       product_collection->push_back(my_wf);
-      std::cout<<"waveform size"<<my_wf.size()<<"\n";
+      //   std::cout<<"waveform size"<<my_wf.size()<<"\n";
      
 /*      for (size_t i_n=0; i_n<wfm_length; ++i_n){
         std::cout<<"waveform is"<<my_wf[i_n]<<"\n";
@@ -192,7 +192,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
   */    
       }// end loop over channels
 
-    std::cout<<"product collection"<<product_collection->back().size()<<"\n";
+      // std::cout<<"product collection"<<product_collection->back().size()<<"\n";
      } // end loop over fragments
 
   
