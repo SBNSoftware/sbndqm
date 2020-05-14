@@ -94,6 +94,7 @@ physics:
      {
       module_type: OnlineAnalysis
       group_name: tpc_channel
+      send_sbnd_metrics: true
       @table::analysis_config
       metrics: {
 
@@ -144,6 +145,16 @@ physics:
           occupancy: {
             #title: "TPC wire %(instance)s occupancy"
             display_range: [0., 1.]
+          }
+          baseline_femb: {
+            format: "0x#"
+          }
+          baseline_asic: {
+            format: "0x#"
+          }
+          baseline_chan: {
+            format: "0x#"
+            units: "ADC"
           }
       	}
       }
