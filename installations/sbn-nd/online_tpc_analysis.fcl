@@ -68,6 +68,10 @@ physics:
 
   analyzers:
   {
+    Meta: {
+      module_type: ReportMetadata
+    }
+ 
     OnlineAnalysisRawData: {
       module_type: OnlineAnalysis
       @table::analysis_config
@@ -124,6 +128,7 @@ physics:
           }
           baseline: {
             units: ADC
+            format: "0x#"
             #title: "TPC wire %(instance)s baseline"
             #display_range: [1990, 2040]
           }
@@ -146,7 +151,7 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData]
+  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
 //  end_paths: [a]
 }
 
