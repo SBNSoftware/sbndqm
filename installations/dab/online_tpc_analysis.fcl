@@ -157,6 +157,9 @@ physics:
           baseline_asic: {
             format: "0x#"
           }
+          baseline_channel_no: {
+            format: "0x#"
+          }
           baseline_chan: {
             format: "0x#"
             units: "ADC"

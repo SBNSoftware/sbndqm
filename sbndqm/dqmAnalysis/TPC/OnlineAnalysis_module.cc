@@ -188,6 +188,14 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 	
 	int chan = channel_data.baseline & 0xF;
 	sbndaq::sendMetric(fGroupName, instance, "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
+        
+        int ch_offset = 0;
+        if (chan <= 7) ch_offset = 7 - chan;
+        else ch_offset = 8 + 15  - chan;
+        int channel_number = 128*femb + 16*asic + ch_offset; 
+
+        sbndaq::sendMetric(fGroupName, instance, "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
+
       }
 
     }
