@@ -69,6 +69,14 @@ def main(args):
     global logger
     logger = logging.getLogger("DAQConsumerMaster")
 
+    # if configured, log to both stdout and a file
+    if args.log_dir is not None and args.log_stdout:
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        console.setFormatter(formatter)
+        logger.addHandler(console)
+
     hostname = socket.gethostname()
     logger.info("New DAQ Consumer Master starting on hostname: %s." % hostname)
 
@@ -222,5 +230,6 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--restart", type=int, default=0, help="Number of times to restart failed process. Set to '-1' to always restart. Defaults to 0.", metavar="<ntimes>")
     parser.add_argument("-o", "--overwrite_path", default="source.dispatcherPort", help="Fhicl path to overwrite dispatcher port. Defaults to 'source.dispatcherPort'.", metavar="<fhicl path>")
     parser.add_argument("-p", "--process_name_path", default="source.transfer_plugin.unique_label", help="Fhicl path to unique_label name. Defaults to 'source.transfer_plugin.unique_label'.", metavar="<fhicl path>")
+    parser.add_argument("-lo", "--log_stdout", action="store_true", help="Force logging to stdout.")
     args = parser.parse_args()
     main(args)
