@@ -47,7 +47,23 @@ def main(args):
     global logger
     logger = logging.getLogger("DAQConsumerMaster")
 
-    logger.info("New DAQ Consumer Master starting.")
+#<<<<<<< HEAD
+#    logger.info("New DAQ Consumer Master starting.")
+#=======
+    # if configured, log to both stdout and a file
+    if args.log_dir is not None and args.log_stdout:
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        console.setFormatter(formatter)
+        logger.addHandler(console)
+
+    hostname = socket.gethostname()
+    logger.info("New DAQ Consumer Master starting on hostname: %s." % hostname)
+
+    fhicls = [load_fhicl_file(os.path.basename(f)) for f in args.fhicl_configuration]
+    process_names = [walk_fhicl_path(f, args.process_name_path) for f in fhicls]
+#>>>>>>> 3e7077d... Add in option to log DAQ Consumer master to both stdout and to a file.
 
     # cleanup on sigint
     signal.signal(signal.SIGINT, clean_exit)
@@ -190,5 +206,10 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sleep", type=int, default=5, help="Sleep time between checks for new dispatchers [seconds]. Defaults to 5s.", metavar="<seconds>") 
     parser.add_argument("-r", "--restart", type=int, default=0, help="Number of times to restart failed process. Set to '-1' to always restart. Defaults to 0.", metavar="<ntimes>")
     parser.add_argument("-o", "--overwrite_path", default="source.dispatcherPort", help="Fhicl path to overwrite dispatcher port. Defaults to 'source.dispatcherPort'.", metavar="<fhicl path>")
+#<<<<<<< HEAD
+#=======
+    parser.add_argument("-p", "--process_name_path", default="source.transfer_plugin.unique_label", help="Fhicl path to unique_label name. Defaults to 'source.transfer_plugin.unique_label'.", metavar="<fhicl path>")
+    parser.add_argument("-lo", "--log_stdout", action="store_true", help="Force logging to stdout.")
+#>>>>>>> 3e7077d... Add in option to log DAQ Consumer master to both stdout and to a file.
     args = parser.parse_args()
     main(args)
