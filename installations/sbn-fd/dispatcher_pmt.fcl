@@ -27,6 +27,11 @@ physics:
 
   analyzers:
   {
+    Meta: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaPMT
+    }
+
     CAENV1730WaveformAnalysis:
     {
       module_type: CAENV1730WaveformAnalysis
