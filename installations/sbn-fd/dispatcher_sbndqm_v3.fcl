@@ -66,11 +66,6 @@ physics:
 
   analyzers:
   {
-    Meta: {
-      module_type: ReportMetadata
-      RedisKey: eventmetaTPC
-    }
-
     OnlineAnalysisRawData: {
       module_type: OnlineAnalysis
       @table::analysis_config
