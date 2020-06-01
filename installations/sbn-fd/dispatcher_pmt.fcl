@@ -89,7 +89,7 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [CAENV1730WaveformAnalysis]
+  a: [CAENV1730WaveformAnalysis, Meta]
   //  end_paths: [a]
 }
 

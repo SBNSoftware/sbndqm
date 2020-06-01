@@ -172,7 +172,7 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData]
+  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
 //  end_paths: [a]
 }
 
