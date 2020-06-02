@@ -18,9 +18,10 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 #include "sbndaq-online/helpers/Waveform.h"
 #include "sbndaq-online/helpers/Utilities.h"
+#include "sbndaq-online/helpers/EventMeta.h"
 
 //#include "art/Framework/Services/Optional/TFileService.h" //before art_root_io transition
-#include "art_root_io/TFileService.h"
+//#include "art_root_io/TFileService.h"
 #include "TH1F.h"
 #include "TNtuple.h"
 #include <algorithm>
@@ -43,8 +44,8 @@ public:
   
 private:
   
-  TNtuple* nt_header; //Ntuple header
-  TNtuple* nt_wvfm;
+  //TNtuple* nt_header; //Ntuple header
+  //TNtuple* nt_wvfm;
   std::vector< std::vector<uint16_t> >  fWvfmsVec;
   std::string fRedisHostname;
   int         fRedisPort;
@@ -59,9 +60,9 @@ sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet
 {
 
 
-  art::ServiceHandle<art::TFileService> tfs; //pointer to a file named tfs
-  nt_header = tfs->make<TNtuple>("nt_header","CAENV1730 Header Ntuple","art_ev:caen_ev:caen_ev_tts");
-  nt_wvfm = tfs->make<TNtuple>("nt_wvfm","Waveform information Ntuple","art_ev:caen_ev:caen_ev_tts:ch:ped:rms:temp");
+  //  art::ServiceHandle<art::TFileService> tfs; //pointer to a file named tfs
+  //  nt_header = tfs->make<TNtuple>("nt_header","CAENV1730 Header Ntuple","art_ev:caen_ev:caen_ev_tts");
+  //  nt_wvfm = tfs->make<TNtuple>("nt_wvfm","Waveform information Ntuple","art_ev:caen_ev:caen_ev_tts:ch:ped:rms:temp");
 
   sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
@@ -78,13 +79,13 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
 
   art::Handle< std::vector<raw::OpDetWaveform> > OpdetHandle; 
   evt.getByLabel("daq", OpdetHandle); 
-  art::ServiceHandle< art::TFileService > tfs;
+  //  art::ServiceHandle< art::TFileService > tfs;
   
   
   if (!OpdetHandle.isValid()) return;
  
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;
+  //std::cout << "######################################################################" << std::endl;
+  //std::cout << std::endl;
   
  
  int level = 0;
@@ -104,28 +105,29 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
   std::vector<std::vector<raw::ADC_Count_t>> adcs {rd};
   std::vector<int> start {(int)(rd.TimeStamp() / tick_period) /*convert us -> TDC */};
   sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + std::to_string(rd.ChannelNumber()), adcs, start, tick_period);
+  sbndaq::SendEventMeta("snapshot:waveform:PMT:" + std::to_string(rd.ChannelNumber()), evt);
 
 //for (auto const& waveform : *OpdetHandle){
 
- double firstWaveformTime = rd.TimeStamp();
+  //double firstWaveformTime = rd.TimeStamp();
 
  int channel = rd.ChannelNumber();
- std::cout<<"waveform size is"<< rd.size()<<"\n";
- std::cout<<"channel number is"<< channel<<"\n";
+ // std::cout<<"waveform size is"<< rd.size()<<"\n";
+ // std::cout<<"channel number is"<< channel<<"\n";
   std::stringstream histName;
       histName << "event_"      << evt.id().event() 
                << "_opchannel_" << channel;        
       // Increase counter for number of waveforms on this optical channel
     
-        TH1D *waveformHist = tfs->make< TH1D >(histName.str().c_str(),TString::Format(";t - %f (#mus);",firstWaveformTime),rd.size(), 0, rd.size());
+      //   TH1D *waveformHist = tfs->make< TH1D >(histName.str().c_str(),TString::Format(";t - %f (#mus);",firstWaveformTime),rd.size(), 0, rd.size());
      // Copy values from the waveform into the histogram
-      for (size_t tick = 0; tick < rd.size(); tick++){
-        waveformHist->SetBinContent(tick + 1, rd[tick]);
+      //      for (size_t tick = 0; tick < rd.size(); tick++){
+      //        waveformHist->SetBinContent(tick + 1, rd[tick]);
 	//std::cout<<"waveform value is"<<waveform[tick]<<"\n";
-//	}
+      //	}
 
 
-}
+      //}
 
   
  }	    

@@ -1,28 +1,30 @@
 #!/bin/bash
 
+# 18 March 2020
 # Change name of terminal, suggested by Antoni
 printf '\033]2;Online Monitoring\a'
 
 #defaults
 my_quals="e19:prof:s94:py2"
-my_version="v0_05_00"
+my_version="v0_06_00"
 my_env="sbn-fd"
-my_gitbranch="develop"
-my_devdir=$(date +"DQM_%d%b%C")
+my_gitbranch="release/v0_06_00"
+#my_devdir=$(date +"DAQ_%d%b%C")
+my_devdir=DAQ_14May20
 my_projname=sbndqm
 my_new=False
 my_redishost=icarus-db01.fnal.gov
-my_dispatcherfcl=dispatcher_sbndqm_v3.fcl
+my_dispatcherfcl=" -f dispatcher_sbndqm_v3.fcl -f dispatcher_pmt.fcl"
 
 while [[ "$#" -gt 0 ]]; do case $1 in
   -e|--env) my_env="$2"; shift;;
   -d|--devdir) my_devdir="$2"; shift;;
   -v|--version) my_version="$2"; shift;;
-  -q|--quals) my_quals="$2"; ishift;;
-	-f|--dispatcherfcl) my_dispatcherfcl="$2"; shift;;
-	-r|--redishost) my_redishost="$2"; shift;;
-	-b|--gitbranch) my_gitbranch="$2"; shift;;
-	-p|--projname) my_projname="$2"; shift;;
+  -q|--quals) my_quals="$2"; shift;;
+  -f|--dispatcherfcl) my_dispatcherfcl="$2"; shift;;
+  -r|--redishost) my_redishost="$2"; shift;;
+  -b|--gitbranch) my_gitbranch="$2"; shift;;
+  -p|--projname) my_projname="$2"; shift;;
   -n|--new) my_new=True;;
   *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
@@ -92,6 +94,6 @@ fi
 export FHICL_FILE_PATH=$my_daqarea/$my_devdir:$FHICL_FILE_PATH
 
 python $SBNDQM_FQ_DIR/tools/AliveMonitor/alive_monitor.py -s "$my_redishost" -k DAQConsumer \
- -c "python $SBNDQM_FQ_DIR/tools/DAQConsumer/daq_consumer.py  -f $my_dispatcherfcl"
+ -c "python $SBNDQM_FQ_DIR/tools/DAQConsumer/daq_consumer.py  $my_dispatcherfcl"
 
 
