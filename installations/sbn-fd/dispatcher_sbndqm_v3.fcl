@@ -66,6 +66,11 @@ physics:
 
   analyzers:
   {
+    Meta: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaTPC
+    }
+
     OnlineAnalysisRawData: {
       module_type: OnlineAnalysis
       @table::analysis_config
@@ -167,7 +172,7 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData]
+  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
 //  end_paths: [a]
 }
 

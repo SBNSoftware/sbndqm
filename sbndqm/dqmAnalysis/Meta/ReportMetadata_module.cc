@@ -38,19 +38,15 @@ public:
 
   // Required functions.
   void analyze(art::Event const & e) override;
-
-private:
-  std::string fRedisKey;
 };
 
 sbndqm::ReportMetadata::ReportMetadata(fhicl::ParameterSet const & p):
-  art::EDAnalyzer::EDAnalyzer(p),
-  fRedisKey(p.get<std::string>("RedisKey", "eventmeta"))
+  art::EDAnalyzer::EDAnalyzer(p)
 {
 }
 
 void sbndqm::ReportMetadata::analyze(art::Event const & e) {
-  sbndaq::SendEventMeta(fRedisKey, e);
+  sbndaq::SendEventMeta("eventmeta", e);
 }
 
 DEFINE_ART_MODULE(sbndqm::ReportMetadata)
