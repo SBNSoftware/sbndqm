@@ -106,6 +106,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // number of samples in noise sample
   n_noise_samples = param.get<unsigned>("n_noise_samples", 20);
 
+  n_max_noise_samples = param.get<unsigned>("n_max_noise_samples", UINT_MAX);
+
   // number of samples to average in each direction for peak finding
   n_smoothing_samples = param.get<unsigned>("n_smoothing_samples", 1);
   // number of consecutive samples that must be above threshold to count as a peak
@@ -123,6 +125,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   fill_waveforms = param.get<bool>("fill_waveforms", false);
   reduce_data = param.get<bool>("reduce_data", false);
   timing = param.get<bool>("timing", false);
+
+  find_signal = param.get<bool>("find_signal", true);
 
   // name of producer of raw::RawDigits
   //std::string producers = param.get<std::string>("producer_name");
@@ -195,7 +199,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
       unsigned raw_digits_i = _channel_index_map[i];
       unsigned raw_digits_next_channel = _channel_index_map[next_channel];
       float unscaled_dnoise = _noise_samples[i].DNoise(
-          _raw_digits_handle[raw_digits_i]->ADCs(), _noise_samples[next_channel], _raw_digits_handle[raw_digits_next_channel]->ADCs());
+          _raw_digits_handle[raw_digits_i]->ADCs(), _noise_samples[next_channel], _raw_digits_handle[raw_digits_next_channel]->ADCs(), _config.n_max_noise_samples);
       // Don't use same noise sample to scale dnoise
       // This should probably be ok, as long as the dnoise sample is large enough
 
@@ -366,11 +370,15 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _timing.StartTime();
   }
   // get Peaks
-  PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
+
+  if (_config.find_signal) {
+    PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
   
-  PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
-      _config.n_smoothing_samples, _config.n_above_threshold, plane);
-  _per_channel_data[channel].peaks.assign(peaks.Peaks()->begin(), peaks.Peaks()->end());
+    PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
+        _config.n_smoothing_samples, _config.n_above_threshold, plane);
+    _per_channel_data[channel].peaks.assign(peaks.Peaks()->begin(), peaks.Peaks()->end());
+  }
+
   if (_config.timing) {
     _timing.EndTime(&_timing.find_peaks);
   }
@@ -394,7 +402,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _per_channel_data[channel].baseline = _noise_samples[channel].Baseline(); 
   }
 
-  _per_channel_data[channel].rms = _noise_samples[channel].RMS(adc_vec);
+  _per_channel_data[channel].rms = _noise_samples[channel].RMS(adc_vec, _config.n_max_noise_samples);
   _per_channel_data[channel].noise_ranges = *_noise_samples[channel].Ranges();
   if (_config.timing) {
     _timing.EndTime(&_timing.calc_noise);

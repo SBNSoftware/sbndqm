@@ -31,7 +31,7 @@ NoiseSample::NoiseSample(std::vector<PeakFinder::Peak>& peaks, int16_t baseline,
 
 float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline, unsigned max_sample) {
   unsigned n_samples = 0;
-  int ret = 0;
+  double ret = 0;
   // iterate over the regions w/out signal
   for (auto &range: ranges) {
     for (unsigned i = range[0]; i <= range[1]; i++) {
@@ -39,11 +39,12 @@ float NoiseSample::CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<st
       ret += (wvfm_self[i] - baseline) * (wvfm_self[i] - baseline);
 
       if (n_samples == max_sample) {
-        return sqrt((float)ret / n_samples);
+        return sqrt((double)ret / n_samples);
       }
     }
   }
-  return sqrt((float)ret / n_samples);
+
+  return sqrt((double)ret / n_samples);
 }
 
 NoiseSample NoiseSample::DoIntersection(NoiseSample &me, NoiseSample &other, int16_t baseline) {

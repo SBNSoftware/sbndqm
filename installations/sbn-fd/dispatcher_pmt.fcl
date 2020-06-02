@@ -1,0 +1,151 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+physics:
+{
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      # PMT !!!!
+      # NB (BH, AC): these params same as TPC, maybe we can remove if not needed??
+      module_type: DaqDecoderIcarusPMT
+      // for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      // make the header
+      produce_header: true
+      baseline_calc: false
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
+      frame_to_dt: 0.5
+      // parameters for header index
+      min_slot_no: 4
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers:
+  {
+    Meta: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaPMT
+    }
+
+    CAENV1730WaveformAnalysis:
+    {
+      module_type: CAENV1730WaveformAnalysis
+      // producer of digits and header info
+      metrics: {
+        redis_metric: {
+          level: 0
+          metricPluginType: "redis"
+          reporting_interval: 1.0
+          redis_key_postfix: ":30s"
+          hostname: "icarus-db01.fnal.gov"
+        }
+      }
+
+      metric_config: {
+
+        hostname: "icarus-db01.fnal.gov"
+        // hostname: "sbnd-daq33.fnal.gov"
+        //  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+
+        groups: {
+          PMT: [ [0, 30] ]
+          // "PMT": [ [0, 15], 124]
+        }
+
+        streams: ["30s"]
+        metrics: {
+          graphite: {
+            level:5
+            metricPluginType: "graphite"
+            reporting_interval: 10.0
+            host:"192.168.191.18"
+            port:2003
+            namespace:"icarus.om."
+          }
+
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [0., 100.]
+          }
+
+          pedestal: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [-1000, 1000]
+          }
+        }
+
+        // what happens to the title in python:
+        // title = title % ({"instance": channel_no, "group": group_name})
+      }
+
+    }
+  }
+
+  my_producer_modules: [daq]
+  a: [CAENV1730WaveformAnalysis, Meta]
+  //  end_paths: [a]
+}
+
+services:
+{
+//  TFileService: { fileName: "out.root"}
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
+ // ArtdaqFragmentNamingServiceInterface: { service_provider: IcarusFragmentNamingService }
+}
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "OnlineMonitorPMT"
+      transferPluginType: Shmem
+      shm_key: 0x40471455
+      max_fragment_size_words: 33554432
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "OnlineMonitorPMT"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "OnlineMonitorPMT"
+          transferPluginType: Shmem
+
+          shm_key: 0x40471455
+
+          max_fragment_size_words: 33554432
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+process_name: PMTANALYSIS
+

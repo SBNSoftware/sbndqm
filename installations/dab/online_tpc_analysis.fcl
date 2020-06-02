@@ -9,8 +9,8 @@ analysis_config: {
   
   // channel info
   channel_info: {
-    n_channels: 5760 # 8 crates
-    collection_channels: [[0,5760]] # no signal -- plane is arbitrary
+    n_channels: 1024 # 16 crates
+    collection_channels: [[0,1014]] # no signal -- plane is arbitrary
     induction_channels: []
   }
   
@@ -22,7 +22,9 @@ analysis_config: {
   baseline_calc: 2
   n_mode_skip: 3
   use_planes: false
+  // n_max_noise_samples: 100
   refine_baseline: false
+  find_signal: false
   
   // turn on for analysis information printed out on stdin
   verbose: false
@@ -48,18 +50,18 @@ physics:
   producers:
   {
     daq: {
-      module_type: ICARUSTPCDecoder
+      module_type: SBNDTPCDecoder
       // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
       // make the header
-      produce_header: true
+      produce_header: false
       baseline_calc: false
       // parameters for timestamps
       timesize: 2559
       // produce timestamps in units of mus
       frame_to_dt: 0.5
       // parameters for header index
-      min_slot_no: 4
+      min_slot_no: 5
       channel_per_slot: 64
     }
   }
@@ -68,22 +70,26 @@ physics:
   {
     Meta: {
       module_type: ReportMetadata
-      RedisKey: eventmetaTPC
+      RedisKey: "eventmeta_dab"
     }
-
+ 
     OnlineAnalysisRawData: {
       module_type: OnlineAnalysis
       @table::analysis_config
       send_metrics: false
       send_waveforms: true
-      send_ffts: true
-      fft_name: fft
-      waveform_name: waveform
-      fft_per_channel: true # calculate FFT's
-      wait_period: -1 # s 
-      send_time_avg_ffts: true
+      send_ffts: false
+
+      fft_name: fft_dab
+      waveform_name: waveform_dab
+      avgfft_name: avgfft_dab 
+      avgwvf_name: avgwvf_dab 
+
+      fft_per_channel: false # don't calculate FFT's
+      wait_period: 10 # s 
+      send_time_avg_ffts: false
       n_evt_fft_avg: 50
-      n_evt_send_rawdata: 50
+      n_evt_send_rawdata: 1
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
@@ -92,40 +98,18 @@ physics:
     OnlineAnalysis:
      {
       module_type: OnlineAnalysis
-      group_name: tpc_channel
+      group_name: tpc_channel_dab
+      send_sbnd_metrics: true
       @table::analysis_config
       metrics: {
 
-      graphite: {
-        level:5
-     	metricPluginType: "graphite"
-     	reporting_interval: 10.0
-     	host:"192.168.191.18"
-     	port:2003
-     	namespace:"icarus.om."
-      }
-
-      	redis_metric_fast: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          // period in seconds to send metric to database
-          reporting_interval: 2.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":fast"
-          # uncomment to use single-threaded version of redis connection
-	  #use_local_redis: true
-	  #redis:{
-	  #  host: "icarus-db01.fnal.gov"
-	  #}
-        }
-        redis_metric_slow: {    
+        redis_metric_10s: {    
           level: 3
           metricPluginType: "redis"
           reporting_interval: 10.0
           verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":slow"
+          redis_key_postfix: ":10s"
         }
         redis_metric_archive: {
           level: 3
@@ -138,20 +122,21 @@ physics:
 
       }
       metric_config: {
-        streams: [archiving, slow, fast]
+        streams: [archiving, 10s]
         groups: {
-	  tpc_channel:[[0,5760]] # 8 crates
+	  tpc_channel_dab:[[0,1024]] # 8 crates
         }
         metrics: {
           rms: {
             units: ADC
             #title: "TPC wire %(instance)s rms"
-            display_range: [0, 5]
+            #display_range: [0, 5]
           }
           baseline: {
             units: ADC
+            format: "0x#"
             #title: "TPC wire %(instance)s baseline"
-            display_range: [1990, 2040]
+            #display_range: [1990, 2040]
           }
           next_channel_dnoise: {
             #title: "TPC wire %(instance)s next channel dnoise"
@@ -165,6 +150,19 @@ physics:
           occupancy: {
             #title: "TPC wire %(instance)s occupancy"
             display_range: [0., 1.]
+          }
+          baseline_femb: {
+            format: "0x#"
+          }
+          baseline_asic: {
+            format: "0x#"
+          }
+          baseline_channel_no: {
+            format: "0x#"
+          }
+          baseline_chan: {
+            format: "0x#"
+            units: "ADC"
           }
       	}
       }
@@ -180,9 +178,10 @@ services:
 {
   RedisConnection: @local::redis_connection
   ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
-// ArtdaqFragmentNamingServiceInterface: { service_provider: IcarusFragmentNamingService }
 }
-services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+services.RedisConnection.host: "sbnd-daq33.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/justin_this_is_the_password"
 
 source:
 {
@@ -198,7 +197,7 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitor"
+     unique_label: "OnlineMonitorTPC"
       transferPluginType: Shmem
       shm_key: 0x40471454
       max_fragment_size_words: 33554432
@@ -208,7 +207,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "OnlineMonitor"
+    unique_label: "OnlineMonitorTPC"
     path: [ out ]
     physics: {}
     outputs: {
@@ -216,7 +215,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "OnlineMonitor"
+           unique_label: "OnlineMonitorTPC"
             transferPluginType: Shmem
 
             shm_key: 0x40471454

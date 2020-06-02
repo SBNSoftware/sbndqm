@@ -1,9 +1,9 @@
 BEGIN_PROLOG
 SBND_simple_channel_info:
 {
-  n_channels: 640
-  collection_channels: [ [0, 320] ]
-  induction_channels: [ [320, 640] ]
+  n_channels: 1024
+  collection_channels: [ [0, 1024] ]
+  induction_channels: []
 }
 ICARUS_simple_channel_info:
 {

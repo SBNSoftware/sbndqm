@@ -53,10 +53,10 @@ e19:prof:s96:py2   e19:prof:s96:py2    e19:prof:s96:py2    e19:prof:s96:py2
 e19:debug:s96:py2  e19:debug:s96:py2   e19:debug:s96:py2   e19:debug:s96:py2  
 end_qualifier_list
 
-# table fragment to set FW_SEARCH_PATH needed to find XML files:
 table_fragment_begin
-    # currently, XML pandora files are installed in 'scripts':
-    pathPrepend(FW_SEARCH_PATH, ${SBNDCODE_DIR}/scripts)
+    # Include installation locations in fhicl file path
+    pathPrepend(FHICL_FILE_PATH, ${MRB_SOURCE}/sbndqm/installations/sbn-nd)
+    pathPrepend(FHICL_FILE_PATH, ${MRB_SOURCE}/sbndqm/installations/sbn-fd)
 table_fragment_end
 
 

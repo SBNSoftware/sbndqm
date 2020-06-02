@@ -6,6 +6,8 @@ import os
 import signal
 import sys
 import xmlrpclib
+import socket
+import fhicl
 
 from process import ConsumerProcess, ProcessFhiclException
 
@@ -28,6 +30,26 @@ def do_clean_exit():
     logger.info("Finished cleaning up subprocesses. Exiting.")
     sys.exit(0)
 
+def walk_fhicl_path(f, path):
+    for name in path.split("."):
+        f = f[name]
+    return f
+
+def load_fhicl_file(fname):
+    try:
+        return fhicl.make_pset(fname)
+    except fhicl.CetException as err:
+        # parse error
+        if err.message[:10] == "---- Parse":
+            raise err
+        # file not found error
+        elif err.message[:16] == "---- search_path":
+            err = Exception("Unable to find file %s on path FHICL_FILE_PATH. Try adding the file location to FHICL_FILE_PATH. If the file is located in an installations/ sub-directory, try running 'mrbslp'" % fname)
+            raise err
+        # unknown error
+        else:
+            raise err
+        
 def main(args):
     # configure logging
     if args.log_dir is None:
@@ -47,7 +69,19 @@ def main(args):
     global logger
     logger = logging.getLogger("DAQConsumerMaster")
 
-    logger.info("New DAQ Consumer Master starting.")
+    # if configured, log to both stdout and a file
+    if args.log_dir is not None and args.log_stdout:
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        console.setFormatter(formatter)
+        logger.addHandler(console)
+
+    hostname = socket.gethostname()
+    logger.info("New DAQ Consumer Master starting on hostname: %s." % hostname)
+
+    fhicls = [load_fhicl_file(os.path.basename(f)) for f in args.fhicl_configuration]
+    process_names = [walk_fhicl_path(f, args.process_name_path) for f in fhicls]
 
     # cleanup on sigint
     signal.signal(signal.SIGINT, clean_exit)
@@ -64,7 +98,7 @@ def main(args):
             if port not in new_dispatchers:
                 logger.info("Removing dispatcher on port %i" % port)
         dispatchers = new_dispatchers
-        check_dispatchers(dispatchers)
+        check_dispatchers(dispatchers, process_names)
 
         setters = []
         for port, status in dispatchers.items():
@@ -115,17 +149,22 @@ def check_process(process, args):
             return False
     return True
 
-def check_dispatchers(dispatchers):
+def unregister(port, process_names):
+    for name in process_names:
+	logger.info("De-registering old monitoring process with unique_label %s on port %i." % (name, port))
+	connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+	connect.daq.unregister_monitor(name) # Added BH to test... Unregister monitor if it's already registered.
+	logger.info("Done attempting de-register.")
+
+def check_dispatchers(dispatchers, process_names):
     setters = []
     removers = []
     for port, status in dispatchers.items():
         if status == "Starting":
             try:
-                logger.info("De-registering old monitoring process with unique_label %s" % "OnlineMonitor")
-                connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
-                connect.daq.unregister_monitor("OnlineMonitor") # Added BH to test... Unregister monitor if it's already registered.
-                daq_status = connect.daq.status()
-                logger.info("Done attempting de-register.")
+                unregister(port, process_names)
+	        connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+	        daq_status = connect.daq.status()
             # connection failed -- remove the dispatcher
             except:
                 logger.info("Failed to connect to dispatcher XMLRPC server on port %i. Removing." % port)
@@ -172,10 +211,10 @@ def get_dispatchers():
                     try:
                         port = int(cmd.split(" ")[1])
                     except:
-                        logger.error("Error parsing command line arguments for dispatcher instnace: %s" % " ".join(cmdline))
+                        logger.error("Error parsing command line arguments for dispatcher instance: %s" % " ".join(cmdline))
                     break
             else:
-                logger.error("Error: Bad command line arguments for dispatcher instnace: %s" % " ".join(cmdline))
+                logger.error("Error: Bad command line arguments for dispatcher instance: %s" % " ".join(cmdline))
         if port in dispatcher_ports:
             logger.error("Error: Duplicate dispatcher id (%i) for dispatcher instance: %s" % (port, " ".join(cmdline)))
         if port:
@@ -190,5 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--sleep", type=int, default=5, help="Sleep time between checks for new dispatchers [seconds]. Defaults to 5s.", metavar="<seconds>") 
     parser.add_argument("-r", "--restart", type=int, default=0, help="Number of times to restart failed process. Set to '-1' to always restart. Defaults to 0.", metavar="<ntimes>")
     parser.add_argument("-o", "--overwrite_path", default="source.dispatcherPort", help="Fhicl path to overwrite dispatcher port. Defaults to 'source.dispatcherPort'.", metavar="<fhicl path>")
+    parser.add_argument("-p", "--process_name_path", default="source.transfer_plugin.unique_label", help="Fhicl path to unique_label name. Defaults to 'source.transfer_plugin.unique_label'.", metavar="<fhicl path>")
+    parser.add_argument("-lo", "--log_stdout", action="store_true", help="Force logging to stdout.")
     args = parser.parse_args()
     main(args)

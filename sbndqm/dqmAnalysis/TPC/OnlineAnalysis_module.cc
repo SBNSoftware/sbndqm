@@ -65,6 +65,8 @@ private:
   bool _send_metrics;
   int _wait_period;
   int _last_time;
+  bool _send_sbnd_metrics;
+
   std::string fFFTName;
   std::string fWaveformName;
   std::string fGroupName;
@@ -121,6 +123,8 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   fCorrelationMatrixName = p.get<std::string>("correlation_matrix_name", "correlation");
   fNCorrelationMatrixSamples = p.get<unsigned>("n_correlation_matrix_samples", UINT_MAX);
 
+  _send_sbnd_metrics = p.get<bool>("send_sbnd_metrics", false);
+
   event_ind = 0;
 }
 
@@ -173,6 +177,27 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
 
       value = channel_data.occupancy;
       sbndaq::sendMetric(fGroupName, instance, "occupancy", value, level, mode);
+
+      if (_send_sbnd_metrics) {
+	// compute the encoded femb/asic/channel #'s from the baseline
+	int femb = (channel_data.baseline >> 8) & 0xF;
+	sbndaq::sendMetric(fGroupName, instance, "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
+	
+	int asic = (channel_data.baseline >> 4) & 0xF;
+	sbndaq::sendMetric(fGroupName, instance, "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
+	
+	int chan = channel_data.baseline & 0xF;
+	sbndaq::sendMetric(fGroupName, instance, "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
+        
+        int ch_offset = 0;
+        if (chan <= 7) ch_offset = 7 - chan;
+        else ch_offset = 8 + 15  - chan;
+        int channel_number = 128*femb + 16*asic + ch_offset; 
+
+        sbndaq::sendMetric(fGroupName, instance, "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
+
+      }
+
     }
   }
 }
