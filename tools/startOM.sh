@@ -1,18 +1,16 @@
 #!/bin/bash
 
-# Change name of terminal, suggested by Antoni
-printf '\033]2;Online Monitoring\a'
-
 #defaults
 my_quals="e19:prof:s94:py2"
-my_version="v0_05_00"
+my_version="v0_06_00"
 my_env="sbn-fd"
 my_gitbranch="develop"
-my_devdir=$(date +"DQM_%d%b%C")
+#my_devdir=$(date +"DAQ_%d%b%C")
+my_devdir=DAQ_02Jun20
 my_projname=sbndqm
 my_new=False
 my_redishost=icarus-db01.fnal.gov
-my_dispatcherfcl=dispatcher_sbndqm_v3.fcl
+my_dispatcherfcl=" -f dispatcher_sbndqm_v3.fcl "
 
 while [[ "$#" -gt 0 ]]; do case $1 in
   -e|--env) my_env="$2"; shift;;
@@ -75,7 +73,7 @@ ups active |grep -E "(sbndqm)"
 #printenv |grep DQM
 
 my_pythonbin=$(dirname $(which python))
-
+my_pythonpath=$PYTHONPATH
 unset PYTHONPATH
 
 if [[ ! -d $my_daqarea/$my_devdir/python_virtualenv ]]; then
@@ -90,8 +88,9 @@ else
 fi
 
 export FHICL_FILE_PATH=$my_daqarea/$my_devdir:$FHICL_FILE_PATH
+export PYTHONPATH=$(echo ${my_pythonpath} | awk -v RS=: -v ORS=: '/site-packages/ {next} {print}'| sed 's/:*$//' )
 
 python $SBNDQM_FQ_DIR/tools/AliveMonitor/alive_monitor.py -s "$my_redishost" -k DAQConsumer \
- -c "python $SBNDQM_FQ_DIR/tools/DAQConsumer/daq_consumer.py  -f $my_dispatcherfcl"
+ -c "python $SBNDQM_FQ_DIR/tools/DAQConsumer/daq_consumer.py  $my_dispatcherfcl"
 
 
