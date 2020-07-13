@@ -30,23 +30,31 @@ export QUAL
 
 #available configurations
 source_branchtages_testing=(
-   "sbndqm:${SBNDQM_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
-   "sbndaq_online:${SBNDAQ_ONLINE_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_artdaq_core:${SBNDAQ_ARTDAQ_CORE_BRANCHTAG}:-${DEFAULT_BRANCHTAG}"
+   "sbndaq_decode:${SBNDAQ_DECODE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_online:${SBNDAQ_ONLINE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndqm:${SBNDQM_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
 )
 
 source_branchtages_tagged=(
-   "sbndqm:${SBNDQM_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
-   "sbndaq_online:${SBNDAQ_ONLINE_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_artdaq_core:${SBNDAQ_ARTDAQ_CORE_BRANCHTAG}:-${DEFAULT_BRANCHTAG}"
+   "sbndaq_decode:${SBNDAQ_DECODE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_online:${SBNDAQ_ONLINE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndqm:${SBNDQM_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
 )
 
 source_branchtages_master=(
-   "sbndqm:master"
+   "sbndaq_artdaq_core:master"
+   "sbndaq_decode:master"
    "sbndaq_online:master"
+   "sbndqm:master"
 )
 
 source_branchtages_develop=(
-   "sbndqm:develop"
+   "sbndaq_artdaq_core:develop"
+   "sbndaq_decode:develop"
    "sbndaq_online:develop"
+   "sbndqm:develop"
 )
 
 usage() {
