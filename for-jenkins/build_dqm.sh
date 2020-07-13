@@ -7,14 +7,14 @@ PRODUCTS=${PRODUCTS:-'/software/products/artdaq:/software/products/larsoft'}
 # config
 working_dir="${WORKSPACE:-$(pwd)}"
 selected_build_config=${1:-${BUILDCONFIG:-"testing"}}
-qual_set="${2:-${QUAL:-'s94:py:e19'}}"
-build_type="${3:-${BUILDTYPE:-'prof'}}"
+qual_set=${2:-${QUAL:-"s94:py2:e19"}}
+build_type=${3:-${BUILDTYPE:-"prof"}}
 PROJECT_SOURCE_GIT_PREFIX=${4:-${PROJECT_SOURCE_GIT_PREFIX:-"https://github.com/sbnsoftware"}}
 
 ARTDAQ_VERSION=${ARTDAQ_VERSION:-"v3_08_00"}
 export ARTDAQ_VERSION
 
-DEFAULT_BRANCHTAG=${DEFAULT_BRANCHTAG:-'v0_06_01'}
+DEFAULT_BRANCHTAG=${DEFAULT_BRANCHTAG:-'gputnam/build-testing'}
 PRODUCTS=$(for d in $(echo $PRODUCTS | tr ":" " "); do [[ -d $d ]] && echo -n "$d:"; done)
 PRODUCTS=${PRODUCTS::-1}
 export PRODUCTS
@@ -25,22 +25,28 @@ export BUILDTYPE
 WORKSPACE=${working_dir}
 export WORKSPACE
 
+QUAL=${qual_set}
+export QUAL
 
 #available configurations
 source_branchtages_testing=(
    "sbndqm:${SBNDQM_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_online:${SBNDAQ_ONLINE_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
 )
 
 source_branchtages_tagged=(
    "sbndqm:${SBNDQM_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
+   "sbndaq_online:${SBNDAQ_ONLINE_CORE_BRANCHTAG:-${DEFAULT_BRANCHTAG}}"
 )
 
 source_branchtages_master=(
    "sbndqm:master"
+   "sbndaq_online:master"
 )
 
 source_branchtages_develop=(
    "sbndqm:develop"
+   "sbndaq_online:develop"
 )
 
 usage() {
@@ -67,8 +73,6 @@ function main()
     local source_branchtag=$(echo $source_branchtag | cut -d ":" -f 2 )
     local src_dir=${working_dir}/source
     local project_uri=${PROJECT_SOURCE_GIT_PREFIX}/$(echo $product_name | tr "_" "-")$( [[ ${PROJECT_SOURCE_GIT_PREFIX} =~ github ]] && echo ".git" || echo "" )
-    echo $project_uri
-    echo $source_branchtag
 
     [[ -d ${src_dir} ]] && rm -rf ${src_dir}
     mkdir -p ${src_dir}; cd ${src_dir}
@@ -95,6 +99,8 @@ function main()
     cd ${working_dir}
     BRANCHTAG=${source_branchtag}
     echo Running build for $product_name.
+    echo $QUAL
+    echo $BUILDTYPE
     ./build-${product_name}.sh "$BRANCHTAG" "$QUAL" "$BUILDTYPE" |tee ${copybackall_dir}/combined-build-${product_name}.log
     [[ $? -eq 0 ]] \
        || { echo "Error: Failed building ${product_name} with $QUAL."; return 3; }

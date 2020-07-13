@@ -8,6 +8,8 @@ PRODUCTS=${PRODUCTS:-'/cvmfs/fermilab.opensciencegrid.org/products/artdaq:/cvmfs
 
 ARTDAQ_VERSION=${ARTDAQ_VERSION:-"v3_08_00"}
 
+LARSOFT_VERSION=${LARSOFT_VERSION:-"v08_42_01"}
+
 #main script
 PRODUCTS=$(for d in $(echo $PRODUCTS | tr ":" " "); do [[ -d $d ]] && echo -n "$d:"; done)
 PRODUCTS=${PRODUCTS::-1}
@@ -154,6 +156,8 @@ curl --fail --silent --location --insecure -O http://scisoft.fnal.gov/scisoft/bu
 chmod +x pullProducts pullPackage
 ./pullProducts ${products_dir} ${flvr} artdaq-${ARTDAQ_VERSION} ${manifest_qual_set//:/-} ${build_type} 2>&1 |tee ${products_dir}/pullproducts.log
 
+./pullProducts ${products_dir} ${flvr} larsoft-${LARSOFT_VERSION} ${manifest_qual_set//:/-} ${build_type} 2>&1 |tee ${products_dir}/pullproducts.log
+
 ./pullPackage ${products_dir} sl7 python-v3_7_2 2>&1 |tee -a ${products_dir}/pullProducts.log
 
 echo
@@ -187,7 +191,7 @@ cd ${products_dir} || exit 1
 table_qual_set="+${qual_set//:/+:}+:${build_type}"
 export products_dir
 
-cat ${products_dir}/sbndaq_artdaq/*/ups/sbndaq_artdaq.table | \
+cat ${products_dir}/sbndqm/*/ups/sbndqm.table | \
         sed -n "/+e19:+py2:+s94:+${build_type}/,/^$/p" | \
         sed  's/setupRequired(/.\/pullPackage ${products_dir} sl7 /g' | \
         sed  's/)//g;s/+//g;s/^[ \t]*//;s/[ \t]*$//;/^\s*$/d;s/:/-/g;s/-q//g;s/\(.*\)-/\1 /'| \
