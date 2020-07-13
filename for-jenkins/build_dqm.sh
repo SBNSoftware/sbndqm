@@ -2,7 +2,7 @@
 
 # set products to cvmfs if they aren't already setup
 # PRODUCTS=${PRODUCTS:-'/cvmfs/fermilab.opensciencegrid.org/products/artdaq:/cvmfs/fermilab.opensciencegrid.org/products/larsoft'}
-PRODUCTS=${PRODUCTS:-'/software/products/artdaq:/software/products/larsoft'}
+PRODUCTS=${PRODUCTS:-'/cvmfs/fermilab.opensciencegrid.org/products/artdaq:/cvmfs/fermilab.opensciencegrid.org/products/larsoft'}
 
 # config
 working_dir="${WORKSPACE:-$(pwd)}"
