@@ -34,7 +34,7 @@ fwdir   product_dir scripts
 # With "product  version" table below, we now define dependencies
 # Add the dependent product and version
 
-product             version
+product             version  whichqual optional
 artdaq              v3_08_00
 sbndaq_online       v0_06_00
 sbndaq_decode       v0_06_00
