@@ -14,7 +14,7 @@ PROJECT_SOURCE_GIT_PREFIX=${4:-${PROJECT_SOURCE_GIT_PREFIX:-"https://github.com/
 ARTDAQ_VERSION=${ARTDAQ_VERSION:-"v3_08_00"}
 export ARTDAQ_VERSION
 
-DEFAULT_BRANCHTAG=${DEFAULT_BRANCHTAG:-'gputnam/build-testing'}
+DEFAULT_BRANCHTAG=${DEFAULT_BRANCHTAG:-'v0_06_01'}
 PRODUCTS=$(for d in $(echo $PRODUCTS | tr ":" " "); do [[ -d $d ]] && echo -n "$d:"; done)
 PRODUCTS=${PRODUCTS::-1}
 export PRODUCTS
