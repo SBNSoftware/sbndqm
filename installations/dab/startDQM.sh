@@ -5,7 +5,7 @@ MRBDIR=/home/nfs/gputnam/DQM_DAB/
 function printhelp() {
   echo "Starts the online monitoring. Can be run in the foreground or background."
   echo "To stop while running in the foreground, type Ctrl-C to send SIGINT."
-  echo "To stop while tunning in the background, run:"
+  echo "To stop while running in the background, run:"
   echo "kill -INT <pid>"
   echo "where <pid> is the process ID of either the startDQM process or the child"
   echo "python process."
