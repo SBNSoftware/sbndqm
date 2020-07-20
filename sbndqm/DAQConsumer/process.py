@@ -38,7 +38,7 @@ class ConsumerProcess(object):
         output_file = sys.stdout.fileno() if self.output_file is None else open(self.output_file, "w+")
         try:
             self.process = subprocess.Popen(command, stdout=output_file, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             self.retcode = err.code
         if self.output_file is not None:
             output_file.close()
