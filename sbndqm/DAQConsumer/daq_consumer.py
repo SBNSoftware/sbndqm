@@ -5,7 +5,12 @@ import argparse
 import os
 import signal
 import sys
-import xmlrpclib
+# python 2
+try:
+    import xmlrpclib as xmlrpc
+# python 3
+except:
+    import xmlrpc.client as xmlrpc
 import socket
 import fhicl
 
@@ -141,20 +146,20 @@ def check_process(process, args):
     if retcode is not None:
         process.cleanup()
         logger.info("Process with config %s ID %i on port %i exited with code %i" % (process.name, process.ID, process.port, retcode)) 
-	if retcode != 0 and (process.n_restart < args.restart or args.restart < 0):
+        if retcode != 0 and (process.n_restart < args.restart or args.restart < 0):
             logger.info("Restarting process with config %s ID %i on port %i. Process has been restarted %i times." % (process.name, process.ID, process.port, process.n_restart))
-	    process.restart()
-	else:
+            process.restart()
+        else:
             logger.info("Removing process with config %s ID %i on port %i." % (process.name, process.ID, process.port))
             return False
     return True
 
 def unregister(port, process_names):
     for name in process_names:
-	logger.info("De-registering old monitoring process with unique_label %s on port %i." % (name, port))
-	connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
-	connect.daq.unregister_monitor(name) # Added BH to test... Unregister monitor if it's already registered.
-	logger.info("Done attempting de-register.")
+        logger.info("De-registering old monitoring process with unique_label %s on port %i." % (name, port))
+        connect = xmlrpc.ServerProxy('http://localhost:%i' % port)
+        connect.daq.unregister_monitor(name) # Added BH to test... Unregister monitor if it's already registered.
+        logger.info("Done attempting de-register.")
 
 def check_dispatchers(dispatchers, process_names):
     setters = []
@@ -163,8 +168,8 @@ def check_dispatchers(dispatchers, process_names):
         if status == "Starting":
             try:
                 unregister(port, process_names)
-	        connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
-	        daq_status = connect.daq.status()
+                connect = xmlrpc.ServerProxy('http://localhost:%i' % port)
+                daq_status = connect.daq.status()
             # connection failed -- remove the dispatcher
             except:
                 logger.info("Failed to connect to dispatcher XMLRPC server on port %i. Removing." % port)
@@ -177,7 +182,7 @@ def check_dispatchers(dispatchers, process_names):
                 setters.append( (port, "Initialize") )
         elif status == "Running":
             try:
-                connect = xmlrpclib.ServerProxy('http://localhost:%i' % port)
+                connect = xmlrpc.ServerProxy('http://localhost:%i' % port)
                 daq_status = connect.daq.status()
             except:
                 logger.info("Failed to connect to dispatcher XMLRPC server on port %i. Removing." % port)
