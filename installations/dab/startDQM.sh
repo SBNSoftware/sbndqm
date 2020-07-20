@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MRBDIR=/home/nfs/gputnam/DQM_DAB/
+MRBDIR=/home/nfs/sbnddqm/DQM/
 
 function printhelp() {
   echo "Starts the online monitoring. Can be run in the foreground or background."
@@ -49,7 +49,7 @@ function main() {
   cd $MRBDIR
   source /daq/software/products/setup
   setup mrb
-  source localProducts_sbndqm_v0_06_00_e19_prof_py2_s94/setup
+  source localProducts_sbndqm_0_06_01_e19_prof/setup 
   mrbsetenv
   mrbslp
   cd srcs/sbndqm
