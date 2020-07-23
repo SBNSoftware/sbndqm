@@ -27,8 +27,8 @@ class ConsumerProcess(object):
         except:
             raise ProcessFhiclException("Couldn't read fhicl file (%s)" % self.config_file_path)
         self.temp_file = tempfile.NamedTemporaryFile() 
-        self.temp_file.write(text)
-        self.temp_file.write("\n\n%s: %i" % (self.overwrite_path, self.port))
+        self.temp_file.write(text.encode())
+        self.temp_file.write(("\n\n%s: %i" % (self.overwrite_path, self.port)).encode())
         self.temp_file.flush()
 
         self.process = None
