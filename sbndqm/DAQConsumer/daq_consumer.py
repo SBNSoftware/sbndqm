@@ -88,7 +88,7 @@ def main(args):
     if args.consumer == "dispatcher":
         consumer = dispatcher_consumer.DispatcherConsumer(args.fhicl_configuration, process_names, args.log_dir, args.overwrite_path)
     elif args.consumer == "file":
-        consumer = file_consumer.FileConsumer(args.file_glob, args.fhicl_configuration, process_names, args.log_dir, args.overwrite_path)
+        consumer = file_consumer.FileConsumer(args.file_glob, args.parallel_process, args.fhicl_configuration, process_names, args.log_dir, args.overwrite_path)
 
     # cleanup on sigint
     signal.signal(signal.SIGINT, lambda signum, frame: clean_exit(consumer, signum, frame))
@@ -136,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--consumer", choices=["file", "dispatcher"], default="dispatcher", help="Which consumer to run. Defaults to '%(default)s'.", metavar="file|dispatcher")
     parser.add_argument("-o", "--overwrite_path", default=None, help="Fhicl path to overwrite dispatcher port/file name. Defaults to 'source.dispatcherPort' for dispatcher consumer and 'source.fileNames' for file consumer.", metavar="<fhicl path>")
     parser.add_argument("-g", "--file_glob", default=None, help="Glob path for input files. Used only by the file consumer. Defaults to 'None'", metavar="<glob>")
+    parser.add_argument("-pp", "--parallel_process", action="store_true", help="Flag for running multiple jobs in parallel. Only used by the file consumer.")
     args = parser.parse_args()
 
     if args.consumer == "file" and args.overwrite_path is None:

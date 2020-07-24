@@ -14,8 +14,9 @@ from process import ConsumerProcess, ProcessFhiclException
 logger = None
 
 class FileConsumer:
-    def __init__(self, search_glob, fhicl_configurations, process_names, log_dir, overwrite_path):
+    def __init__(self, search_glob, parallel_process, fhicl_configurations, process_names, log_dir, overwrite_path):
         self.search_glob = search_glob
+        self.parallel_process = parallel_process
         self.fhicl_configurations = fhicl_configurations
         self.process_names = process_names
         self.log_dir = log_dir
@@ -55,6 +56,11 @@ class FileConsumer:
             make_ready.append(fname)
             basef = os.path.basename(fname)
             logger.info("New file (%s) ready for processing." % basef)
+
+            # see if we are ready to start a new process
+            if not self.parallel_process and self.PROCESSES:
+                logger.info("Another file is currently processing skipping this one.")
+                continue
 
             self.PROCESSES[basef] = []
             for config in self.fhicl_configurations:
