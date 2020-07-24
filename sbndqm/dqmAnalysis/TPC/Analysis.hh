@@ -90,6 +90,7 @@ public:
     std::string output_file_name;
     bool verbose;
     std::vector<std::string> producers;
+    std::string instance;
     std::string header_producer;
     int static_input_size;
 
