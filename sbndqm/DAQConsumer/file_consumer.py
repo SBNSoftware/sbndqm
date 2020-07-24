@@ -20,7 +20,7 @@ class FileConsumer:
         self.process_names = process_names
         self.log_dir = log_dir
         self.overwrite_path = overwrite_path
-        self.wait_time = 0 # [s]
+        self.wait_time = 10 # [s]
         self.PROCESSES = {}
         self.files = {}
         self.initial_files = set([])
