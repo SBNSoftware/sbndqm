@@ -5,7 +5,6 @@ import argparse
 import os
 import signal
 import sys
-import xmlrpclib
 import socket
 import fhicl
 import glob
