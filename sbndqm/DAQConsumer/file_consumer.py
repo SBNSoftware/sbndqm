@@ -58,8 +58,8 @@ class FileConsumer:
             logger.info("New file (%s) ready for processing." % basef)
 
             # see if we are ready to start a new process
-            if len(self.PROCESS) >= self.parallel_process:
-                logger.info("Currently processing %i files (max is %i). Skipping this one." % (len(self.PROCESS), self.parallel_process))
+            if len(self.PROCESSES) >= self.parallel_process:
+                logger.info("Currently processing %i files (max is %i). Skipping this one." % (len(self.PROCESSES), self.parallel_process))
                 continue
 
             self.PROCESSES[basef] = []
