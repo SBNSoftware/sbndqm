@@ -57,13 +57,14 @@ class FileConsumer:
             basef = os.path.basename(fname)
             logger.info("New file (%s) ready for processing." % basef)
 
-            # see if we are ready to start a new process
-            if len(self.PROCESSES) >= self.parallel_process:
-                logger.info("Currently processing %i files (max is %i). Skipping this one." % (len(self.PROCESSES), self.parallel_process))
-                continue
-
             self.PROCESSES[basef] = []
             for config in self.fhicl_configurations:
+                 n_active = sum([config in [p.config_file_path for p in procs] for _, procs in self.PROCESSES.items()])
+                 # see if we are ready to start a new process
+                 if n_active >= self.parallel_process:
+                     logger.info("For config (%s): Currently processing %i files (max is %i). Skipping this one." % (config, len(self.PROCESSES), self.parallel_process))
+                     continue
+
                  ID = int(time.time())
                  log_file = None if self.log_dir is None else \
                      os.path.join(self.log_dir, os.path.split(config)[-1].split(".")[0] + "_" + basef + "_" + str(ID) + ".log")
