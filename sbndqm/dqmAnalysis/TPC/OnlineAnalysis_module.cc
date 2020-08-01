@@ -61,12 +61,18 @@ private:
   bool _send_ffts;
   bool _send_time_avg_ffts;
   bool _send_correlation_matrix;
+  bool _send_rms;
+  bool _send_baseline;
+  bool _send_dnoise;
+  bool _send_peakheight;
+  bool _send_occupancy;
   int _n_evt_fft_avg;
   bool _send_metrics;
   int _wait_period;
   int _last_time;
   bool _send_sbnd_metrics;
 
+  std::string fMetricPrefix;
   std::string fFFTName;
   std::string fWaveformName;
   std::string fGroupName;
@@ -115,6 +121,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
 
   fAvgFFTData.first = true;
 
+  fMetricPrefix = p.get<std::string>("metric_prefix", "");
   fFFTName = p.get<std::string>("fft_name", "fft");
   fGroupName = p.get<std::string>("group_name", "tpc_channel");
   fWaveformName = p.get<std::string>("waveform_name", "waveform");
@@ -124,6 +131,12 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   fNCorrelationMatrixSamples = p.get<unsigned>("n_correlation_matrix_samples", UINT_MAX);
 
   _send_sbnd_metrics = p.get<bool>("send_sbnd_metrics", false);
+
+  _send_rms = p.get<bool>("send_rms", true);
+  _send_baseline = p.get<bool>("send_baseline", true);
+  _send_dnoise = p.get<bool>("send_dnoise", true);
+  _send_peakheight = p.get<bool>("send_peakheight", true);
+  _send_occupancy = p.get<bool>("send_occupancy", true);
 
   event_ind = 0;
 }
@@ -164,37 +177,42 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
       std::string instance = std::to_string(channel_data.channel_no);
       
       value = channel_data.rms;
-      sbndaq::sendMetric(fGroupName, instance, "rms", value, level, mode);
+      if (_send_rms)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "rms", value, level, mode);
 
       value = channel_data.baseline;
-      sbndaq::sendMetric(fGroupName, instance, "baseline", value, level, mode);
+      if (_send_baseline)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline", value, level, mode);
 
       value = channel_data.next_channel_dnoise;
-      sbndaq::sendMetric(fGroupName, instance, "next_channel_dnoise", value, level, mode);
+      if (_send_dnoise)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "next_channel_dnoise", value, level, mode);
 
       value = channel_data.mean_peak_height;
-      sbndaq::sendMetric(fGroupName, instance, "mean_peak_height", value, level, mode);
+      if (_send_peakheight)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "mean_peak_height", value, level, mode);
 
       value = channel_data.occupancy;
-      sbndaq::sendMetric(fGroupName, instance, "occupancy", value, level, mode);
+      if (_send_occupancy)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "occupancy", value, level, mode);
 
       if (_send_sbnd_metrics) {
 	// compute the encoded femb/asic/channel #'s from the baseline
 	int femb = (channel_data.baseline >> 8) & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
 	
 	int asic = (channel_data.baseline >> 4) & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
 	
 	int chan = channel_data.baseline & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
         
         int ch_offset = 0;
         if (chan <= 7) ch_offset = 7 - chan;
         else ch_offset = 8 + 15  - chan;
         int channel_number = 128*femb + 16*asic + ch_offset; 
 
-        sbndaq::sendMetric(fGroupName, instance, "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
 
       }
 
