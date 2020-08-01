@@ -84,7 +84,7 @@ private:
   // fields used to compute time averaged FFT's
   class {
   public:
-    std::vector<std::vector<double>> waveforms;
+    std::vector<std::vector<float>> waveforms;
     int event_ind;
     bool first;
   } fAvgFFTData;
@@ -173,7 +173,7 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
     artdaq::MetricMode mode = artdaq::MetricMode::Average;
     // send the metrics
     for (auto const &channel_data: _analysis._per_channel_data) {
-      double value;
+      float value;
       std::string instance = std::to_string(channel_data.channel_no);
       
       value = channel_data.rms;
@@ -241,7 +241,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
   // first time setup -- set the size of each waveform
   if (fAvgFFTData.first) {
     // set the waveform size to the number of channels
-    std::fill_n(std::back_inserter(fAvgFFTData.waveforms), _analysis._channel_info.NChannels(), std::vector<double>());
+    std::fill_n(std::back_inserter(fAvgFFTData.waveforms), _analysis._channel_info.NChannels(), std::vector<float>());
     fAvgFFTData.event_ind = 0;
 
     unsigned n_ticks = _analysis._raw_digits_handle[0]->NADC();
@@ -292,9 +292,9 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
     if (digits->Channel() >= fAvgFFTData.waveforms.size()) continue;
 
     const std::vector<int16_t> &adcs = digits->ADCs();
-    std::vector<double> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
+    std::vector<float> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
     for (unsigned i = 0; i < wvf.size(); i++) {
-      wvf[i] = ((double)adcs.at(i) + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
+      wvf[i] = ((float)adcs.at(i) + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
     } 
   }
   fAvgFFTData.event_ind ++; 
