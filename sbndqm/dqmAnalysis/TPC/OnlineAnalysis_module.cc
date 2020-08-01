@@ -104,7 +104,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   if (p.has_key("metric_config")) {
     sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   }
-  _tick_period = p.get<double>("tick_period", 500 /* ns */);
+  _tick_period = p.get<double>("tick_period", 0.4 /* us */);
   _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
   _send_waveforms = p.get<bool>("send_waveforms", false);
   _send_ffts = p.get<bool>("send_ffts", false);
@@ -231,7 +231,7 @@ void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {
   for (auto const& digits: _analysis._raw_digits_handle) {
     const std::vector<int16_t> &adcs = digits->ADCs();
      std::string redis_key = "snapshot:" + fWaveformName + ":wire:" + std::to_string(digits->Channel());
-     sbndaq::SendWaveform(redis_key, adcs, 0.4 /* tick period in us */);
+     sbndaq::SendWaveform(redis_key, adcs, _tick_period /* tick period in us */);
      sbndaq::SendEventMeta(redis_key, e); 
   }
 }
@@ -277,7 +277,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
 
       // send it out
       std::string redis_key = "snapshot:" + fAvgFFTName + ":wire:" + std::to_string(i);
-      sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendWaveform(redis_key, fft, 1./_tick_period /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
 
       std::string redis_key_wvf = "snapshot:" + fAvgWvfName + ":wire:" + std::to_string(i);
@@ -305,7 +305,7 @@ void tpcAnalysis::OnlineAnalysis::SendFFTs(const art::Event &e) {
   for (const ChannelData &chan: _analysis._per_channel_data) {
     if (chan.fft_mag.size()) {
       std::string redis_key = "snapshot:"+ fFFTName + ":wire:" + std::to_string(chan.channel_no);
-      sbndaq::SendWaveform(redis_key, chan.fft_mag, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendWaveform(redis_key, chan.fft_mag, 1./_tick_period /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
     }
   }
