@@ -75,8 +75,6 @@ sbndaq::CAENV1730WaveformAnalysis::~CAENV1730WaveformAnalysis()
 
 void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
 {
-  
-
   art::Handle< std::vector<raw::OpDetWaveform> > OpdetHandle; 
   evt.getByLabel("daq", OpdetHandle); 
   //  art::ServiceHandle< art::TFileService > tfs;
@@ -88,7 +86,7 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt)
   //std::cout << std::endl;
   
  
- int level = 0;
+ int level = 3; // BH: was 0, on advice of Gray we're changing it to 3, has to do with Metric Manager.
  artdaq::MetricMode mode = artdaq::MetricMode::Average;
  std::string group_name = "PMT";
  

@@ -3,7 +3,7 @@
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v1_02_03)
 parent sbndqm v0_06_01
-defaultqual e19:s94
+defaultqual e19
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -35,22 +35,17 @@ fwdir   product_dir scripts
 # Add the dependent product and version
 
 product             version  whichqual optional
-artdaq              v3_08_00
 sbndaq_online       v0_06_01
 sbndaq_decode       v0_06_01
 cetbuildtools   v7_14_00 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes".
-qualifier          artdaq              sbndaq_online       sbndaq_decode     notes
-e19:prof:s94       e19:prof:s94        e19:prof:s94        e19:prof:s94   
-e19:debug:s94      e19:debug:s94       e19:debug:s94       e19:debug:s94  
-e19:prof:s94:py2   e19:prof:s94:py2    e19:prof:s94:py2    e19:prof:s94:py2   
-e19:debug:s94:py2  e19:debug:s94:py2   e19:debug:s94:py2   e19:debug:s94:py2  
-e19:prof:s96       e19:prof:s96        e19:prof:s96        e19:prof:s96   
-e19:debug:s96      e19:debug:s96       e19:debug:s96       e19:debug:s96  
-e19:prof:s96:py2   e19:prof:s96:py2    e19:prof:s96:py2    e19:prof:s96:py2   
-e19:debug:s96:py2  e19:debug:s96:py2   e19:debug:s96:py2   e19:debug:s96:py2  
+qualifier                        sbndaq_online       sbndaq_decode     notes
+e19:prof               e19:prof        e19:prof   
+e19:debug             e19:debug       e19:debug  
+e19:prof:py2      e19:prof:py2    e19:prof:py2   
+e19:debug:py2     e19:debug:py2   e19:debug:py2  
 end_qualifier_list
 
 table_fragment_begin

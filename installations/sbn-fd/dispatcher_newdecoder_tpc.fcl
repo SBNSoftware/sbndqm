@@ -42,6 +42,9 @@ analysis_config: {
   // number of headers per event provided by input (will be ignored if value is negative)
   // 10 for SBND
   n_headers: -1
+
+  // Change tick period to be 0.4 for ICARUS
+  tick_period: 0.4
 }
 END_PROLOG
 
@@ -53,11 +56,21 @@ physics:
     daq: @local::decodeFilterNoise
   }
 
+  filters:
+  {
+    prescale10: { module_type: "Prescaler"
+    		  prescaleFactor: 10
+ 		  prescaleOffset: 0
+		 }
+  }
+
   analyzers:
   {
     Meta: {
       module_type: ReportMetadata
       RedisKey: eventmetaTPC
+
+      SelectEvents: [all_events]
     }
 
     OnlineAnalysisRawData: {
@@ -76,6 +89,8 @@ physics:
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
+
+      SelectEvents: [all_events]
     }
 
     OnlineAnalysis:
@@ -83,6 +98,9 @@ physics:
       module_type: OnlineAnalysis
       group_name: tpc_channel
       @table::analysis_config
+
+      #SelectEvents: [pscale_event]
+      SelectEvents: [all_events]
       metrics: {
 
       graphite: {
@@ -96,7 +114,7 @@ physics:
         redis_metric_archive: {
           level: 3
           metricPluginType: "redis"
-          reporting_interval: 1000000.0 # 1000000s
+          reporting_interval: 60.0 # 60s
           verbose: true
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":archiving"
@@ -113,7 +131,12 @@ physics:
           rms: {
             units: ADC
             #title: "TPC wire %(instance)s rms"
-            display_range: [0, 5]
+            display_range: [0, 10]
+          }
+	  filtered_rms: {
+            units: ADC
+            #title: "TPC wire %(instance)s rms"
+            display_range: [0, 10]
           }
           baseline: {
             units: ADC
@@ -136,11 +159,33 @@ physics:
       	}
       }
     }
+
+    OnlineAnalysisDenoised:
+     {
+      module_type: OnlineAnalysis
+      group_name: tpc_channel
+      @table::analysis_config
+
+      raw_digit_instance: ""
+
+      #SelectEvents: [pscale_event]
+      SelectEvents: [all_events]
+
+      metric_prefix: filtered_
+
+      send_peakheight: false
+      send_baseline: false
+      send_occupancy: false
+      send_dnoise: false
+     }
   }
 
-  my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
-//  end_paths: [a]
+  all_events: [ daq ]
+  #pscale_event: [ prescale10, daq ]
+  trigger_paths: [ all_events ] #, pscale_event ]
+
+  a: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta ]
+  end_paths: [ a ]
 }
 
 services:
@@ -151,6 +196,8 @@ services:
 }
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 services.NuRandomService: @erase
+services.TFileService: @erase
+services.message: @erase
 
 source:
 {
