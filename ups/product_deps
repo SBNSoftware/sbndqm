@@ -2,7 +2,7 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v1_02_03)
-parent sbndqm v0_06_01
+parent sbndqm v0_07_00
 defaultqual e19:s94
 
 # These optional lines define the installed directories where headers,
@@ -35,9 +35,9 @@ fwdir   product_dir scripts
 # Add the dependent product and version
 
 product             version  whichqual optional
-artdaq              v3_08_00
-sbndaq_online       v0_06_01
-sbndaq_decode       v0_06_01
+artdaq              v3_09_01
+sbndaq_online       v0_07_00
+sbndaq_decode       v0_07_00
 cetbuildtools   v7_14_00 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
