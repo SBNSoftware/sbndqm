@@ -1,0 +1,31 @@
+physics:
+{
+  // now also have something produce the digits and headers
+  producers: {}
+
+  analyzers: {
+    ana: {
+      module_type: NevisProductionTest
+    }
+  }
+
+  my_producer_modules: []
+  my_analyzer_modules: [ana]
+  a: []
+  end_paths: [a]
+}
+
+source: {
+  module_type: RootInput
+}
+
+outputs: {
+  rootout: {
+    module_type: "RootOutput"
+    fileName: "digits.root"
+  }
+}
+
+
+process_name: TPCANALYSIS
+
