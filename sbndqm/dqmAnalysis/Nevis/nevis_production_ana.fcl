@@ -9,9 +9,7 @@ physics:
     }
   }
 
-  my_producer_modules: []
-  my_analyzer_modules: [ana]
-  a: []
+  a: [ana]
   end_paths: [a]
 }
 
