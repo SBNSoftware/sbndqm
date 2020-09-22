@@ -209,9 +209,55 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 
+#source:
+#{
+#  module_type: RootInput
+#}
+
 source:
 {
-  module_type: RootInput
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "OnlineMonitor"
+      transferPluginType: Shmem
+      shm_key: 0x40471454
+      max_fragment_size_words: 33554432
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "OnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "OnlineMonitor"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471454
+
+            max_fragment_size_words: 33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
 }
 
 outputs:
