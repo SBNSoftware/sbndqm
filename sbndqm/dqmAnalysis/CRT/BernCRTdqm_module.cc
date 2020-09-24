@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       BernCRTAna
+// Class:       BernCRTdqm
 // Module Type: analyzer
-// File:        BernCRTAna_module.cc
+// File:        BernCRTdqm_module.cc
 // Description: Makes a tree with waveform information.
 ////////////////////////////////////////////////////////////////////////
 
@@ -33,16 +33,16 @@
 
 
 namespace sbndaq {
-  class BernCRTAna;
+  class BernCRTdqm;
 }
 
 /*****/
 
-class sbndaq::BernCRTAna : public art::EDAnalyzer {
+class sbndaq::BernCRTdqm : public art::EDAnalyzer {
 
 public:
-  explicit BernCRTAna(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
-  virtual ~BernCRTAna();
+  explicit BernCRTdqm(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
+  virtual ~BernCRTdqm();
   
   virtual void analyze(art::Event const & evt);
   
@@ -54,7 +54,7 @@ private:
 };
 
 //Define the constructor
-sbndaq::BernCRTAna::BernCRTAna(fhicl::ParameterSet const & pset)
+sbndaq::BernCRTdqm::BernCRTdqm(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
 
@@ -72,11 +72,11 @@ sbndaq::BernCRTAna::BernCRTAna(fhicl::ParameterSet const & pset)
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));  //This line cauess the code to not be able to compile -- undefined reference to this thing Commenting out this line allows it to compile
 }
 
-sbndaq::BernCRTAna::~BernCRTAna()
+sbndaq::BernCRTdqm::~BernCRTdqm()
 {
 }
 
-void sbndaq::BernCRTAna::analyze(art::Event const & evt)
+void sbndaq::BernCRTdqm::analyze(art::Event const & evt)
 {
   sleep(2);
 
@@ -199,5 +199,5 @@ void sbndaq::BernCRTAna::analyze(art::Event const & evt)
 
 }
 
-DEFINE_ART_MODULE(sbndaq::BernCRTAna)
+DEFINE_ART_MODULE(sbndaq::BernCRTdqm)
 //this is where the name is specified
