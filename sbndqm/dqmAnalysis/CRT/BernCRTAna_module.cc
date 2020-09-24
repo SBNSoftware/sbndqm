@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       BernCRTZMQAna
+// Class:       BernCRTAna
 // Module Type: analyzer
-// File:        BernCRTZMQAna_module.cc
+// File:        BernCRTAna_module.cc
 // Description: Makes a tree with waveform information.
 ////////////////////////////////////////////////////////////////////////
 
@@ -12,7 +12,7 @@
 
 #include "canvas/Utilities/Exception.h"
 
-#include "sbndaq-artdaq-core/Overlays/Common/BernCRTZMQFragment.hh"
+#include "sbndaq-artdaq-core/Overlays/Common/BernCRTFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
 //add these
 #include "sbndaq-online/helpers/SBNMetricManager.h"
@@ -33,16 +33,16 @@
 
 
 namespace sbndaq {
-  class BernCRTZMQAna;
+  class BernCRTAna;
 }
 
 /*****/
 
-class sbndaq::BernCRTZMQAna : public art::EDAnalyzer {
+class sbndaq::BernCRTAna : public art::EDAnalyzer {
 
 public:
-  explicit BernCRTZMQAna(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
-  virtual ~BernCRTZMQAna();
+  explicit BernCRTAna(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
+  virtual ~BernCRTAna();
   
   virtual void analyze(art::Event const & evt);
   
@@ -54,7 +54,7 @@ private:
 };
 
 //Define the constructor
-sbndaq::BernCRTZMQAna::BernCRTZMQAna(fhicl::ParameterSet const & pset)
+sbndaq::BernCRTAna::BernCRTAna(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
 
@@ -72,11 +72,11 @@ sbndaq::BernCRTZMQAna::BernCRTZMQAna(fhicl::ParameterSet const & pset)
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));  //This line cauess the code to not be able to compile -- undefined reference to this thing Commenting out this line allows it to compile
 }
 
-sbndaq::BernCRTZMQAna::~BernCRTZMQAna()
+sbndaq::BernCRTAna::~BernCRTAna()
 {
 }
 
-void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
+void sbndaq::BernCRTAna::analyze(art::Event const & evt)
 {
   sleep(2);
 
@@ -90,7 +90,7 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
 
   //we fill the handle by getting the right data according to the label
   //the module label will be 'daq', while the instance label (second argument) matches the type of fragment
-  evt.getByLabel("daq","BERNCRTZMQ", rawFragHandle);
+  evt.getByLabel("daq","BERNCRT", rawFragHandle);
 
   //this checks to make sure it's ok
   if (!rawFragHandle.isValid()) return;
@@ -105,15 +105,15 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
 
     const auto& frag((*rawFragHandle)[idx]); // use this fragment as a reference to the same data
 
-    //this applies the 'overlay' to the fragment, to tell it to treat it like a BernCRTZMQ fragment
-    BernCRTZMQFragment bern_fragment(frag);
+    //this applies the 'overlay' to the fragment, to tell it to treat it like a BernCRT fragment
+    BernCRTFragment bern_fragment(frag);
 
     unsigned readout_number = 0; //board number //AA: why is it always 0? what is the purpose?!
     std::string readout_number_str = std::to_string(readout_number);
 
     //gets a pointers to the data and metadata from the fragment
-    BernCRTZMQEvent const* evt = bern_fragment.eventdata();
-    const BernCRTZMQFragmentMetadata* md = bern_fragment.metadata();
+    BernCRTEvent const* evt = bern_fragment.eventdata();
+    const BernCRTFragmentMetadata* md = bern_fragment.metadata();
 
     std::cout << *evt << std::endl;
     std::cout << *md << std::endl;
@@ -199,5 +199,5 @@ void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
 
 }
 
-DEFINE_ART_MODULE(sbndaq::BernCRTZMQAna)
+DEFINE_ART_MODULE(sbndaq::BernCRTAna)
 //this is where the name is specified

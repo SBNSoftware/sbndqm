@@ -1,4 +1,4 @@
-simple_plugin( BernCRTZMQAna module
+simple_plugin( BernCRTAna module
   art_Framework_Services_Registry
   ${ROOT_BASIC_LIB_LIST}
   sbndaq-artdaq-core_Overlays_Common 
