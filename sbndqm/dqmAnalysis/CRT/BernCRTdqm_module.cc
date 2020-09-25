@@ -147,7 +147,6 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
     std::cout<<" TS1 "<<ts0 - 1e9<<std::endl; //AA: why do we display ts0 here?
   }
   for(int i = 0; i<32; i++) {
-    std::cout<<i<<": "<<adc[i]<<std::endl;
     totaladc  += adc[i];
     ADCchannel = adc[i];
     sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
