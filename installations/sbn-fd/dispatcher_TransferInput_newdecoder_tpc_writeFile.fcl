@@ -58,8 +58,16 @@ physics:
 
   filters:
   {
+    prescale2: { module_type: "Prescaler"
+    		    prescaleFactor: 2
+ 		    		      prescaleOffset: 0
+				      		       }
     prescale10: { module_type: "Prescaler"
     		    prescaleFactor: 10
+ 		    		      prescaleOffset: 0
+				      		       }
+    prescale20: { module_type: "Prescaler"
+    		    prescaleFactor: 20
  		    		      prescaleOffset: 0
 				      		       }
 
@@ -75,7 +83,7 @@ physics:
       module_type: ReportMetadata
       RedisKey: eventmetaTPC
 
-      SelectEvents: [pscale10_events]
+      SelectEvents: [pscale2_events]
     }
 
     OnlineAnalysisRawData: {
@@ -95,7 +103,7 @@ physics:
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
 
-      SelectEvents: [pscale10_events]
+      SelectEvents: [pscale2_events]
     }
 
     OnlineAnalysis:
@@ -105,7 +113,7 @@ physics:
       @table::analysis_config
 
       #SelectEvents: [pscale_event]
-      SelectEvents: [pscale10_events]
+      SelectEvents: [pscale2_events]
       metrics: {
 
 #      graphite: {
@@ -174,7 +182,7 @@ physics:
       raw_digit_instance: ""
 
       #SelectEvents: [pscale_event]
-      SelectEvents: [pscale10_events]
+      SelectEvents: [pscale2_events]
 
       metric_prefix: filtered_
 
@@ -188,8 +196,9 @@ physics:
   #all_events: [ daq ]
   #pscale_event: [ prescale10, daq ]
   pscale10_events: [ prescale10, daq ]
-  pscale_event: [ prescale100, daq ]
-  trigger_paths: [ pscale10_events, pscale_event ] # BH: COMMENT PSCALE_EVENT TO TURN OFF OUTPUT FILE
+  pscale2_events: [ prescale2, daq ]
+  pscale_event: [ prescale10, daq ]
+  trigger_paths: [ pscale10_events, pscale_event, pscale2_events ] # BH: COMMENT PSCALE_EVENT TO TURN OFF OUTPUT FILE
 
   a: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta ]
 
@@ -202,6 +211,10 @@ services:
   RedisConnection: @local::redis_connection
   @table::icarus_calibration_services
   @table::icarus_wirecalibration_services
+
+  ArtdaqSharedMemoryServiceInterface: {
+    service_provider: "ArtdaqSharedMemoryService"
+  }
 }
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 services.NuRandomService: @erase
@@ -231,7 +244,8 @@ source:
      unique_label: "OnlineMonitor"
       transferPluginType: Shmem
       shm_key: 0x40471454
-      max_fragment_size_words: 33554432
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
@@ -251,7 +265,7 @@ source:
 
             shm_key: 0x40471454
 
-            max_fragment_size_words: 33554432
+            max_fragment_size_words: 58543672 #33554432
               first_event_builder_rank: 0
               destination_rank: 6
         }
@@ -265,10 +279,17 @@ outputs:
   decodedout:
   {
     module_type: RootOutput
-    fileName:    "%ifb_%tc-decoded.root"
+    fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
     dataTier:    "raw"
     compressionLevel: 1
     SelectEvents: [pscale_event]
+
+    fileProperties: { 
+      maxSubRuns: 1 
+      maxRuns: 1 
+      maxEvents: 1
+    }
+
   }
 }
 
@@ -284,5 +305,7 @@ physics.producers.daq.DecoderTool.FragmentIDVec:      [ [4,0x1210], [5,0x1214], 
 #physics.producers.daq.Decode
 
 services.TFileService.fileName: "/dev/null"
+services.DetectorPropertiesService: @erase
+services.SignalShapingICARUSService: @erase
 
 process_name: TPCANALYSIS
