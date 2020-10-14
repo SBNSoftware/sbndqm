@@ -132,14 +132,17 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 
  for (size_t idx = 0; idx < rawFragHandle->size(); ++idx) { /*loop over the fragments*/
       //--use this fragment as a reference to the same data
+      
+      size_t fragment_id = (*rawFragHandle)[idx].fragmentID();
+
       const auto& frag((*rawFragHandle)[idx]); 
       sbndaq::CAENV1730Fragment bb(frag);
       auto const* md = bb.Metadata();
       sbndaq::CAENV1730Event const* event_ptr = bb.Event();
       sbndaq::CAENV1730EventHeader header = event_ptr->Header;
-
       //      std::cout << "\tFrom header, event counter is "  << header.eventCounter   << "\n";
       //      std::cout << "\tFrom header, triggerTimeTag is " << header.triggerTimeTag << "\n";
+
       std::vector< std::vector<uint16_t> >  fWvfmsVec;
       size_t nChannels = md->nChannels;
       //      std::cout <<"\tFrom header , no of channel is" << nChannels << "\n";
@@ -167,7 +170,10 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
       //fWvfmsVec[i_ch].resize(wfm_length);
       ch_offset = i_ch * wfm_length;
       
-      raw::OpDetWaveform my_wf(0.00, i_ch, wfm_length);
+      // For now I assign a value which is the univoque daq address (equivalent to the channel countd consequencially from WW-TOP-A to EE-BOT-C. This is differnet from the PMT ID )
+      size_t i_daq = i_ch + nChannels*fragment_id;
+      
+      raw::OpDetWaveform my_wf(0.00, i_daq, wfm_length);
       my_wf.resize(wfm_length);
       // Loop over waveform
       
@@ -183,6 +189,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
         } //--end loop samples
  
       product_collection->push_back(my_wf);
+
       //   std::cout<<"waveform size"<<my_wf.size()<<"\n";
      
 /*      for (size_t i_n=0; i_n<wfm_length; ++i_n){
@@ -193,6 +200,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
       }// end loop over channels
 
       // std::cout<<"product collection"<<product_collection->back().size()<<"\n";
+
      } // end loop over fragments
 
   

@@ -1,5 +1,5 @@
 #include "simple_channel_info.fcl"
-
+#include "redis_connection.fcl"
 
 
 physics:
@@ -49,7 +49,7 @@ metric_config: {
 //  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
 
   groups: {
-     PMT: [ [0, 30] ]
+     PMT: [ [0, 380] ]
     // "PMT": [ [0, 15], 124]
   }
 
@@ -119,7 +119,11 @@ metric_config: {
 services:
 {
   TFileService: { fileName: "waveformtest.root"}
+  #RedisConnectionService: { host: "icarus-db01.fnal.gov" }
+  RedisConnection: @local::redis_connection
 } 
+
+services.RedisConnection.host: "icarus-db01.fnal.gov"
 
 source:
 {
