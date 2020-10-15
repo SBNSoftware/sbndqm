@@ -89,10 +89,10 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
 
   //gets a pointers to the data and metadata from the fragment
   BernCRTEvent const* evt = bern_fragment.eventdata();
-  const BernCRTFragmentMetadata* md = bern_fragment.metadata();
+//  const BernCRTFragmentMetadata* md = bern_fragment.metadata();
 
-  std::cout << *evt << std::endl;
-  std::cout << *md << std::endl;
+//  std::cout << *evt << std::endl;
+//  std::cout << *md << std::endl;
 
   //Get information from the fragment
   //unused variables must be commented, as the compiler treats warnings as errors
