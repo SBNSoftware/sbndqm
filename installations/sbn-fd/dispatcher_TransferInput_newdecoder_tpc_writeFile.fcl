@@ -209,9 +209,12 @@ physics:
 services:
 {
   RedisConnection: @local::redis_connection
+  
+  #icaurs services
   @table::icarus_calibration_services
   @table::icarus_wirecalibration_services
-
+  ICARUSChannelMap: @local::icarus_channelmappinggservice
+  
   ArtdaqSharedMemoryServiceInterface: {
     service_provider: "ArtdaqSharedMemoryService"
   }
