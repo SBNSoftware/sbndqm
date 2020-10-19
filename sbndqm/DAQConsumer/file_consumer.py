@@ -62,7 +62,7 @@ class FileConsumer:
                  n_active = sum([config in [p.config_file_path for p in procs] for _, procs in self.PROCESSES.items()])
                  # see if we are ready to start a new process
                  if n_active >= self.parallel_process:
-                     logger.info("For config (%s): Currently processing %i files (max is %i). Skipping this one." % (config, len(self.PROCESSES), self.parallel_process))
+                     logger.info("For config (%s): Currently processing %i files (max is %i). Skipping this one." % (config, n_active, self.parallel_process))
                      continue
 
                  ID = int(time.time())
