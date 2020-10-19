@@ -1,7 +1,10 @@
-#include "simple_channel_info.fcl"
-#include "redis_connection.fcl"
+#include "services_common_icarus.fcl"
+#include "channelmapping_icarus.fcl"
 #include "decoderDefs.fcl"
-#include "services_icarus.fcl"
+#include "recowire_icarus.fcl"
+#include "hitfindermodules_icarus.fcl"
+#include "icarus_ophitfinder.fcl"
+#include "redis_connection.fcl"
 
 BEGIN_PROLOG
 analysis_config: {
@@ -289,15 +292,16 @@ services:
 {
   RedisConnection: @local::redis_connection
   
-  #icaurs services
+  #icarus services
   @table::icarus_calibration_services
   @table::icarus_wirecalibration_services
-  ICARUSChannelMap: @local::icarus_channelmappinggservice
+  IICARUSChannelMap: @local::icarus_channelmappinggservice
   
   ArtdaqSharedMemoryServiceInterface: {
     service_provider: "ArtdaqSharedMemoryService"
   }
 }
+#services.IICARUSChannelMap: { service_provider: "ICARUSChannelMap" }
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 services.NuRandomService: @erase
 
