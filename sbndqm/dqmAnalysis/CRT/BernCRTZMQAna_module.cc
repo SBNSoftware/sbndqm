@@ -78,116 +78,122 @@ sbndaq::BernCRTZMQAna::~BernCRTZMQAna()
 
 void sbndaq::BernCRTZMQAna::analyze(art::Event const & evt)
 {
-sleep(2);
+  sleep(2);
 
 
   //can get the art event number
   art::EventNumber_t eventNumber = evt.event();
-  
+
   //we get a 'handle' to the fragments in the event
   //this will act like a pointer to a vector of artdaq fragments
   art::Handle< std::vector<artdaq::Fragment> > rawFragHandle;
-  
+
   //we fill the handle by getting the right data according to the label
   //the module label will be 'daq', while the instance label (second argument) matches the type of fragment
   evt.getByLabel("daq","BERNCRTZMQ", rawFragHandle);
 
   //this checks to make sure it's ok
   if (!rawFragHandle.isValid()) return;
-  
+
   std::cout << "######################################################################" << std::endl;
   std::cout << std::endl;  
   std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()
-	    << ", event " << eventNumber << " has " << rawFragHandle->size()
-	    << " CRT fragment(s)." << std::endl;
-  
+            << ", event " << eventNumber << " has " << rawFragHandle->size()
+            << " CRT fragment(s)." << std::endl;
+
   for (size_t idx = 0; idx < rawFragHandle->size(); ++idx) { // loop over the fragments of an event
 
- 
     const auto& frag((*rawFragHandle)[idx]); // use this fragment as a reference to the same data
 
     //this applies the 'overlay' to the fragment, to tell it to treat it like a BernCRTZMQ fragment
-    BernCRTZMQFragment bb(frag);
-    
-    unsigned readout_number = 0; //board number
+    BernCRTZMQFragment bern_fragment(frag);
+
+    unsigned readout_number = 0; //board number //AA: why is it always 0? what is the purpose?!
     std::string readout_number_str = std::to_string(readout_number);
-    //gets a pointer to the metadata from the fragment
-    //type is BernCRTZMQFragmentMetadata*
-    auto const* md = bb.metadata();
+
+    //gets a pointers to the data and metadata from the fragment
+    BernCRTZMQEvent const* evt = bern_fragment.eventdata();
+    const BernCRTZMQFragmentMetadata* md = bern_fragment.metadata();
+
+    std::cout << *evt << std::endl;
     std::cout << *md << std::endl;
 
-    //gets the number of CRT events (hits) inside this fragment
-    size_t n_events = md->n_events();
-    std::cout<<"n_event value:"<<n_events<<std::endl;
-    sbndaq::sendMetric("CRT_board", readout_number_str, "n_events", n_events, 0, artdaq::MetricMode::Average);
- 
+    //Get information from the fragment
+    //unused variables must be commented, as the compiler treats warnings as errors
+    //header:
+//    uint64_t fragment_timestamp = frag.timestamp();
+//    uint64_t fragment_id = frag.fragmentID();
+
+    //data from FEB:
+    int mac5     = evt->MAC5();
+//    int flags    = evt->flags;
+//    int lostcpu  = evt->lostcpu;
+//    int lostfpga = evt->lostfpga;
+    int ts0      = evt->Time_TS0();
+    int ts1      = evt->Time_TS1();
+//    int coinc    = evt->coinc;
+    bool     isTS0    = evt->IsReference_TS0();
+    bool     isTS1    = evt->IsReference_TS1();
+
+    uint16_t adc[32];
+    for(int ch=0; ch<32; ch++) adc[ch] = evt->ADC(ch);
+
+    //metadata
+//    uint64_t run_start_time            = md->run_start_time();
+//    uint64_t this_poll_start           = md->this_poll_start();
+//    uint64_t this_poll_end             = md->this_poll_end();
+//    uint64_t last_poll_start           = md->last_poll_start();
+//    uint64_t last_poll_end             = md->last_poll_end();
+//    int32_t  system_clock_deviation    = md->system_clock_deviation();
+//    uint32_t feb_events_per_poll       = md->feb_events_per_poll();
+//    uint32_t feb_event_number          = md->feb_event_number();
+
+    //AA: I propose to keep all the code getting fragment data above
+
+
     size_t max        = 0;
     size_t totaladc   = 0;
     size_t ADCchannel = 0;
 
-    //loop over the events in the fragment ...
-    for(size_t i_e=0; i_e<n_events; ++i_e){
-      
-      //grab the pointer to the event
-      BernCRTZMQEvent const* evt = bb.eventdata(i_e);
 
-      size_t FEBID = evt->MAC5();
-      std::string FEBID_str = std::to_string(FEBID);
+    //    std::string FEBID_str = std::to_string(fragment_id);
+    //    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
 
-//    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", FEBID, 0, artdaq::MetricMode::LastPoint); 
 
-      unsigned readout_number_channel = 32*(FEBID-1);
-	
-      std::string readout_number_channel_str = std::to_string(readout_number_channel);
-
-      //we can print this
-      std::cout << *evt << std::endl;
-
-      //let's fill our sample hist with the Time_TS0()-1e9 if 
-      //it's a GPS reference pulse
-      if(evt->IsReference_TS0()){
-	fSampleHist->Fill(evt->Time_TS0()-1e9);
-        std::cout<<" TS0 "<<evt->Time_TS0()-1e9<<std::endl; //nothing is changed in the output when i added this line, and it compiles just fine
-       //cout<<"I printed here"<<endl;
+    //let's fill our sample hist with the Time_TS0()-1e9 if 
+    //it's a GPS reference pulse
+    if(isTS0){
+      fSampleHist->Fill(ts0 - 1e9);
+      std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+    }
+    if(isTS1){
+      fSampleHist->Fill(ts1 - 1e9);
+      std::cout<<" TS1 "<<ts0 - 1e9<<std::endl; //AA: why do we display ts0 here?
+    }
+    for(int i = 0; i<32; i++) {
+      std::cout<<i<<": "<<adc[i]<<std::endl;
+      totaladc  += adc[i];
+      ADCchannel = adc[i];
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
+      if(adc[i] > max){
+        max = adc[i];
       }
-      if(evt->IsReference_TS1()){
-	fSampleHist->Fill(evt->Time_TS1()-1e9);
-        std::cout<<" TS1 "<<evt->Time_TS0()-1e9<<std::endl;
-	//adding this to teh output cause a segmentation fault (core dumped)
-      }
-      for(int i = 0; i<32; i++){
-  	std::cout<<i+1<<": "<<evt->ADC(i)<<std::endl;
-	totaladc  += evt->ADC(i);
-	ADCchannel = evt->ADC(i);
-	sbndaq::sendMetric("CRT_channel", readout_number_channel_str, "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
-	readout_number_channel += 1;
-	readout_number_channel_str = std::to_string(readout_number_channel);
-	if(evt->ADC(i)>max){
-	max = evt->ADC(i);
-	}
-	}
-      int baseline = (totaladc-max)/31;
-      std::cout<<" Maximum ADC value:"<<max<<std::endl;
-      std::cout<<" Average without Max value:"<<baseline<<std::endl;
-      sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+    }
+    int baseline = (totaladc-max)/31;
+    std::cout<<" Maximum ADC value:"<<max<<std::endl;
+    std::cout<<" Average without Max value:"<<baseline<<std::endl;
+    sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
 
-//Burke Change: named time, time0 and created variables, time1, ADC
-      int time0 = evt->Time_TS0();
-      int time_1 = evt->Time_TS1();
-      
-
-//Per board front end metric group
-      sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", time0, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", time_1, 0, artdaq::MetricMode::LastPoint);
- 
+    //Per board front end metric group
+    sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
 
 
-//ADC Analysis metric group
+    //ADC Analysis metric group
 
 
-    }//end loop over events in a fragment
-  
+
   }//end loop over fragments
 
 

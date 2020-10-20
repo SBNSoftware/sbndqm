@@ -19,17 +19,17 @@ public:
   // calculate the intersect of ranges with another sample
   NoiseSample Intersection(NoiseSample &other) { return DoIntersection(*this, other, _baseline); }
 
-  float RMS(const std::vector<int16_t> &wvfm_self) { return CalcRMS(wvfm_self, _ranges, _baseline); } 
+  float RMS(const std::vector<int16_t> &wvfm_self, unsigned max_sample=UINT_MAX) { return CalcRMS(wvfm_self, _ranges, _baseline); } 
 
   // Functions for quantifying coherent noise:
-  float Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other);
-  float Correlation(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other);
+  float Covariance(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample=UINT_MAX);
+  float Correlation(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample=UINT_MAX);
   // the "Sum RMS" of a sample with another sample
-  float SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other);
+  float SumRMS(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample=UINT_MAX);
   // the "Sum RMS" of n samples
-  static float ScaledSumRMS(std::vector<NoiseSample *>& other, std::vector<const std::vector<int16_t> *>& wvfm_other);
+  static float ScaledSumRMS(std::vector<NoiseSample *>& other, std::vector<const std::vector<int16_t> *>& wvfm_other, unsigned max_sample=UINT_MAX);
   // "DNoise" with another sample
-  float DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other);
+  float DNoise(const std::vector<int16_t> &wvfm_self, NoiseSample &other, const std::vector<int16_t> &wvfm_other, unsigned max_sample=UINT_MAX);
 
   // re-calculate the baseline as taking the mean of all values in the noise ranges
   void ResetBaseline(const std::vector<int16_t> &wvfm_self);
@@ -39,7 +39,7 @@ public:
   // getter for the baseline
   int16_t Baseline() { return _baseline; }
 private:
-  static float CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline);
+  static float CalcRMS(const std::vector<int16_t> &wvfm_self, std::vector<std::array<unsigned,2>> &ranges, int16_t baseline, unsigned max_sample=UINT_MAX);
   static NoiseSample DoIntersection(NoiseSample &me, NoiseSample &other, int16_t baseline=0.);
 
   std::vector<std::array<unsigned, 2>> _ranges;

@@ -106,6 +106,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // number of samples in noise sample
   n_noise_samples = param.get<unsigned>("n_noise_samples", 20);
 
+  n_max_noise_samples = param.get<unsigned>("n_max_noise_samples", UINT_MAX);
+
   // number of samples to average in each direction for peak finding
   n_smoothing_samples = param.get<unsigned>("n_smoothing_samples", 1);
   // number of consecutive samples that must be above threshold to count as a peak
@@ -123,6 +125,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   fill_waveforms = param.get<bool>("fill_waveforms", false);
   reduce_data = param.get<bool>("reduce_data", false);
   timing = param.get<bool>("timing", false);
+
+  find_signal = param.get<bool>("find_signal", true);
 
   // name of producer of raw::RawDigits
   //std::string producers = param.get<std::string>("producer_name");
@@ -195,7 +199,7 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
       unsigned raw_digits_i = _channel_index_map[i];
       unsigned raw_digits_next_channel = _channel_index_map[next_channel];
       float unscaled_dnoise = _noise_samples[i].DNoise(
-          _raw_digits_handle[raw_digits_i]->ADCs(), _noise_samples[next_channel], _raw_digits_handle[raw_digits_next_channel]->ADCs());
+          _raw_digits_handle[raw_digits_i]->ADCs(), _noise_samples[next_channel], _raw_digits_handle[raw_digits_next_channel]->ADCs(), _config.n_max_noise_samples);
       // Don't use same noise sample to scale dnoise
       // This should probably be ok, as long as the dnoise sample is large enough
 
@@ -366,11 +370,15 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _timing.StartTime();
   }
   // get Peaks
-  PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
+
+  if (_config.find_signal) {
+    PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
   
-  PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
-      _config.n_smoothing_samples, _config.n_above_threshold, plane);
-  _per_channel_data[channel].peaks.assign(peaks.Peaks()->begin(), peaks.Peaks()->end());
+    PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
+        _config.n_smoothing_samples, _config.n_above_threshold, plane);
+    _per_channel_data[channel].peaks.assign(peaks.Peaks()->begin(), peaks.Peaks()->end());
+  }
+
   if (_config.timing) {
     _timing.EndTime(&_timing.find_peaks);
   }
@@ -394,7 +402,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _per_channel_data[channel].baseline = _noise_samples[channel].Baseline(); 
   }
 
-  _per_channel_data[channel].rms = _noise_samples[channel].RMS(adc_vec);
+  _per_channel_data[channel].rms = _noise_samples[channel].RMS(adc_vec, _config.n_max_noise_samples);
   _per_channel_data[channel].noise_ranges = *_noise_samples[channel].Ranges();
   if (_config.timing) {
     _timing.EndTime(&_timing.calc_noise);
@@ -414,26 +422,32 @@ bool Analysis::EmptyEvent() {
   return _per_channel_data[0].empty;
 }
 
-float Analysis::Correlation(unsigned channel_i, unsigned channel_j) {
+float Analysis::Correlation(unsigned channel_i, unsigned channel_j, unsigned max_sample) {
   unsigned digits_i = _channel_index_map[channel_i];
   unsigned digits_j = _channel_index_map[channel_j];
   return _noise_samples[channel_i].Correlation(_raw_digits_handle[digits_i]->ADCs(), 
-    _noise_samples[channel_j], _raw_digits_handle[digits_j]->ADCs());
+    _noise_samples[channel_j], _raw_digits_handle[digits_j]->ADCs(), max_sample);
 }
 
-std::vector<std::vector<float>> Analysis::CorrelationMatrix() {
+std::vector<float> Analysis::CorrelationMatrix(unsigned max_sample) {
+  _timing.StartTime();
   unsigned n_channels = _channel_info.NChannels();
-  std::vector<std::vector<float>> ret(n_channels, std::vector<float>(n_channels, 0));
+  std::vector<float> ret(n_channels * n_channels, 0);
   for (unsigned i = 0; i < n_channels; i++) {
     for (unsigned j = 0; j <= i; j++) {
-      if (i == j) ret[i][j] = 1.;
+      unsigned set = i * n_channels + j;
+      unsigned set_diag = j * n_channels + i;
+      if (i == j) ret[set] = 1.;
       else {
-        float corr = Correlation(i, j);
-        ret[i][j] = corr;
-        ret[j][i] = corr;
+        float corr = Correlation(i, j, max_sample);
+        ret[set] = corr;
+        ret[set_diag] = corr;
       }
     }
   }
+  float delta = 0.;
+  _timing.EndTime(&delta);
+  std::cout << "Correlation matrix took: " << delta << " [ms]\n";
   return ret;
 }
 

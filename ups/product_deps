@@ -2,8 +2,8 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v1_02_03)
-parent sbndqm v0_04_01
-defaultqual e17:s83
+parent sbndqm v0_06_01
+defaultqual e19:s94
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -34,24 +34,29 @@ fwdir   product_dir scripts
 # With "product  version" table below, we now define dependencies
 # Add the dependent product and version
 
-product             version
-larsoft             v08_19_01
-artdaq              v3_07_01CHbe635f
-sbndaq_online       v0_04_00
-sbndaq_decode       v0_04_01
+product             version  whichqual optional
+artdaq              v3_08_00
+sbndaq_online       v0_06_01
+sbndaq_decode       v0_06_01
 cetbuildtools   v7_14_00 - only_for_build
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes".
-qualifier     larsoft    artdaq          sbndaq_online   sbndaq_decode  notes
-e17:prof:s83  e17:prof   e17:prof:s83    e17:prof:s83    e17:prof:s83   
-e17:debug:s83 e17:debug  e17:debug:s83   e17:debug:s83   e17:debug:s83  
+qualifier          artdaq              sbndaq_online       sbndaq_decode     notes
+e19:prof:s94       e19:prof:s94        e19:prof:s94        e19:prof:s94   
+e19:debug:s94      e19:debug:s94       e19:debug:s94       e19:debug:s94  
+e19:prof:s94:py2   e19:prof:s94:py2    e19:prof:s94:py2    e19:prof:s94:py2   
+e19:debug:s94:py2  e19:debug:s94:py2   e19:debug:s94:py2   e19:debug:s94:py2  
+e19:prof:s96       e19:prof:s96        e19:prof:s96        e19:prof:s96   
+e19:debug:s96      e19:debug:s96       e19:debug:s96       e19:debug:s96  
+e19:prof:s96:py2   e19:prof:s96:py2    e19:prof:s96:py2    e19:prof:s96:py2   
+e19:debug:s96:py2  e19:debug:s96:py2   e19:debug:s96:py2   e19:debug:s96:py2  
 end_qualifier_list
 
-# table fragment to set FW_SEARCH_PATH needed to find XML files:
 table_fragment_begin
-    # currently, XML pandora files are installed in 'scripts':
-    pathPrepend(FW_SEARCH_PATH, ${SBNDCODE_DIR}/scripts)
+    # Include installation locations in fhicl file path
+    pathPrepend(FHICL_FILE_PATH, ${MRB_SOURCE}/sbndqm/installations/sbn-nd)
+    pathPrepend(FHICL_FILE_PATH, ${MRB_SOURCE}/sbndqm/installations/sbn-fd)
 table_fragment_end
 
 
