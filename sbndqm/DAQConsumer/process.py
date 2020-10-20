@@ -27,8 +27,8 @@ class ConsumerProcess(object):
         except:
             raise ProcessFhiclException("Couldn't read fhicl file (%s)" % self.config_file_path)
         self.temp_file = tempfile.NamedTemporaryFile() 
-        self.temp_file.write(text)
-        self.temp_file.write("\n\n%s: %i" % (self.overwrite_path, self.port))
+        self.temp_file.write(text.encode())
+        self.temp_file.write(("\n\n%s: %s" % (self.overwrite_path, self.port)).encode())
         self.temp_file.flush()
 
         self.process = None
@@ -38,7 +38,7 @@ class ConsumerProcess(object):
         output_file = sys.stdout.fileno() if self.output_file is None else open(self.output_file, "w+")
         try:
             self.process = subprocess.Popen(command, stdout=output_file, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             self.retcode = err.code
         if self.output_file is not None:
             output_file.close()

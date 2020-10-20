@@ -133,6 +133,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   producers = param.get<std::vector<std::string>>("raw_digit_producers");
   std::string header_producer = param.get<std::string>("header_producer");
 
+  instance = param.get<std::string>("raw_digit_instance", "");  
+
 }
 
 void Analysis::AnalyzeEvent(art::Event const & event) {
@@ -153,7 +155,13 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   // get the raw digits
   for (const std::string &prod: _config.producers) {
     art::Handle<std::vector<raw::RawDigit>> digit_handle;
-    event.getByLabel(prod, digit_handle);
+    if (_config.instance.size()) {
+      event.getByLabel(prod, _config.instance, digit_handle);
+    }
+    else {
+      event.getByLabel(prod, digit_handle);
+    }
+
     // exit if the data isn't present
     if (!digit_handle.isValid()) {
       std::cerr << "Error: missing digits with producer (" << prod << ")" << std::endl;

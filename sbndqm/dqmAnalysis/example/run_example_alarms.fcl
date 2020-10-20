@@ -1,0 +1,32 @@
+#include "redis_connection.fcl"
+
+physics:
+{
+  analyzers:
+  {
+    ExampleAlarm: {
+      module_type: ExampleAlarm
+      Alarm: "alarm2"
+      sleep_time: 1
+    }
+
+  }
+
+  a: [ExampleAlarm]
+  end_paths: [a]
+}
+
+source:
+{
+  module_type: EmptyEvent
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
+}
+
+
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+process_name: EXAMPLE

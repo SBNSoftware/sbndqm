@@ -61,12 +61,18 @@ private:
   bool _send_ffts;
   bool _send_time_avg_ffts;
   bool _send_correlation_matrix;
+  bool _send_rms;
+  bool _send_baseline;
+  bool _send_dnoise;
+  bool _send_peakheight;
+  bool _send_occupancy;
   int _n_evt_fft_avg;
   bool _send_metrics;
   int _wait_period;
   int _last_time;
   bool _send_sbnd_metrics;
 
+  std::string fMetricPrefix;
   std::string fFFTName;
   std::string fWaveformName;
   std::string fGroupName;
@@ -78,7 +84,7 @@ private:
   // fields used to compute time averaged FFT's
   class {
   public:
-    std::vector<std::vector<double>> waveforms;
+    std::vector<std::vector<float>> waveforms;
     int event_ind;
     bool first;
   } fAvgFFTData;
@@ -98,7 +104,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   if (p.has_key("metric_config")) {
     sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   }
-  _tick_period = p.get<double>("tick_period", 500 /* ns */);
+  _tick_period = p.get<double>("tick_period", 0.4 /* us */);
   _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
   _send_waveforms = p.get<bool>("send_waveforms", false);
   _send_ffts = p.get<bool>("send_ffts", false);
@@ -115,6 +121,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
 
   fAvgFFTData.first = true;
 
+  fMetricPrefix = p.get<std::string>("metric_prefix", "");
   fFFTName = p.get<std::string>("fft_name", "fft");
   fGroupName = p.get<std::string>("group_name", "tpc_channel");
   fWaveformName = p.get<std::string>("waveform_name", "waveform");
@@ -124,6 +131,12 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   fNCorrelationMatrixSamples = p.get<unsigned>("n_correlation_matrix_samples", UINT_MAX);
 
   _send_sbnd_metrics = p.get<bool>("send_sbnd_metrics", false);
+
+  _send_rms = p.get<bool>("send_rms", true);
+  _send_baseline = p.get<bool>("send_baseline", true);
+  _send_dnoise = p.get<bool>("send_dnoise", true);
+  _send_peakheight = p.get<bool>("send_peakheight", true);
+  _send_occupancy = p.get<bool>("send_occupancy", true);
 
   event_ind = 0;
 }
@@ -160,41 +173,46 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
     artdaq::MetricMode mode = artdaq::MetricMode::Average;
     // send the metrics
     for (auto const &channel_data: _analysis._per_channel_data) {
-      double value;
+      float value;
       std::string instance = std::to_string(channel_data.channel_no);
       
       value = channel_data.rms;
-      sbndaq::sendMetric(fGroupName, instance, "rms", value, level, mode);
+      if (_send_rms)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "rms", value, level, mode);
 
       value = channel_data.baseline;
-      sbndaq::sendMetric(fGroupName, instance, "baseline", value, level, mode);
+      if (_send_baseline)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline", value, level, mode);
 
       value = channel_data.next_channel_dnoise;
-      sbndaq::sendMetric(fGroupName, instance, "next_channel_dnoise", value, level, mode);
+      if (_send_dnoise)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "next_channel_dnoise", value, level, mode);
 
       value = channel_data.mean_peak_height;
-      sbndaq::sendMetric(fGroupName, instance, "mean_peak_height", value, level, mode);
+      if (_send_peakheight)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "mean_peak_height", value, level, mode);
 
       value = channel_data.occupancy;
-      sbndaq::sendMetric(fGroupName, instance, "occupancy", value, level, mode);
+      if (_send_occupancy)
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "occupancy", value, level, mode);
 
       if (_send_sbnd_metrics) {
 	// compute the encoded femb/asic/channel #'s from the baseline
 	int femb = (channel_data.baseline >> 8) & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
 	
 	int asic = (channel_data.baseline >> 4) & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
 	
 	int chan = channel_data.baseline & 0xF;
-	sbndaq::sendMetric(fGroupName, instance, "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
         
         int ch_offset = 0;
         if (chan <= 7) ch_offset = 7 - chan;
         else ch_offset = 8 + 15  - chan;
         int channel_number = 128*femb + 16*asic + ch_offset; 
 
-        sbndaq::sendMetric(fGroupName, instance, "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
 
       }
 
@@ -213,7 +231,7 @@ void tpcAnalysis::OnlineAnalysis::SendWaveforms(const art::Event &e) {
   for (auto const& digits: _analysis._raw_digits_handle) {
     const std::vector<int16_t> &adcs = digits->ADCs();
      std::string redis_key = "snapshot:" + fWaveformName + ":wire:" + std::to_string(digits->Channel());
-     sbndaq::SendWaveform(redis_key, adcs, 0.4 /* tick period in us */);
+     sbndaq::SendWaveform(redis_key, adcs, _tick_period /* tick period in us */);
      sbndaq::SendEventMeta(redis_key, e); 
   }
 }
@@ -223,7 +241,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
   // first time setup -- set the size of each waveform
   if (fAvgFFTData.first) {
     // set the waveform size to the number of channels
-    std::fill_n(std::back_inserter(fAvgFFTData.waveforms), _analysis._channel_info.NChannels(), std::vector<double>());
+    std::fill_n(std::back_inserter(fAvgFFTData.waveforms), _analysis._channel_info.NChannels(), std::vector<float>());
     fAvgFFTData.event_ind = 0;
 
     unsigned n_ticks = _analysis._raw_digits_handle[0]->NADC();
@@ -259,7 +277,7 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
 
       // send it out
       std::string redis_key = "snapshot:" + fAvgFFTName + ":wire:" + std::to_string(i);
-      sbndaq::SendWaveform(redis_key, fft, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendWaveform(redis_key, fft, 1./_tick_period /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
 
       std::string redis_key_wvf = "snapshot:" + fAvgWvfName + ":wire:" + std::to_string(i);
@@ -274,9 +292,9 @@ void tpcAnalysis::OnlineAnalysis::SendTimeAvgFFTs(const art::Event &e) {
     if (digits->Channel() >= fAvgFFTData.waveforms.size()) continue;
 
     const std::vector<int16_t> &adcs = digits->ADCs();
-    std::vector<double> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
+    std::vector<float> &wvf = fAvgFFTData.waveforms.at(digits->Channel());
     for (unsigned i = 0; i < wvf.size(); i++) {
-      wvf[i] = ((double)adcs.at(i) + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
+      wvf[i] = ((float)adcs.at(i) + wvf[i] * fAvgFFTData.event_ind) / (fAvgFFTData.event_ind+1);
     } 
   }
   fAvgFFTData.event_ind ++; 
@@ -287,7 +305,7 @@ void tpcAnalysis::OnlineAnalysis::SendFFTs(const art::Event &e) {
   for (const ChannelData &chan: _analysis._per_channel_data) {
     if (chan.fft_mag.size()) {
       std::string redis_key = "snapshot:"+ fFFTName + ":wire:" + std::to_string(chan.channel_no);
-      sbndaq::SendWaveform(redis_key, chan.fft_mag, 2.5 /* tick freq. in MHz */);
+      sbndaq::SendWaveform(redis_key, chan.fft_mag, 1./_tick_period /* tick freq. in MHz */);
       sbndaq::SendEventMeta(redis_key, e); 
     }
   }
