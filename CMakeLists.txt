@@ -14,7 +14,7 @@
 
 
 # use cmake 2.8 or later
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.14)
 
 project(sbndqm)
 
@@ -50,7 +50,6 @@ find_ups_product( artdaq_utilities v1_05_02 )
 find_ups_product( jsoncpp v1_00_00 )
 find_ups_product( artdaq_core v3_05_07 )
 find_ups_product( fftw )
-find_ups_product( xmlrpc_c )
 find_ups_product( sbndaq_decode v0_03_00 )
 find_ups_product( sbndaq_online v0_03_00 )
 # include_directories($ENV{JSONCPP_LIB})

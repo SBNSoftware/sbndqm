@@ -29,7 +29,7 @@ physics:
  analyzers:{
 
    crtana: {
-     module_type: BernCRTZMQAna
+     module_type: BernCRTdqm
 
     metrics: {
         redis_metric_fast: { // can be named anything
