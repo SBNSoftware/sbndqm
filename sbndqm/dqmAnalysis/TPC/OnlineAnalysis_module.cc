@@ -175,6 +175,9 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
     for (auto const &channel_data: _analysis._per_channel_data) {
       float value;
       std::string instance = std::to_string(channel_data.channel_no);
+
+      // don't send empty metrics
+      if (channel_data.empty) continue;
       
       value = channel_data.rms;
       if (_send_rms)
