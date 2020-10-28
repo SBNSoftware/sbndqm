@@ -75,7 +75,6 @@ sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet
   //  nt_header = tfs->make<TNtuple>("nt_header","CAENV1730 Header Ntuple","art_ev:caen_ev:caen_ev_tts");
   //  nt_wvfm = tfs->make<TNtuple>("nt_wvfm","Waveform information Ntuple","art_ev:caen_ev:caen_ev_tts:ch:ped:rms:temp");
 
-  sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
 
 }

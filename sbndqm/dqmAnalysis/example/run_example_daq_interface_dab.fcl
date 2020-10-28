@@ -6,25 +6,6 @@ physics: {
     ExampleTimeStream: {
       module_type: ExampleTimeStream
 
-      metrics: {
-        redis_metric_fast: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          // period in seconds to send metric to database
-          reporting_interval: 2.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":fast" 
-        }
-        redis_metrix_slow: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          reporting_interval: 10.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":slow" 
-        }
-      }
       metric_config: {
         // Each group name, mapping to the list of instances for this group
         // The list of instances are the set of instances that you send metrics
@@ -123,6 +104,13 @@ source:
 services:
 {
   RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
 }
 
 services.RedisConnection.passfile: "/var/adm/krb5/redis_password"

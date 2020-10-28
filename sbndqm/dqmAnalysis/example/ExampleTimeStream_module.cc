@@ -49,9 +49,6 @@ sbndqm::ExampleTimeStream::ExampleTimeStream(fhicl::ParameterSet const & pset)
     : EDAnalyzer(pset),
       _sleep_time(pset.get<unsigned>("sleep_time", 0))  {
 
-  // Intiailize the metric manager
-  sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
-
   // Initialize the config
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
 }

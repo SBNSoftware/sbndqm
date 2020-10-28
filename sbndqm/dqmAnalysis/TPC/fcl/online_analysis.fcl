@@ -44,25 +44,6 @@ physics:
       // 10 for SBND data
       n_headers: 10
 
-      metrics: {
-        redis_metric_fast: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          // period in seconds to send metric to database
-          reporting_interval: 2.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":fast" 
-        }
-        redis_metric_slow: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          reporting_interval: 10.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":slow" 
-        }
-      }
       metric_config: {
         streams: [slow, fast]
         groups: [tpc_channel]
@@ -100,6 +81,12 @@ services:
 {
   TFileService: { fileName: "out.root"}
   RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+    }
+  }
 } 
 
 source:

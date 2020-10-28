@@ -48,7 +48,6 @@ class sbndaq::CAENV1730Stream : public art::EDAnalyzer {
 
 sbndaq::CAENV1730Stream::CAENV1730Stream(fhicl::ParameterSet const & pset)
     : EDAnalyzer(pset)  {
-  sbndaq::InitializeMetricManager(pset);
 }
 
 sbndaq::CAENV1730Stream::~CAENV1730Stream() {}

@@ -6,6 +6,13 @@ services: {
     host: "icarus-db01.fnal.gov"
   }
 #  message: @local::standard_debug
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
 }
 
 #source is a root file
@@ -31,25 +38,6 @@ physics:
    crtana: {
      module_type: BernCRTdqm
 
-    metrics: {
-        redis_metric_fast: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          // period in seconds to send metric to database
-          reporting_interval: 2.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":fast"
-        }
-        redis_metric_slow: { // can be named anything
-          level: 3
-          metricPluginType: "redis"
-          reporting_interval: 10.0
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":slow"
-        }
-      }
     metric_board_config: {
 	groups:{
 		CRT_board:[[0,8]] //8 crt boards
