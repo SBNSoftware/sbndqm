@@ -90,6 +90,13 @@ physics:
       SelectEvents: [pscale2_events]
     }
 
+    MetaPMT: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaPMT
+
+      SelectEvents: [pscale2_events]
+    }
+
     OnlineAnalysisRawData: {
       module_type: OnlineAnalysis
       @table::analysis_config
@@ -119,10 +126,10 @@ physics:
       InputTag: "daqpmt"
       metrics: {
         redis_metric: {
-    	  level: 3
+    	  level: 5
     	  metricPluginType: "redis"
     	  reporting_interval: 1.0
-    	  redis_key_postfix: ":30s"
+    	  redis_key_postfix: ":archiving"
     	  hostname: "icarus-db01.fnal.gov"
    	  // hostname: "sbnd-daq33.fnal.gov"
    	  // redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
@@ -136,17 +143,17 @@ physics:
     	// "PMT": [ [0, 15], 124]
       }
 
-      streams: ["30s"]
+      streams: ["archiving"]
       metrics: {
         rms: {
       	  units: ADC
       	  title: "PMT channel %(instance)s rms"
       	  display_range: [0., 100.]
     	}
-    	pedestal: {
+    	baseline: {
       	  units: ADC
       	  title: "%(group)s channel %(instance)s Pedestal"
-      	  display_range: [-1000, 1000]
+      	  display_range: [10000, 16000]
     	}
 
       }
@@ -282,7 +289,7 @@ physics:
   pscale_event: [ prescale10, daq, daqpmt ]
   trigger_paths: [ pscale10_events, pscale_event, pscale2_events ] # BH: COMMENT PSCALE_EVENT TO TURN OFF OUTPUT FILE
 
-  a: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, CAENV1730WaveformAnalysis ]
+  a: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, MetaPMT, CAENV1730WaveformAnalysis ]
 
   decoded_stream: [decodedout] # BH: COMMENT THIS LINE TO TURN OFF OUTPUT FILE
   end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
