@@ -10,6 +10,7 @@ def main(args):
     while process.poll() is None:
         redis.xadd(args.key, {"dat": "alive"}, maxlen=1)
         time.sleep(args.sleep)
+    return process.returncode
 
 def connect_to_redis_args(args):
     return connect_to_redis(args.server, args.port, args.password, args.passfile)
@@ -32,4 +33,7 @@ if __name__ == "__main__":
     argparser.add_argument("-c", "--command", required=True, help="REQUIRED. Shell command to run/monitor. Use quotes for any spaces", metavar='<"shell command">')
 
     args = argparser.parse_args()
-    main(args)
+    #res = main(args)
+    while main(args)==0:
+        time.sleep(5.0)
+

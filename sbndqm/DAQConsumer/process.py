@@ -68,6 +68,9 @@ class ConsumerProcess(object):
         self.process = None
         return self.retcode
 
-    def restart(self):
-        self.n_restart += 1
+    def restart(self,reset=False):
+        if reset:
+            self.n_restart = 0
+        else:
+            self.n_restart += 1
         self.start()

@@ -101,7 +101,7 @@ physics:
       wait_period: -1 # s
       send_time_avg_ffts: false
       n_evt_fft_avg: 100
-      n_evt_send_rawdata: 100
+      n_evt_send_rawdata: 10
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100

@@ -109,7 +109,7 @@ physics:
       wait_period: -1 # s
       send_time_avg_ffts: false
       n_evt_fft_avg: 100
-      n_evt_send_rawdata: 100
+      n_evt_send_rawdata: 10
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
@@ -124,17 +124,6 @@ physics:
       // producer of digits and header info
       data_label: sbndaq
       InputTag: "daqpmt"
-      metrics: {
-        redis_metric: {
-    	  level: 5
-    	  metricPluginType: "redis"
-    	  reporting_interval: 1.0
-    	  redis_key_postfix: ":archiving"
-    	  hostname: "icarus-db01.fnal.gov"
-   	  // hostname: "sbnd-daq33.fnal.gov"
-   	  // redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
-  	}
-      }
       metric_config: {
 
       hostname: "icarus-db01.fnal.gov"
@@ -203,29 +192,9 @@ physics:
 
       #SelectEvents: [pscale_event]
       SelectEvents: [pscale2_events]
-      metrics: {
 
-#      graphite: {
-#        level:5
-#     	metricPluginType: "graphite"
-#     	reporting_interval: 10.0
-#     	host:"192.168.191.18"
-#     	port:2003
-#     	namespace:"icarus.om."
-#      }
-        redis_metric_archive: {
-          level: 3
-          metricPluginType: "redis"
-          reporting_interval: 60.0 # 60s
-          verbose: true
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":archiving"
-	    send_zeros: false
-        }
-
-      }
       metric_config: {
-        streams: [archiving]
+        streams: ["archiving"]
         groups: {
 	  tpc_channel:[[0,5760]] # 8 crates
         }
@@ -298,6 +267,20 @@ physics:
 services:
 {
   RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      archiving: {
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 60.0 # 60s
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":archiving"
+	  send_zeros: false
+      }
+    }
+  }
   
   #icarus services
   @table::icarus_calibration_services
@@ -326,7 +309,7 @@ source:
   register_fragment_types: false
   # The timeout shouldn't be much smaller than the period between events, otherwise
   # there's a spew of timeout messages
-  timeoutInUsecs: 10000000
+  timeoutInUsecs: 50000000
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
@@ -374,12 +357,12 @@ outputs:
     module_type: RootOutput
     fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
     dataTier:    "raw"
-    compressionLevel: 1
+    compressionLevel: 0
     SelectEvents: [pscale_event]
 
     fileProperties: { 
-      maxSubRuns: 1 
-      maxRuns: 1 
+      #maxSubRuns: 1 
+      #maxRuns: 1 
       maxEvents: 1
     }
 
