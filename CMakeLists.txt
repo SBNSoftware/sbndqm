@@ -52,6 +52,7 @@ find_ups_product( artdaq_core v3_05_07 )
 find_ups_product( fftw )
 find_ups_product( sbndaq_decode v0_03_00 )
 find_ups_product( sbndaq_online v0_03_00 )
+find_ups_product( sbnobj )
 # include_directories($ENV{JSONCPP_LIB})
 
 # macros for dictionary and simple_plugin

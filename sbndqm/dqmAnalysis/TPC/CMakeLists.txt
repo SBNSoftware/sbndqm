@@ -115,10 +115,13 @@ simple_plugin( OnlineAnalysis module
   artdaq-utilities_Plugins
 )
 
-simple_plugin( ICARUSPurityDQM module
+simple_plugin( TPCPurityDQMSender module
+  sbndaq_online_storage
+  sbndaq_online_redis_connection
+  sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
-  lardataobj_RawData
+  sbnobj_Common_Analysis
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${ART_FRAMEWORK_CORE}
@@ -126,8 +129,8 @@ simple_plugin( ICARUSPurityDQM module
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
+                        ${ART_FRAMEWORK_SERVICES_BASIC}#
+			art_root_io_tfile_support#
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
