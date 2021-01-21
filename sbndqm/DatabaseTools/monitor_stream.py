@@ -29,10 +29,15 @@ def main(args):
     # case 2 -- build key from user supplied arguments
     else:
         keys = redis.keys("%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream))
+        if len(keys) == 0:
+            keys = ["%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream)]
 
     # read the initial value for each key
     last_seen_ids = {}
     for key in keys:
+        # ignore archiver metadata
+        if key.endswith("_LatestCompleted"): continue
+
         try:
             lastval = redis.xrevrange(key, count=1)
         except:
