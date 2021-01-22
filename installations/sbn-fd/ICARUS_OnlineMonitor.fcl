@@ -289,20 +289,21 @@ physics.analyzers:
 
     PurityInfoLabels: [purityana0,purityana1]
     PrintInfo: true
+    MinTracksToReport: 25
 
     metric_config: {
       streams: ["archiving"]
       groups: {
-        tpc_purity:[[0,2]]
+        tpc_purity:["EastCryostat","WestCryostat"]
       }
       metrics:{
-        attenuation:{
-	  units: InverseMicroSeconds
-	  display_range: [0,0.2]
+        attenuation_raw:{
+	  units: "ms-1"
+	  display_range: [0,2]
         }
-        lifetime:{
-	  units: MicroSeconds
-	  display_range: [0,20000]
+        lifetime_raw:{
+	  units: ms
+	  display_range: [0,20]
         }
       }
     } 
