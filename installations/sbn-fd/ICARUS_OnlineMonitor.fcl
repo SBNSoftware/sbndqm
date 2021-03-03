@@ -371,6 +371,39 @@ physics.analyzers:
     
     SelectEvents: [pscale2_events]
   }
+
+  CRTAna:{
+    module_type: BernCRTdqm
+
+    metric_board_config: {
+      groups:
+      {
+        CRT_board:[[25,96]] //73 crt boards
+      }
+      streams:[archiving]
+      metrics:{
+        TS0:{}
+        TS1:{}
+        n_events:{}
+        MaxADCValue:{}
+        baseline:{}	
+      }
+    }
+    metric_channel_config: {
+      groups:
+      {
+        CRT_channel:[[0,256]]
+      }
+      streams:[archiving]
+      
+      metrics:{
+        ADC:{
+          display_range: [0, 5000]
+        }
+      }	
+    }
+  }
+
 }
 
 physics.pscale10_events: [prescale10, daqTPC, daqPMT]
