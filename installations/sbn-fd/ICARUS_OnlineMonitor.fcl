@@ -289,7 +289,7 @@ physics.analyzers:
 
     PurityInfoLabels: [purityana0,purityana1]
     PrintInfo: true
-    MinTracksToReport: 25
+    MinTracksToReport: 100
 
     metric_config: {
       streams: ["archiving"]
