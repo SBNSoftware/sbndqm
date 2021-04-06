@@ -3,12 +3,14 @@
 #analysis configuration pieces
 BEGIN_PROLOG
 
-daqTPC: [daqTPCEE, daqTPCEW, daqTPCWE, daqTPCWW]
+tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
+tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
+tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW","daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
 
 analysis_config: {
   // producer of digits and header info
-  raw_digit_producers: [@sequence::daqTPC]
-  raw_digit_instance: RAW
+  raw_digit_producers: [@sequence::tpclabels_DecoderRaw]
+#  raw_digit_instance: RAW
   header_producer: ""
 
   // channel info
@@ -144,19 +146,15 @@ outputs.decodedout:{
   }
 }
 
-physics.producers.daqTPCEE: @local::physics.producers.daqTPC
-physics.producers.daqTPCEE.FragmentsLabel: "daq:PHYSCRATEDATATPCEE"
-physics.producers.daqTPCEW: @local::physics.producers.daqTPC
-physics.producers.daqTPCEW.FragmentsLabel: "daq:PHYSCRATEDATATPCEW"
-physics.producers.daqTPCWE: @local::physics.producers.daqTPC
-physics.producers.daqTPCWE.FragmentsLabel: "daq:PHYSCRATEDATATPCWE"
-physics.producers.daqTPCWW: @local::physics.producers.daqTPC
-physics.producers.daqTPCWW.FragmentsLabel: "daq:PHYSCRATEDATATPCWW"
+physics.producers.daqTPC: @local::physics.producers.daqTPC
+physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
+physics.producers.daqTPC.OutputRawWaveform: true
+
 
 #add online purity producers
 physics.producers.purityana0:
 {
-  RawModuleLabel: [@sequence::daqTPC] 
+  RawModuleLabel: [@sequence::tpclabels_DecoderDenoised] 
   module_type:    "ICARUSPurityDQM"
   ValoreTauFCL:  600000.
   CryostatFCL: 0
@@ -372,7 +370,9 @@ physics.analyzers:
     group_name: tpc_channel
     @table::analysis_config
 
-    raw_digit_instance: ""
+    raw_digit_producers: [@sequence::tpclabels_DecoderDenoised]
+
+    #raw_digit_instance: ""
 
     metric_prefix: filtered_
 
@@ -418,9 +418,9 @@ physics.analyzers:
 
 }
 
-physics.pscale_OnMonFiles:    [prescale20, @sequence::daqTPC ]
-physics.online_purity:   [prescale2,  @sequence::daqTPC, purityana0, purityana1]
-physics.tpc_only: [ pscale2, @sequence::daqTPC ]
+physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
+physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
+physics.tpc_only: [ prescale2, daqTPC ]
 physics.pmt_only: [ daqPMT ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
@@ -431,7 +431,7 @@ physics.trigger_paths: [ @sequence::physics.tpc_path,
 		         @sequence::physics.pmt_path ]
 
 
-physics.anatpc: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
+physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anapmt: [ MetaPMT, CAENV1730WaveformAnalysis ]
 
 physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
