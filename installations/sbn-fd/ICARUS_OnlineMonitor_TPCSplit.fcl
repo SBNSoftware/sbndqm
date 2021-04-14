@@ -433,8 +433,9 @@ physics.trigger_paths: [ @sequence::physics.tpc_path,
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anapmt: [ MetaPMT, CAENV1730WaveformAnalysis ]
+physics.anacrt: [ CRTAna ]
 
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
 
 physics.decoded_stream: [ decodedout ]
 

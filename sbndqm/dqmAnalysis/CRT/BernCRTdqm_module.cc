@@ -61,16 +61,13 @@ sbndaq::BernCRTdqm::BernCRTdqm(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
 
-  //this is how you setup/use the TFileService
-  //I do this here in the constructor to setup the histogram just once
-  //but you can call the TFileService and make new objects from anywhere
- // art::ServiceHandle<art::TFileService> tfs; //pointer to a file named tfs
-
-  //make the histogram
-  //the arguments are the same as what would get passed into ROOT
-//  fSampleHist = tfs->make<TH1F>("hSampleHist","Sample Hist Title; x axis (units); y axis (units)",100,-50,50);
-///this line
-  sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics")); //This causes the error for no "metrics" at the beginning or the end
+  if (pset.has_key("metrics")) {
+    sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+  }
+  //if (p.has_key("metric_config")) {
+  //  sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
+  //}
+  //sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics")); //This causes the error for no "metrics" at the beginning or the end
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_channel_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));  //This line cauess the code to not be able to compile -- undefined reference to this thing Commenting out this line allows it to compile
 }
