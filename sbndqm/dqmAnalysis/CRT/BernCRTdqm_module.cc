@@ -88,7 +88,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   const std::vector<icarus::crt::BernCRTTranslator> hit_vector =  icarus::crt::BernCRTTranslator::getCRTData(evt);
 
   for(auto & hit : hit_vector) {
-    TLOG(TLVL_INFO)<<hit;
+//    TLOG(TLVL_INFO)<<hit;
 
     //data from FEB:
     int mac5     = hit.mac5;
