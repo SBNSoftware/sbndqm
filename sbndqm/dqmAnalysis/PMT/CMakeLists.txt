@@ -6,7 +6,7 @@ simple_plugin( CAENV1730Stream "module"
   sbndaq-artdaq-core_Overlays_Common 
 	artdaq-core_Utilities
   artdaq-utilities_Plugins
-		sbndaqMode
+  sbndqm_Decode_Mode
   sbndaq_online_storage
   sbndaq_online_redis_connection
   sbndaq_online_hiredis

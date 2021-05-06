@@ -15,7 +15,7 @@
 #include "sbndaq-artdaq-core/Overlays/Common/CAENV1730Fragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
 
-#include "sbndaq-decode/Mode/Mode.hh"
+#include "sbndqm/Decode/Mode/Mode.hh"
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 
 #include "TH1F.h"

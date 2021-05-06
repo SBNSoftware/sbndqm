@@ -6,6 +6,6 @@ simple_plugin( BernCRTdqm module
   artdaq-utilities_Plugins
   sbndaq_online_storage
   sbndaq_online_hiredis
-  sbndaqMode
+  sbndqm_Decode_Mode
 )
 

@@ -1,5 +1,6 @@
 # basic source code CMakeLists.txt
 
+add_subdirectory(Decode)
 add_subdirectory(dqmAnalysis)
 #add_subdirectory(TransferInput)
 

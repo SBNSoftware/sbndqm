@@ -13,7 +13,7 @@
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "artdaq-core/Data/Fragment.hh"
 
-#include "sbndaq-decode/Mode/Mode.hh"
+#include "sbndqm/Decode/Mode/Mode.hh"
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
 #include "sbndaq-online/helpers/Waveform.h"

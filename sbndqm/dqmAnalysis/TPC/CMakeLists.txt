@@ -19,7 +19,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		PeakFinder.cc
 		ChannelData.cc
 	LIBRARIES
-		sbndaqMode
+	        sbndqm_Decode_Mode
 		${LARDATAOBJ} 
 		lardataobj_RawData
 		lardata_Utilities
