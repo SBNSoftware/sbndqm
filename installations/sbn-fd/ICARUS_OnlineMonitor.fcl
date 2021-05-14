@@ -209,6 +209,13 @@ physics.analyzers:
     SelectEvents: [pmt_only]
   }
 
+  MetaCRT: {
+    module_type: ReportMetadata
+    RedisKey: eventmetaCRT
+
+    #SelectEvents: [crt_only]
+  }
+
   OnlineAnalysisRawData: {
     module_type: OnlineAnalysis
     @table::analysis_config
@@ -422,6 +429,7 @@ physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale2, daqTPC ]
 physics.pmt_only: [ daqPMT ]
+#physics.crt_only: [ ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
@@ -433,10 +441,10 @@ physics.trigger_paths: [ @sequence::physics.tpc_path,
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anapmt: [ MetaPMT, CAENV1730WaveformAnalysis ]
-physics.anacrt: [ CRTAna ]
+physics.anacrt: [ MetaCRT, CRTAna ]
 
-#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
