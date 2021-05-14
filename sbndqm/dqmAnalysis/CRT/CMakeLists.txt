@@ -7,5 +7,6 @@ simple_plugin( BernCRTdqm module
   sbndaq_online_storage
   sbndaq_online_hiredis
   sbndqm_Decode_Mode
+  BERN_CRT_TRANSLATOR
 )
 

@@ -48,6 +48,7 @@ find_ups_product( fftw )
 find_ups_product( sbndaq_online v0_03_00 )
 find_ups_product( sbnobj )
 find_ups_product( sbncode )
+find_ups_product( icaruscode v09_17_01 )
 # include_directories($ENV{JSONCPP_LIB})
 
 # macros for dictionary and simple_plugin
