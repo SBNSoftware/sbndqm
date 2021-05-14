@@ -3,9 +3,9 @@
 #analysis configuration pieces
 BEGIN_PROLOG
 
-tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
-tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
-tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW","daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
+tpclabels_daq: ["daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
+tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
+tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
 
 analysis_config: {
   // producer of digits and header info
@@ -435,7 +435,8 @@ physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRa
 physics.anapmt: [ MetaPMT, CAENV1730WaveformAnalysis ]
 physics.anacrt: [ CRTAna ]
 
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
@@ -444,3 +445,8 @@ physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OF
 #physics.end_paths: [ anapmt, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
+
+#PMT overrides for the online
+physics.producers.daqPMT.DecoderTool.PMTconfigTag: @erase
+physics.producers.daqPMT.DecoderTool.RequireKnownBoards: false
+physics.producers.daqPMT.DecoderTool.RequireBoardConfig: false

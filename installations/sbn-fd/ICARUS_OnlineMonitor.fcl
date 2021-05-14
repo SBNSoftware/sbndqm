@@ -2,10 +2,15 @@
 
 #analysis configuration pieces
 BEGIN_PROLOG
+
+tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
+tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
+tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW","daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
+
 analysis_config: {
   // producer of digits and header info
-  raw_digit_producers: [daqTPC]
-  raw_digit_instance: RAW
+  raw_digit_producers: [@sequence::tpclabels_DecoderRaw]
+#  raw_digit_instance: RAW
   header_producer: ""
 
   // channel info
@@ -132,7 +137,7 @@ outputs.decodedout:{
   fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
   dataTier:    "raw"
   compressionLevel: 3
-  SelectEvents: [pscale_event]
+  SelectEvents: [pscale_OnMonFiles]
 
   fileProperties: { 
     #maxSubRuns: 1 
@@ -141,19 +146,15 @@ outputs.decodedout:{
   }
 }
 
-physics.producers.daqTPCEE: @local::physics.producers.daqTPC
-physics.producers.daqTPCEE.FragmentsLabel: "daq:PHYSCRATEDATATPCEE"
-physics.producers.daqTPCEW: @local::physics.producers.daqTPC
-physics.producers.daqTPCEW.FragmentsLabel: "daq:PHYSCRATEDATATPCEW"
-physics.producers.daqTPCWE: @local::physics.producers.daqTPC
-physics.producers.daqTPCWE.FragmentsLabel: "daq:PHYSCRATEDATATPCWE"
-physics.producers.daqTPCWW: @local::physics.producers.daqTPC
-physics.producers.daqTPCWW.FragmentsLabel: "daq:PHYSCRATEDATATPCWW"
+physics.producers.daqTPC: @local::physics.producers.daqTPC
+physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
+physics.producers.daqTPC.OutputRawWaveform: true
+
 
 #add online purity producers
 physics.producers.purityana0:
 {
-  RawModuleLabel: ["daqTPC"] 
+  RawModuleLabel: [@sequence::tpclabels_DecoderDenoised] 
   module_type:    "ICARUSPurityDQM"
   ValoreTauFCL:  600000.
   CryostatFCL: 0
@@ -198,14 +199,14 @@ physics.analyzers:
     module_type: ReportMetadata
     RedisKey: eventmetaTPC
 
-    SelectEvents: [pscale2_events]
+    SelectEvents: [tpc_only]
   }
 
   MetaPMT: {
     module_type: ReportMetadata
     RedisKey: eventmetaPMT
 
-    SelectEvents: [pscale2_events]
+    SelectEvents: [pmt_only]
   }
 
   OnlineAnalysisRawData: {
@@ -225,7 +226,7 @@ physics.analyzers:
     // correlation_matrix_name: correlation
     // n_correlation_matrix_samples: 100
 
-    SelectEvents: [pscale2_events]
+    SelectEvents: [tpc_only]
   }
 
   CAENV1730WaveformAnalysis: {
@@ -289,7 +290,7 @@ physics.analyzers:
     // 10 for SBND 
     n_headers: -1
 
-    SelectEvents: [pscale2_events]
+    SelectEvents: [pmt_only]
   }//end CAENV1730WaveformAnalysis
 
   PurityAnalysis:{
@@ -319,7 +320,7 @@ physics.analyzers:
     SelectEvents: [online_purity]
   }
 
-  OnlineAnalysis: {
+  TPCOnlineAnalysis: {
     module_type: OnlineAnalysis
     group_name: tpc_channel
     @table::analysis_config
@@ -361,15 +362,17 @@ physics.analyzers:
         }
       }
     }
-    SelectEvents: [pscale2_events]
+    SelectEvents: [tpc_only]
   }
 
-  OnlineAnalysisDenoised:{
+  TPCOnlineAnalysisDenoised:{
     module_type: OnlineAnalysis
     group_name: tpc_channel
     @table::analysis_config
 
-    raw_digit_instance: ""
+    raw_digit_producers: [@sequence::tpclabels_DecoderDenoised]
+
+    #raw_digit_instance: ""
 
     metric_prefix: filtered_
 
@@ -378,7 +381,7 @@ physics.analyzers:
     send_occupancy: false
     send_dnoise: false
     
-    SelectEvents: [pscale2_events]
+    SelectEvents: [tpc_only]
   }
 
   CRTAna:{
@@ -415,23 +418,35 @@ physics.analyzers:
 
 }
 
-physics.pscale10_events: [prescale10, daqTPC, daqPMT]
-physics.pscale2_events:  [prescale2,  daqTPC, daqPMT]
-physics.pscale_event:    [prescale10, daqTPC, daqPMT]
+physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
+physics.tpc_only: [ prescale2, daqTPC ]
+physics.pmt_only: [ daqPMT ]
 
-# BH: COMMENT PSCALE_EVENT TO TURN OFF OUTPUT FILE
-physics.trigger_paths: [pscale10_events, pscale_event, pscale2_events, online_purity]
+# BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
+physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
+physics.pmt_path: [ pmt_only ]
+
+physics.trigger_paths: [ @sequence::physics.tpc_path,
+		         @sequence::physics.pmt_path ]
 
 
-physics.a: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, MetaPMT, CAENV1730WaveformAnalysis, PurityAnalysis ]
-physics.anatpc: [ OnlineAnalysis, OnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
+physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anapmt: [ MetaPMT, CAENV1730WaveformAnalysis ]
+physics.anacrt: [ CRTAna ]
 
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
 physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 #physics.end_paths: [ anatpc, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+#physics.end_paths: [ anapmt, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
+
+#PMT overrides for the online
+physics.producers.daqPMT.DecoderTool.PMTconfigTag: @erase
+physics.producers.daqPMT.DecoderTool.RequireKnownBoards: false
+physics.producers.daqPMT.DecoderTool.RequireBoardConfig: false
