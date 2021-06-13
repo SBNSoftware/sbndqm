@@ -1,5 +1,6 @@
 #ifndef DaqDecoderIcarus_h
 #define DaqDecoderIcarus_h
+
 ////////////////////////////////////////////////////////////////////////
 // Class:       DaqDecoderIcarus
 // Plugin Type: producer (art v2_09_06)
@@ -13,39 +14,16 @@
 #include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
 #include "canvas/Utilities/InputTag.h"
 
-//#include "sbnddaq-datatypes/Overlays/NevisTPCFragment.hh"
-
-//some standard C++ includes
 #include <iostream>
 #include <stdlib.h>
 #include <string>
 #include <vector>
 
-//some ROOT includes
-#include "TInterpreter.h"
-#include "TROOT.h"
-#include "TH1F.h"
-#include "TFile.h"
-#include "TVirtualFFT.h"
-
-//"art" includes (canvas, and gallery)
-//#include "gallery/Event.h"
-//#include "gallery/ValidHandle.h"
 #include "canvas/Persistency/Common/FindMany.h"
 #include "canvas/Persistency/Common/FindOne.h"
 
 #include "fhiclcpp/ParameterSet.h"
 #include "fhiclcpp/make_ParameterSet.h"
-
-//#include "icarus-artdaq-core/Overlays/PhysCrateFragment.hh"
-
-//#include "WaveformPropertiesAlg.h"
-
-/*
-  * The Decoder module takes as input "NevisTPCFragments" and
-  * outputs raw::RawDigits. It also handles in and all issues
-  * with the passed in header and fragments (or at least it will).
-*/
 
 namespace daq {
   class DaqDecoderIcarusPMT;
