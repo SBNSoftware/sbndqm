@@ -1,3 +1,6 @@
+#ifndef _sbnddaq_analysis_PMTWaveform
+#define _sbnddaq_analysis_PMTWaveform
+
 #include <vector>
 #include <array>
 #include <string>
@@ -27,3 +30,5 @@ namespace pmtAnalysis
 	};
 
 }
+
+#endif

@@ -1,7 +1,7 @@
 #include "canvas/Persistency/Common/Wrapper.h"
 #include <vector>
-#include "sbndqm/dqmAnalysis/PMT/PMTWaveform.hh"
-#include "sbndqm/dqmAnalysis/PMT/PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/PMTWaveform.hh"
+#include "sbndqm/Decode/PMT/PMTDigitizerInfo.hh"
 
 namespace 
 {

@@ -1,3 +1,6 @@
+#ifndef _sbnddaq_analysis_PMTDigitizerInfo
+#define _sbnddaq_analysis_PMTDigitizerInfo
+
 #include <vector>
 #include <array>
 #include <string>
@@ -19,3 +22,5 @@ namespace pmtAnalysis
 	};
 
 }
+
+#endif
