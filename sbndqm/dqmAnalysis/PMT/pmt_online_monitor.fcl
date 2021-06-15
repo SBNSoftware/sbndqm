@@ -1,0 +1,121 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+
+physics:
+{
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      module_type: DaqDecoderIcarusPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+  }
+
+  analyzers:
+  {
+   CAENV1730WaveformAnalysis:
+    {
+      module_type: CAENV1730WaveformAnalysis
+      // producer of digits and header info
+      data_label: sbndaq
+metric_config: {
+
+  hostname: "icarus-db01.fnal.gov"
+ // hostname: "sbnd-daq33.fnal.gov"
+//  redis_passfile: "/home/nfs/gputnam/justin_this_is_the_password"
+
+  groups: {
+     PMT: [ [0, 380] ]
+    // "PMT": [ [0, 15], 124]
+  }
+
+  streams: ["30s"]
+  metrics: {
+    rms: {
+      units: ADC
+      title: "PMT channel %(instance)s rms"
+      display_range: [0., 100.]
+    }
+    pedestal: {
+      units: ADC
+      title: "%(group)s channel %(instance)s Pedestal"
+      display_range: [-1000, 1000]
+    }
+
+  }
+  // what happens to the title in python:
+  // title = title % ({"instance": channel_no, "group": group_name})
+
+}
+
+      // channel info
+     // channel_info: @local::ICARUS_simple_channel_info
+
+      // standard analysis config
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      baseline_calc: 2
+      n_mode_skip: 3
+      use_planes: false
+      refine_baseline: false
+
+      // turn on for analysis information printed out on stdin
+      verbose: false
+      // turn on for timing information printed out on stdin
+      timing: false
+
+      // turn on to calculate FFT and save them in output ChannelData
+      fft_per_channel: false
+
+      // turn on to save waveform in output ChannelData
+      fill_waveforms: false
+
+      // turn on to output ReducedChannelData objects instead of 
+      // ChannelData (will throw out waveform and FFT info)
+      reduce_data: false
+
+      // number of headers per event provided by input (will be ignored if value is negative)
+      // 10 for SBND 
+      n_headers: -1
+    }
+  }
+
+
+  my_producer_modules: [daq]
+  trigger_paths: [my_producer_modules]
+  
+  #a: [CAENV1730WaveformAnalysis]
+  #end_paths: [a]
+
+  end_path = []
+
+ }
+
+
+services:
+{
+  TFileService: { fileName: "waveformtest.root"}
+  #RedisConnectionService: { host: "icarus-db01.fnal.gov" }
+  RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+} 
+
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}
+
+process_name: DaqDecoderIcarusPMT

@@ -31,6 +31,7 @@
 #include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
+#include "PMTDigitizerInfo.hh"
 
 #include "DaqDecoderIcarusPMT.h"
 
@@ -38,15 +39,12 @@
 daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(Parameters const & params)
   : art::EDProducer(params)
   , m_input_tags{ params().FragmentsLabels() }
-  , fChannelMap{ *(art::ServiceHandle<icarusDB::IICARUSChannelMap const>{}) }
 
 {
   
   // Output data products
 	produces<std::vector<raw::OpDetWaveform>>();
   produces<std::vector<pmtAnalysis::PMTDigitizerInfo>>();
-
-  std::unique_ptr<std::vector<raw::OpDetWaveform>> product_collection(new std::vector<raw::OpDetWaveform>());
 
 }
 
@@ -90,13 +88,12 @@ std::vector<artdaq::Fragment> daq::DaqDecoderIcarusPMT::readFragments( art::Even
 void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFragment ) {
 
   size_t const fragment_id = artdaqFragment.fragmentID();
-  size_t const eff_fragment_id = artdaqFragment.fragmentID() & 0x0fff;
+  size_t const eff_fragment_id = fragment_id & 0x0fff;
 
   sbndaq::CAENV1730Fragment fragment(artdaqFragment);
   sbndaq::CAENV1730FragmentMetadata metafrag = *fragment.Metadata();
   sbndaq::CAENV1730Event evt = *fragment.Event();
   sbndaq::CAENV1730EventHeader header = evt.Header;
-
   size_t nChannelsPerBoard = metafrag.nChannels;
 
   uint32_t ev_size_quad_bytes         = header.eventSize;
@@ -105,54 +102,33 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
   uint32_t nSamplesPerChannel         = data_size_double_bytes/nChannelsPerBoard;
   uint16_t const enabledChannels      = header.ChannelMask();
 
-  //artdaq::Fragment::timestamp_t const fragmentTimestamp = artdaqFragment.timestamp(); << uncomment me
-
+  artdaq::Fragment::timestamp_t const fragmentTimestamp = artdaqFragment.timestamp(); 
   unsigned int const time_tag =  header.triggerTimeTag;
 
-  //size_t boardId = nChannelsPerBoard * eff_fragment_id; << uncomment me
-
   auto const [ chDataMap, nEnabledChannels ] = setBitIndices<16U>(enabledChannels);
-
   const uint16_t* data_begin = reinterpret_cast<const uint16_t*>(artdaqFragment.dataBeginBytes() + sizeof(sbndaq::CAENV1730EventHeader));
 
-  if (fChannelMap.hasPMTDigitizerID(eff_fragment_id)) {
-
-      const icarusDB::DigitizerChannelChannelIDPairVec& digitizerChannelVec
-          = fChannelMap.getChannelIDPairVec(eff_fragment_id);
+  std::vector<uint16_t> wvfm(nSamplesPerChannel);
+  float temperature = 0;
 
 
-      std::vector<uint16_t> wvfm(nSamplesPerChannel);
+  for( size_t digitizerChannel=0; digitizerChannel<nChannelsPerBoard; digitizerChannel++ ) {
 
+    std::size_t const pmtID = digitizerChannel+nChannelsPerBoard*eff_fragment_id;
 
-      for(auto const [ digitizerChannel, channelID ]: digitizerChannelVec) {
+    std::size_t const channelPosInData = chDataMap[digitizerChannel];
+    std::size_t const ch_offset = channelPosInData * nSamplesPerChannel;
 
-        std::size_t const channelPosInData = chDataMap[digitizerChannel];
-        std::size_t const ch_offset = channelPosInData * nSamplesPerChannel;
+    std::copy_n(data_begin + ch_offset, nSamplesPerChannel, wvfm.begin());
 
-        std::copy_n(data_begin + ch_offset, nSamplesPerChannel, wvfm.begin());
+    fOpDetWaveformCollection->emplace_back(fragmentTimestamp, pmtID, wvfm);
 
-        fOpDetWaveformCollection->emplace_back(time_tag, channelID, wvfm);
-
-      }
+    temperature += float( metafrag.chTemps[digitizerChannel] );
 
   }
 
-  else {
-        
-    mf::LogError("DaqDecoderIcarus")
-      << "*** PMT could not find channel information for fragment: "
-        << fragment_id;
 
-  }
-
-  //uint32_t temperature = 0;
-
-  //metafrag.chTemps
-
-  //PMTDigitizerInfo dgtz( eff_fragment_id, time_tag, temperature )
-
-  //v_digitizer_info.push_back(  )
-
+  fPMTDigitizerInfoCollection->emplace_back( eff_fragment_id, time_tag, fragmentTimestamp, temperature );
 
 }
 

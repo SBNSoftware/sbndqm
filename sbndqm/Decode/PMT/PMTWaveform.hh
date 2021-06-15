@@ -1,5 +1,5 @@
-#ifndef _sbnddaq_analysis_PMTWaveform
-#define _sbnddaq_analysis_PMTWaveform
+#ifndef PMTWaveform_hh
+#define PMTWaveform_hh
 
 #include <vector>
 #include <array>

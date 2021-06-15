@@ -1,4 +1,5 @@
 <lcgdict>
+  
   <class name="pmtAnalysis::PMTWaveform"/>
   <class name="std::vector<pmtAnalysis::PMTWaveform>"/>
   <class name="art::Wrapper<pmtAnalysis::PMTWaveform>"/>
@@ -9,6 +10,4 @@
   <class name="art::Wrapper<pmtAnalysis::PMTDigitizerInfo>"/>
   <class name="art::Wrapper<std::vector<pmtAnalysis::PMTDigitizerInfo>>"/>
 
-  <class name="std::vector<std::vector<short>>"/>
-  <class name="art::Wrapper<std::vector<std::vector<short>>>"/>
 </lcgdict>

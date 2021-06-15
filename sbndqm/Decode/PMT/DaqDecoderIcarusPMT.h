@@ -29,7 +29,6 @@
 #include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
-#include "PMTWaveform.hh"
 #include "PMTDigitizerInfo.hh"
 
 #include <iostream>
@@ -85,8 +84,6 @@ namespace daq
           setBitIndices(T value) noexcept;
       
       std::vector<art::InputTag> m_input_tags;
-
-      icarusDB::IICARUSChannelMap const& fChannelMap;
 
       using OpDetWaveformCollection    = std::vector<raw::OpDetWaveform>;
       using OpDetWaveformCollectionPtr = std::unique_ptr<OpDetWaveformCollection>;

@@ -1,8 +1,3 @@
-find_ups_product(artdaq_core)
-find_ups_product(sbndaq_artdaq_core)
-
-art_dictionary(DICTIONARY_LIBRARIES pmtAnalysis_SBN)
-
 cet_make_library( 
 
   LIBRARY_NAME pmtAnalysis_SBN

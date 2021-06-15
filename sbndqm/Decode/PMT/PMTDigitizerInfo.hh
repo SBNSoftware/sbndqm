@@ -1,5 +1,5 @@
-#ifndef _sbnddaq_analysis_PMTDigitizerInfo
-#define _sbnddaq_analysis_PMTDigitizerInfo
+#ifndef PMTDigitizerInfo_hh
+#define PMTDigitizerInfo_hh
 
 #include <vector>
 #include <array>
@@ -13,11 +13,28 @@ namespace pmtAnalysis
 		public: 
 
 			PMTDigitizerInfo();
+
+			PMTDigitizerInfo( size_t const eff_fragment_id, 
+							  unsigned int const time_tag,
+				              uint64_t fragmentTimestamp, 
+				              float temperature )
+			: m_eff_fragment_id( eff_fragment_id )
+			, m_time_tag( time_tag )
+			, m_fragmentTimestamp( fragmentTimestamp )
+			, m_digitizer_temperature( temperature )
+			{};
+
 			~PMTDigitizerInfo();
 
 		private:
 
-			// Some private stuff
+			size_t m_eff_fragment_id;
+			
+			unsigned int m_time_tag;
+			
+			uint64_t m_fragmentTimestamp;
+
+			float m_digitizer_temperature;
 
 	};
 
