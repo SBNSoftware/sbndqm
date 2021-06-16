@@ -6,11 +6,6 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "fhiclcpp/types/TableAs.h"
-#include "fhiclcpp/types/Sequence.h"
-#include "fhiclcpp/types/OptionalAtom.h"
-#include "fhiclcpp/types/Atom.h"
-#include "fhiclcpp/types/Table.h"
 #include "canvas/Utilities/Exception.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
@@ -50,57 +45,7 @@ namespace sbndaq {
 
 		public:
 
-			struct Config 
-      		{
-
-        		using Name = fhicl::Name;
-
-        		using Comment = fhicl::Comment;
-
-        		fhicl::Atom<art::InputTag> OpDetWaveformLabel {
-          			Name("OpDetWaveformLabel"), 
-          			Comment("data products lables for the OpDetWaveform data product"), 
-          			art::InputTag{ "daqPMT" }
-        		};
-
-        		fhicl::Atom<art::InputTag> PMTDigitizerInfoLabel {
-          			Name("PMTDigitizerInfoLabel"), 
-          			Comment("data products lables for the PMTDigitizerInfo data product"), 
-          			art::InputTag{ "daqPMT" }
-        		};
-
-   				fhicl::Atom<std::string> RedisHostname {
-          			Name("RedisHostname"), 
-          			Comment("Redis database hostname"), 
-          			std::string{ "icarus-db01" }
-        		};
-
-        		fhicl::Atom<int> RedisPort {
-          			Name("RedisPort"), 
-          			Comment("Redis database hostname"), 
-          			int{ 6379 }
-        		};
-
-        		fhicl::Table<fhicl::ParameterSet> MetricConfig {
-        			Name("MetricConfig"),
-        			Comment( "Configuration of the redis metrics" ),
-        		};
-
-        		fhicl::Table<fhicl::ParameterSet> PedAlgoConfig {
-        			Name("PedAlgoConfig"),
-        			Comment( "Configuration of the pedestal removal algorithm" ),
-        		};
-
-        		fhicl::Table<fhicl::ParameterSet> HitAlgoConfig {
-        			Name("HitAlgoConfig"),
-        			Comment( "Configuration of the ophit finding algorithm" ),
-        		};
-
-      		};
-
-      		using Parameters = art::EDAnalyzer::Table<Config>;
-  		
-  			explicit CAENV1730WaveformAnalysis(Parameters const & params); // explicit doesn't allow for copy initialization
+  			explicit CAENV1730WaveformAnalysis(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
   			virtual ~CAENV1730WaveformAnalysis();
   
   			virtual void analyze(art::Event const & evt);
@@ -115,6 +60,8 @@ namespace sbndaq {
   			int m_redis_port;
 
   			double stringTime = 0.0;
+
+  			fhicl::ParameterSet m_metric_config;
 
   			pmtana::PulseRecoManager pulseRecoManager;
   			pmtana::PMTPulseRecoBase* threshAlg;

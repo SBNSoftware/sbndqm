@@ -1,8 +1,9 @@
-simple_plugin( "DaqDecoderIcarusPMT" module
+simple_plugin( DaqDecoderIcarusPMT "module"
   
   art_Utilities
   canvas
   
+  artdaq-core_Data  
   artdaq-core_Utilities
   sbndaq-artdaq-core_Overlays_COMMON
   sbndaq-artdaq-core_Overlays_ICARUS 

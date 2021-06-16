@@ -25,9 +25,8 @@
 
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
-#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
+#include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
 #include "sbndaq-artdaq-core/Overlays/Common/CAENV1730Fragment.hh"
-#include "sbndaq-artdaq-core/Overlays/FragmentType.hh" // sbndaq::FragmentType
 #include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
@@ -43,7 +42,7 @@ daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(Parameters const & params)
 {
   
   // Output data products
-	produces<std::vector<raw::OpDetWaveform>>();
+  produces<std::vector<raw::OpDetWaveform>>();
   produces<std::vector<pmtAnalysis::PMTDigitizerInfo>>();
 
 }
@@ -64,25 +63,76 @@ daq::DaqDecoderIcarusPMT::setBitIndices(T value) noexcept {
 } 
 
 
-std::vector<artdaq::Fragment> daq::DaqDecoderIcarusPMT::readFragments( art::Event & event ){
+std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderIcarusPMT::readHandles( art::Event & event ){
 
-  art::Handle<std::vector<artdaq::Fragment>> handle;
+  // Normally or the CAENV1730 or the ContainerCAENV1730 are full
+  // We return the one of the two that is full  
+
+  std::vector<art::Handle<artdaq::Fragments>> handles;
   art::InputTag this_input_tag; 
 
   for( art::InputTag const& input_tag : m_input_tags ) {
 
-    art::Handle<std::vector<artdaq::Fragment>> thisHandle;
+    art::Handle<artdaq::Fragments> thisHandle;
 
     if( !event.getByLabel<std::vector<artdaq::Fragment>>(input_tag, thisHandle) ) continue;
     if( !thisHandle.isValid() || thisHandle->empty() ) continue;
 
-    handle = thisHandle;
+    handles.push_back( thisHandle );
 
   }
 
-  return *handle;
+  return handles;
 
 } 
+
+
+artdaq::Fragments daq::DaqDecoderIcarusPMT::readFragments( std::vector<art::Handle<artdaq::Fragments>> handles ) {
+
+  // Hopefully-not-too-sloppy-code to create the fragment list out of the container  
+  artdaq::FragmentPtrs containerFragments;
+  artdaq::Fragments fragments;
+  
+  for( const auto& handle : handles ) {
+    
+    if( handle->front().type() == artdaq::Fragment::ContainerFragmentType ) {
+      
+      for ( auto const& cont : *handle ) {
+	
+	artdaq::ContainerFragment contf(cont);
+	
+	if( contf.fragment_type() != sbndaq::detail::FragmentType::CAENV1730 ) { break; }
+	
+	for( size_t ii=0; ii < contf.block_count(); ii++ ) {
+	  
+	  // A bit unnecessary for this case 
+	  containerFragments.push_back(contf[ii]);
+	  fragments.push_back( *containerFragments.back() );
+	  
+	}
+
+      } 
+      
+    }
+    
+    else {
+      
+      if ( handle->front().type() != sbndaq::detail::FragmentType::CAENV1730  ) { break; }
+	
+      for( auto frag : *handle ) {
+	  
+	fragments.emplace_back( frag );
+	  	
+      }
+
+    } // end if container
+
+  } // end for handles 
+  
+
+  return fragments;
+
+}
 
 
 void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFragment ) {
@@ -96,6 +146,7 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
   sbndaq::CAENV1730EventHeader header = evt.Header;
   size_t nChannelsPerBoard = metafrag.nChannels;
 
+  
   uint32_t ev_size_quad_bytes         = header.eventSize;
   uint32_t evt_header_size_quad_bytes = sizeof(sbndaq::CAENV1730EventHeader)/sizeof(uint32_t);
   uint32_t data_size_double_bytes     = 2*(ev_size_quad_bytes - evt_header_size_quad_bytes);
@@ -140,29 +191,30 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 
   try {
 
-    auto fragments = readFragments( event );
+    auto fragmentHandles = readHandles( event );
+
+    auto fragments = readFragments( fragmentHandles );
 
     // initialize the data product 
     fOpDetWaveformCollection = OpDetWaveformCollectionPtr(new OpDetWaveformCollection);
     fPMTDigitizerInfoCollection = PMTDigitizerInfoCollectionPtr(new PMTDigitizerInfoCollection);
-
-    for( auto const & fragment : fragments ) { 
-
-      switch( fragment.type() ) {
-        
-        case sbndaq::FragmentType::CAENV1730:
+    
+    if ( fragments.size() > 0 ){
+ 
+      for( auto const & fragment : fragments ) {   
+  
           processFragment( fragment );
-        
-        case artdaq::Fragment::ContainerFragmentType:
-          processFragment( fragment );
-       
-        default: 
-
-          throw cet::exception("DaqDecoderIcarusPMT")
-            << "Unexpected PMT data product fragment type \n";
+   
       }
-
+    
     }
+    
+    else {
+
+       mf::LogError("DaqDecoderIcarus") 
+	 << "No fragments found\n" << '\n';
+    }
+    
 
     // Place the data product in the event stream
     event.put(std::move(fOpDetWaveformCollection));

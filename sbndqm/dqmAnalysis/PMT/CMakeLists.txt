@@ -32,3 +32,5 @@ simple_plugin( CAENV1730WaveformAnalysis "module"
   larana_OpticalDetector_OpHitFinder
 
 )
+
+add_subdirectory(fcl)

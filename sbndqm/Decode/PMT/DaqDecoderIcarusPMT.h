@@ -71,7 +71,9 @@ namespace daq
       
       DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT &&) = delete;
 
-      std::vector<artdaq::Fragment> readFragments( art::Event & event );
+      std::vector<art::Handle<artdaq::Fragments>> readHandles( art::Event & event );
+
+      artdaq::Fragments readFragments( std::vector<art::Handle<artdaq::Fragments>> handles );
 
       void processFragment( const artdaq::Fragment &artdaqFragment );
 

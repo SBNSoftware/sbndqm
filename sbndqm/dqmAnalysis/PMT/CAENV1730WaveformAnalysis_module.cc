@@ -7,20 +7,21 @@
 #include "CAENV1730WaveformAnalysis.hh"
 
 
-sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(Parameters const & params)
-  : EDAnalyzer(params)
-  , m_pmtditigitizerinfo_tag{ params().PMTDigitizerInfoLabel() }
-  , m_opdetwaveform_tag{ params().OpDetWaveformLabel() }
-  , m_redis_hostname{ params().RedisHostname() }
-  , m_redis_port{ params().RedisPort() }
+sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet const & pset)
+  : EDAnalyzer(pset)
+  , m_pmtditigitizerinfo_tag{ pset.get<art::InputTag>("PMTDigitizerInfoLabel") }
+  , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
+  , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
+  , m_redis_port{ pset.get<int>("RedisPort", 6379) }
+  , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
   , pulseRecoManager()
 {
 
   // Configure the redis metrics 
-  sbndaq::GenerateMetricConfig( params().MetricConfig() );
+  sbndaq::GenerateMetricConfig( m_metric_config );
 
   // Configure the pedestal manager
-  auto const ped_alg_pset = params().PedAlgoConfig();
+  auto const ped_alg_pset = pset.get<fhicl::ParameterSet>("PedAlgoConfig");
   std::string pedAlgName = ped_alg_pset.get< std::string >("Name");
   if      (pedAlgName == "Edges")
     pedAlg = new pmtana::PedAlgoEdges(ped_alg_pset);
@@ -36,7 +37,7 @@ sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(Parameters const & 
 
 
   // Configure the ophitfinder manager
-  auto const hit_alg_pset = params().HitAlgoConfig();
+  auto const hit_alg_pset = pset.get<fhicl::ParameterSet>("HitAlgoConfig");
   std::string threshAlgName = hit_alg_pset.get< std::string >("Name");
   if      (threshAlgName == "Threshold")
     threshAlg = new pmtana::AlgoThreshold(hit_alg_pset);
@@ -123,16 +124,15 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
 
   // Get the event timestamp
 
-  
   // Do some stuff with the digitizers
 
 
   // Now we look at the waveforms 
 
-  //int level = 3; 
+  int level = 3; 
 
-  //artdaq::MetricMode mode = artdaq::MetricMode::Average;
-  //std::string groupName = "PMT";
+  artdaq::MetricMode mode = artdaq::MetricMode::Average;
+  std::string groupName = "PMT";
 
   auto opdetHandle = evt.getValidHandle< std::vector<raw::OpDetWaveform> >( m_opdetwaveform_tag );
 
@@ -142,16 +142,14 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
 
     std::vector<unsigned int> m_unique_channels; 
 
-
     for ( auto const & opdetwaveform : *opdetHandle ) {
 
       unsigned int const pmtId = opdetwaveform.ChannelNumber();
+      
+      auto findIt = std::find( m_unique_channels.begin(), m_unique_channels.end(), pmtId );
 
-
-      auto find = std::find( m_unique_channels.begin(), m_unique_channels.end(), pmtId );
-
-      if( find != m_unique_channels.end() ) {
-
+      if( findIt == m_unique_channels.end() ) {
+		
         // We have never seen this channel before
         m_unique_channels.push_back( pmtId );
       
@@ -160,32 +158,31 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
         unsigned int const nsamples = opdetwaveform.size();
 
         int16_t baseline = Median(opdetwaveform, nsamples);
-
+	
+        pulseRecoManager.Reconstruct( opdetwaveform );
         std::vector<double>  pedestal_sigma = pedAlg->Sigma();
+	
         double rms = Median(pedestal_sigma, pedestal_sigma.size());
 
-        std::cout << pmtId << " " << rms << " " << baseline << std::endl;
-
-        //double rms = RMS(opdetwaveform, nsamples, baseline);
-
-        //sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
-        //sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
+        sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
+        sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
 
 
         // Now we send a copy of the waveforms 
-        //double tickPeriod = 2.; // [us] 
-        //std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
-        //std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
+        double tickPeriod = 2.; // [us] 
+        std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
+        std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
 
-        //sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
-        //sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
+        sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
+        sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
   
       } 
 
       else {
-
-        // We have already a waveform from this channel in our sample 
+	
+	// We have already a waveform from this channel in our sample 
         continue;
+      
       }
 
     } // for      
