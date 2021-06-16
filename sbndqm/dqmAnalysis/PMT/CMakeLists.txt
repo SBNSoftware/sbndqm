@@ -3,7 +3,6 @@ simple_plugin( CAENV1730WaveformAnalysis "module"
   art_Utilities
   canvas
 
-
   art_Framework_Services_Registry
 
   ${LARDATAOBJ}
@@ -28,6 +27,8 @@ simple_plugin( CAENV1730WaveformAnalysis "module"
   sbndaq_online_redis_connection
   sbndaq_online_hiredis
 
-  pmtAnalysis_SBN
+  sbndqm_Decode_PMT_PMTDecodeData
+
+  larana_OpticalDetector_OpHitFinder
 
 )

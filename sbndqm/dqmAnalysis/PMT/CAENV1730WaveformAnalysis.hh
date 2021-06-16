@@ -1,5 +1,5 @@
-#ifndef CAENV1730WaveformAnalysis_hh
-#define CAENV1730WaveformAnalysis_hh
+#ifndef SBNDQM_DQMANALYSIS_PMT_CAENV1730WAVEFORMANALYSIS_hh
+#define SBNDQM_DQMANALYSIS_PMT_CAENV1730WaveformAnalysis_hh
 
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
@@ -12,9 +12,20 @@
 #include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Table.h"
 #include "canvas/Utilities/Exception.h"
-#include "lardataobj/RawData/OpDetWaveform.h"
-#include "sbndqm/Decode/PMT/PMTDigitizerInfo.hh"
 
+#include "lardataobj/RawData/OpDetWaveform.h"
+#include "larana/OpticalDetector/OpHitFinder/PMTPulseRecoBase.h"
+#include "larana/OpticalDetector/OpHitFinder/AlgoThreshold.h"
+#include "larana/OpticalDetector/OpHitFinder/AlgoSiPM.h"
+#include "larana/OpticalDetector/OpHitFinder/AlgoSlidingWindow.h"
+#include "larana/OpticalDetector/OpHitFinder/AlgoFixedWindow.h"
+#include "larana/OpticalDetector/OpHitFinder/AlgoCFD.h"
+#include "larana/OpticalDetector/OpHitFinder/PedAlgoEdges.h"
+#include "larana/OpticalDetector/OpHitFinder/PedAlgoRollingMean.h"
+#include "larana/OpticalDetector/OpHitFinder/PedAlgoUB.h"
+#include "larana/OpticalDetector/OpHitFinder/PulseRecoManager.h"
+
+#include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 #include "sbndqm/Decode/Mode/Mode.hh"
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
@@ -75,6 +86,16 @@ namespace sbndaq {
         			Comment( "Configuration of the redis metrics" ),
         		};
 
+        		fhicl::Table<fhicl::ParameterSet> PedAlgoConfig {
+        			Name("PedAlgoConfig"),
+        			Comment( "Configuration of the pedestal removal algorithm" ),
+        		};
+
+        		fhicl::Table<fhicl::ParameterSet> HitAlgoConfig {
+        			Name("HitAlgoConfig"),
+        			Comment( "Configuration of the ophit finding algorithm" ),
+        		};
+
       		};
 
       		using Parameters = art::EDAnalyzer::Table<Config>;
@@ -95,7 +116,12 @@ namespace sbndaq {
 
   			double stringTime = 0.0;
 
+  			pmtana::PulseRecoManager pulseRecoManager;
+  			pmtana::PMTPulseRecoBase* threshAlg;
+  			pmtana::PMTPedestalBase*  pedAlg;
+
   			int16_t Median(std::vector<int16_t> data, size_t n_adc);
+  			double Median(std::vector<double> data, size_t n_adc);
  			
  			double RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline );
   			

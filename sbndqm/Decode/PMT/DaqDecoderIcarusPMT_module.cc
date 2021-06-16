@@ -31,7 +31,7 @@
 #include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
-#include "PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 
 #include "DaqDecoderIcarusPMT.h"
 

@@ -1,28 +1,4 @@
-cet_make_library( 
-
-  LIBRARY_NAME pmtAnalysis_SBN
-  
-  SOURCE  
-    PMTWaveform.cc
-    PMTDigitizerInfo.cc
-  
-  LIBRARIES
-    lardataobj_RawData
-    ${ART_UTILITIES}
-    ${ART_FRAMEWORK_PRINCIPAL}
-    ${ART_FRAMEWORK_SERVICES_REGISTRY}
-    ${ART_FRAMEWORK_SERVICES_BASIC}
-    ${ART_FRAMEWORK_CORE}
-    canvas
-    ${MF_MESSAGELOGGER}
-    ${MF_UTILITIES}
-    ${FHICLCPP}
-    cetlib cetlib_except
-    ${CLHEP}
-    ${ROOT_BASIC_LIB_LIST}
-)
-
-simple_plugin( DaqDecoderIcarusPMT module
+simple_plugin( "DaqDecoderIcarusPMT" module
   
   art_Utilities
   canvas
@@ -42,11 +18,13 @@ simple_plugin( DaqDecoderIcarusPMT module
 
   cetlib cetlib_except
 
-  pmtAnalysis_SBN
+  sbndqm_Decode_PMT_PMTDecodeData
 
 )
 
 install_headers()
 install_fhicl()
 install_source()
+
+add_subdirectory(PMTDecodeData)
 

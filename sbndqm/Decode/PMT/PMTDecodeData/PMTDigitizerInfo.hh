@@ -1,5 +1,5 @@
-#ifndef PMTDigitizerInfo_hh
-#define PMTDigitizerInfo_hh
+#ifndef SBNDQM_DECODE_PMT_PMTDECODEDATA_PMTDIGITIZERINFO_hh
+#define SBNDQM_DECODE_PMT_PMTDECODEDATA_PMTDIGITIZERINFO_hh
 
 #include <vector>
 #include <array>

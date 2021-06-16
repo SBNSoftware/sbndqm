@@ -1,5 +1,5 @@
-#ifndef DaqDecoderIcarusPMT_h
-#define DaqDecoderIcarusPMT_h
+#ifndef SBNDQM_DECODE_PMT_DAQDECODERICARUSPMT_h
+#define SBNDQM_DECODE_PMT_DAQDECODERICARUSPMT_h
 
 ////////////////////////////////////////////////////////////////////////
 // Class:       DaqDecoderIcarus
@@ -29,7 +29,7 @@
 #include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
 
 #include "lardataobj/RawData/OpDetWaveform.h"
-#include "PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 
 #include <iostream>
 #include <stdlib.h>
