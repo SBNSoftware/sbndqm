@@ -14,7 +14,7 @@ namespace pmtAnalysis
 
 			PMTDigitizerInfo();
 
-			PMTDigitizerInfo( size_t const eff_fragment_id, 
+			PMTDigitizerInfo( unsigned int const eff_fragment_id, 
 							  unsigned int const time_tag,
 				              uint64_t fragmentTimestamp, 
 				              float temperature )
@@ -25,6 +25,10 @@ namespace pmtAnalysis
 			{};
 
 			~PMTDigitizerInfo();
+
+			unsigned int getBoardId(){ return m_eff_fragment_id; };
+
+			float getTemperature(){ return m_digitizer_temperature; };
 
 		private:
 

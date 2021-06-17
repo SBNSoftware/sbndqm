@@ -4,10 +4,10 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "CAENV1730WaveformAnalysis.hh"
+#include "CAENV1730Streams.hh"
 
 
-sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet const & pset)
+sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
   , m_pmtditigitizerinfo_tag{ pset.get<art::InputTag>("PMTDigitizerInfoLabel") }
   , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
@@ -60,14 +60,21 @@ sbndaq::CAENV1730WaveformAnalysis::CAENV1730WaveformAnalysis(fhicl::ParameterSet
 //------------------------------------------------------------------------------------------------------------------
 
 
-sbndaq::CAENV1730WaveformAnalysis::~CAENV1730WaveformAnalysis(){};
-
+sbndaq::CAENV1730Streams::~CAENV1730Streams(){};
 
 //------------------------------------------------------------------------------------------------------------------
 
 
+void sbndaq::CAENV1730Streams::clean() {
 
-int16_t sbndaq::CAENV1730WaveformAnalysis::Median(std::vector<int16_t> data, size_t n_adc) 
+  m_get_temperature.clear();
+
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+
+int16_t sbndaq::CAENV1730Streams::Median(std::vector<int16_t> data, size_t n_adc) 
 {
   // First we sort the array
   std::sort(data.begin(), data.end());
@@ -80,7 +87,7 @@ int16_t sbndaq::CAENV1730WaveformAnalysis::Median(std::vector<int16_t> data, siz
 }
 
 
-double sbndaq::CAENV1730WaveformAnalysis::Median(std::vector<double> data, size_t n_adc) 
+double sbndaq::CAENV1730Streams::Median(std::vector<double> data, size_t n_adc) 
 {
   // First we sort the array
   std::sort(data.begin(), data.end());
@@ -96,7 +103,7 @@ double sbndaq::CAENV1730WaveformAnalysis::Median(std::vector<double> data, size_
 //------------------------------------------------------------------------------------------------------------------
 
 
-double sbndaq::CAENV1730WaveformAnalysis::RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
+double sbndaq::CAENV1730Streams::RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
 {
   double ret = 0;
   for (size_t i = 0; i < n_adc; i++) {
@@ -109,7 +116,7 @@ double sbndaq::CAENV1730WaveformAnalysis::RMS(std::vector<int16_t> data, size_t 
 //------------------------------------------------------------------------------------------------------------------
 
 
-int16_t sbndaq::CAENV1730WaveformAnalysis::Min(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
+int16_t sbndaq::CAENV1730Streams::Min(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
 {
   int16_t min = baseline;
   for (size_t i = 0; i < n_adc; i++) {
@@ -120,20 +127,41 @@ int16_t sbndaq::CAENV1730WaveformAnalysis::Min(std::vector<int16_t> data, size_t
 
 //------------------------------------------------------------------------------------------------------------------
 
-void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
+void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
   // Get the event timestamp
-
-  // Do some stuff with the digitizers
-
-
-  // Now we look at the waveforms 
 
   int level = 3; 
 
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
+  artdaq::MetricMode rate = artdaq::MetricMode::Rate;
+
   std::string groupName = "PMT";
 
+
+  // We check the fragments 
+  auto digitizerinfoHandle = evt.getValidHandle< std::vector<pmtAnalysis::PMTDigitizerInfo> >( m_pmtditigitizerinfo_tag );
+
+  if( digitizerinfoHandle->size() > 0 ) {
+
+    for ( auto digitizerinfo : *digitizerinfoHandle ) {
+
+      unsigned int boardId = digitizerinfo.getBoardId();
+
+      m_get_temperature[ boardId ] = digitizerinfo.getTemperature();
+
+    }
+
+  }
+
+   else {
+
+     mf::LogError("sbndaq::CAENV1730Streams::analyze") 
+          << "No raw::OpDetWaveform data product found with the used label! '\n'";
+
+  }
+
+  // Now we look at the waveforms 
   auto opdetHandle = evt.getValidHandle< std::vector<raw::OpDetWaveform> >( m_opdetwaveform_tag );
 
   if( opdetHandle->size() > 0 ) {
@@ -143,6 +171,8 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
     std::vector<unsigned int> m_unique_channels; 
 
     for ( auto const & opdetwaveform : *opdetHandle ) {
+
+      if( m_unique_channels.size() > 384 ) { break; }
 
       unsigned int const pmtId = opdetwaveform.ChannelNumber();
       
@@ -161,12 +191,23 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
 	
         pulseRecoManager.Reconstruct( opdetwaveform );
         std::vector<double>  pedestal_sigma = pedAlg->Sigma();
-	
+        
         double rms = Median(pedestal_sigma, pedestal_sigma.size());
+
+        auto const& pulses = threshAlg->GetPulses();
+        double npulses = (double)pulses.size();
+
+        unsigned int board = pmtId / nChannelsPerBoard;
+
+        float temperature = m_get_temperature[ board ];
+
+        //std::cout << board << " " << pmtId << " " << baseline << " " << rms << " " << temperature << " " << npulses << std::endl;
 
         sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
         sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
-
+        sbndaq::sendMetric(groupName, pmtId_s, "temperature", temperature, level, mode); // Send rms information
+        sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rms information
+        
 
         // Now we send a copy of the waveforms 
         double tickPeriod = 2.; // [us] 
@@ -175,21 +216,17 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
 
         sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
         sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
-  
+
+
       } 
 
-      else {
-	
-	// We have already a waveform from this channel in our sample 
-        continue;
-      
-      }
+      else { continue; }
 
     } // for      
 
-    if( m_unique_channels.size() < 360 ) {
+    if( m_unique_channels.size() < 384 ) {
 
-         mf::LogError("sbndaq::CAENV1730WaveformAnalysis::analyze") 
+         mf::LogError("sbndaq::CAENV1730Streams::analyze") 
           << "Event has less than 360 waveforms'\n'";
 
     }
@@ -198,15 +235,17 @@ void sbndaq::CAENV1730WaveformAnalysis::analyze(art::Event const & evt) {
 
   else {
 
-     mf::LogError("sbndaq::CAENV1730WaveformAnalysis::analyze") 
+     mf::LogError("sbndaq::CAENV1730Streams::analyze") 
           << "No raw::OpDetWaveform data product found with the used label! '\n'";
 
   }
  
- // Ronf for two seconds 
- //sleep(2); // Is it still necessary ? uncomment if so
+
+  clean();
+
+  // Ronf for two seconds 
+  //sleep(2); // Is it still necessary ? uncomment if so
    
 }
 
-DEFINE_ART_MODULE(sbndaq::CAENV1730WaveformAnalysis)
-
+DEFINE_ART_MODULE(sbndaq::CAENV1730Streams)

@@ -1,4 +1,4 @@
-simple_plugin( CAENV1730WaveformAnalysis "module"
+simple_plugin( CAENV1730Streams "module"
 
   art_Utilities
   canvas

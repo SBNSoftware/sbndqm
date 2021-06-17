@@ -27,7 +27,7 @@ icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedest
 icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
 icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
 icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
-icarus_opreco_hit_slidingwindow.Verbosity:           true
+icarus_opreco_hit_slidingwindow.Verbosity:           false
 
 
 physics: {
@@ -45,7 +45,7 @@ physics: {
 
    pmtAnalysis: {
 
-      module_type: CAENV1730WaveformAnalysis
+      module_type: CAENV1730Streams
       
 
       OpDetWaveformLabel: "daqPMT"
@@ -53,7 +53,7 @@ physics: {
 
 
       reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::standard_algo_slidingwindow
+      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
       PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
 
 
@@ -81,12 +81,18 @@ physics: {
             display_range: [-1000, 1000]
           }
 
-          #temperature: {
-          #  units: Celsius 
-          #  title: "%(group)s channel %(instance)s Board temperature"
-          #  display_range: [20, 80]
-          #}
+          temperature: {
+            units: Celsius 
+            title: "%(group)s channel %(instance)s Board temperature"
+            display_range: [20, 80]
+          }
           
+          rate: {
+            untis: Hz 
+            title: "%(group)s channel %(instance)s single PMT rate" 
+            display_range: [ 100000, 300000 ]
+          }
+
         }   
       }
     }
