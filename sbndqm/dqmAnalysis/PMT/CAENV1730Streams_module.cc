@@ -172,7 +172,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
     for ( auto const & opdetwaveform : *opdetHandle ) {
 
-      if( m_unique_channels.size() > 384 ) { break; }
+      if( m_unique_channels.size() > nTotalChannels ) { break; }
 
       unsigned int const pmtId = opdetwaveform.ChannelNumber();
       
@@ -224,7 +224,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
     } // for      
 
-    if( m_unique_channels.size() < 384 ) {
+    if( m_unique_channels.size() < nTotalChannels ) {
 
          mf::LogError("sbndaq::CAENV1730Streams::analyze") 
           << "Event has less than 360 waveforms'\n'";
