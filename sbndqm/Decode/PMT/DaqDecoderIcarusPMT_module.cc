@@ -66,7 +66,7 @@ daq::DaqDecoderIcarusPMT::setBitIndices(T value) noexcept {
 std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderIcarusPMT::readHandles( art::Event & event ){
 
   // Normally or the CAENV1730 or the ContainerCAENV1730 are full
-  // We return the one of the two that is full  
+  // We return all the non-empty ones 
 
   std::vector<art::Handle<artdaq::Fragments>> handles;
   art::InputTag this_input_tag; 
@@ -123,7 +123,7 @@ artdaq::Fragments daq::DaqDecoderIcarusPMT::readFragments( std::vector<art::Hand
     } // end if container
   } // end for handles 
   
-  
+
   return fragments;
 
 }
