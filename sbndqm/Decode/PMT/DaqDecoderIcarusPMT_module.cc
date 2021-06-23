@@ -90,7 +90,6 @@ std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderIcarusPMT::readHandle
 artdaq::Fragments daq::DaqDecoderIcarusPMT::readFragments( std::vector<art::Handle<artdaq::Fragments>> handles ) {
 
   // Hopefully-not-too-sloppy-code to create the fragment list out of the container  
-  artdaq::FragmentPtrs containerFragments;
   artdaq::Fragments fragments;
   
   for( const auto& handle : handles ) {
@@ -99,17 +98,15 @@ artdaq::Fragments daq::DaqDecoderIcarusPMT::readFragments( std::vector<art::Hand
       
       for ( auto const& cont : *handle ) {
 	
-	artdaq::ContainerFragment contf(cont);
+	       artdaq::ContainerFragment contf(cont);
 	
-	if( contf.fragment_type() != sbndaq::detail::FragmentType::CAENV1730 ) { break; }
+	       if( contf.fragment_type() != sbndaq::detail::FragmentType::CAENV1730 ) { break; }
 	
-	for( size_t ii=0; ii < contf.block_count(); ii++ ) {
+	       for( size_t ii=0; ii < contf.block_count(); ii++ ) {
 	  
-	  // A bit unnecessary for this case 
-	  containerFragments.push_back(contf[ii]);
-	  fragments.push_back( *containerFragments.back() );
+	         fragments.push_back( *(contf[ii]) );
 	  
-	}
+	       }
 
       } 
       
@@ -121,15 +118,12 @@ artdaq::Fragments daq::DaqDecoderIcarusPMT::readFragments( std::vector<art::Hand
 	
       for( auto frag : *handle ) {
 	  
-	fragments.emplace_back( frag );
-	  	
+	       fragments.emplace_back( frag );
       }
-
     } // end if container
-
   } // end for handles 
   
-
+  
   return fragments;
 
 }
