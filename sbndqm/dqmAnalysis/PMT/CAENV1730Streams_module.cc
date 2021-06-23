@@ -237,7 +237,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   else {
 
      mf::LogError("sbndaq::CAENV1730Streams::analyze") 
-          << "No raw::OpDetWaveform data product found with the used label! '\n'";
+          << "Data product '" << m_opdetwaveform_tag.encode() << "' has no raw::OpDetWaveform in it!\n";
 
   }
  
