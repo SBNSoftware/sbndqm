@@ -202,8 +202,6 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
         float temperature = m_get_temperature[ board ];
 
-        //std::cout << board << " " << pmtId << " " << baseline << " " << rms << " " << temperature << " " << npulses << std::endl;
-
         sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
         sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
         sbndaq::sendMetric(groupName, pmtId_s, "temperature", temperature, level, mode); // Send rms information
@@ -211,7 +209,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
         
 
         // Now we send a copy of the waveforms 
-        double tickPeriod = 2.; // [us] 
+        double tickPeriod = 0.002; // [us] 
         std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
         std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
 
