@@ -140,9 +140,9 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
 
   // We check the fragments 
-  auto digitizerinfoHandle = evt.getValidHandle< std::vector<pmtAnalysis::PMTDigitizerInfo> >( m_pmtditigitizerinfo_tag );
-
-  if( digitizerinfoHandle->size() > 0 ) {
+  art::Handle<std::vector<pmtAnalysis::PMTDigitizerInfo>> digitizerinfoHandle;
+  evt.getByLabel( m_pmtditigitizerinfo_tag, digitizerinfoHandle );
+  if( digitizerinfoHandle->isValid() && !digitizerinfoHandle->empty() ) {
 
     for ( auto digitizerinfo : *digitizerinfoHandle ) {
 
@@ -157,14 +157,15 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
    else {
 
      mf::LogError("sbndaq::CAENV1730Streams::analyze") 
-          << "No raw::OpDetWaveform data product found with the used label! '\n'";
+          << "No PMT digitizer information is contained in '" << m_pmtditigitizerinfo_tag.encode() << "' data product.\n";
 
   }
 
   // Now we look at the waveforms 
-  auto opdetHandle = evt.getValidHandle< std::vector<raw::OpDetWaveform> >( m_opdetwaveform_tag );
+  art::Handle< std::vector<raw::OpDetWaveform> > opdetHandle;
+  evt.getByLabel( m_opdetwaveform_tag, opdetHandle );
 
-  if( opdetHandle->size() > 0 ) {
+  if( opdetHandle->isValid() && !opdetHandle->empty() ) {
 
     // Create a sample with only one waveforms per channel
 
@@ -236,7 +237,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   else {
 
      mf::LogError("sbndaq::CAENV1730Streams::analyze") 
-          << "No raw::OpDetWaveform data product found with the used label! '\n'";
+          << "Data product '" << m_opdetwaveform_tag.encode() << "' has no raw::OpDetWaveform in it!\n";
 
   }
  
