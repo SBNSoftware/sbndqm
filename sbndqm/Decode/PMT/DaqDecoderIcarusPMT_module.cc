@@ -168,6 +168,7 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
     std::size_t const pmtID = digitizerChannel+nChannelsPerBoard*eff_fragment_id;
 
     std::size_t const channelPosInData = chDataMap[digitizerChannel];
+    if (channelPosInData >= nEnabledChannels) continue; // not enabled
     std::size_t const ch_offset = channelPosInData * nSamplesPerChannel;
 
     std::copy_n(data_begin + ch_offset, nSamplesPerChannel, wvfm.begin());
@@ -235,4 +236,3 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 DEFINE_ART_MODULE(daq::DaqDecoderIcarusPMT)
 
  
-
