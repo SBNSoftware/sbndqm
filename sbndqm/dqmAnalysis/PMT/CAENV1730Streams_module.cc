@@ -162,9 +162,10 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   }
 
   // Now we look at the waveforms 
-  auto opdetHandle = evt.getValidHandle< std::vector<raw::OpDetWaveform> >( m_opdetwaveform_tag );
+  art::Handle< std::vector<raw::OpDetWaveform> > opdetHandle;
+  evt.getByLabel( m_opdetwaveform_tag, opdetHandle );
 
-  if( opdetHandle->size() > 0 ) {
+  if( opdetHandle->isValid() && !opdetHandle->empty() ) {
 
     // Create a sample with only one waveforms per channel
 
