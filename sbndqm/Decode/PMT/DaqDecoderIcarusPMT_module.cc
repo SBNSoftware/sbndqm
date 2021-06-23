@@ -179,7 +179,8 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
 
   }
 
-  temperature /= nChannelsPerBoard;
+  if (nEnabledChannels > 0) temperature /= nEnabledChannels;
+  else temperature = -1.0f; // invalid temperature
 
   fPMTDigitizerInfoCollection->emplace_back( eff_fragment_id, time_tag, fragmentTimestamp, temperature );
 
