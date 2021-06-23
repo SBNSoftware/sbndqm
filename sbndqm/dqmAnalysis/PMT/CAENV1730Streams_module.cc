@@ -140,9 +140,9 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
 
   // We check the fragments 
-  auto digitizerinfoHandle = evt.getValidHandle< std::vector<pmtAnalysis::PMTDigitizerInfo> >( m_pmtditigitizerinfo_tag );
-
-  if( digitizerinfoHandle->size() > 0 ) {
+  art::Handle<std::vector<pmtAnalysis::PMTDigitizerInfo>> digitizerinfoHandle;
+  evt.getByLabel( m_pmtditigitizerinfo_tag, digitizerinfoHandle );
+  if( digitizerinfoHandle->isValid() && !digitizerinfoHandle->empty() ) {
 
     for ( auto digitizerinfo : *digitizerinfoHandle ) {
 
