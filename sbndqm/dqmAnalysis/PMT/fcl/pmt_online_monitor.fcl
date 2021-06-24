@@ -49,8 +49,6 @@ physics: {
       
 
       OpDetWaveformLabel: "daqPMT"
-      PMTDigitizerInfoLabel: "daqPMT"
-
 
       reco_man:      @local::standard_preco_manager
       HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
@@ -79,12 +77,6 @@ physics: {
             units: ADC
             title: "%(group)s channel %(instance)s Pedestal"
             display_range: [-1000, 1000]
-          }
-
-          temperature: {
-            units: Celsius 
-            title: "%(group)s channel %(instance)s Board temperature"
-            display_range: [20, 80]
           }
           
           rate: {
