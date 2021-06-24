@@ -142,7 +142,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   // We check the fragments 
   art::Handle<std::vector<pmtAnalysis::PMTDigitizerInfo>> digitizerinfoHandle;
   evt.getByLabel( m_pmtditigitizerinfo_tag, digitizerinfoHandle );
-  if( digitizerinfoHandle->isValid() && !digitizerinfoHandle->empty() ) {
+  if( digitizerinfoHandle.isValid() && !digitizerinfoHandle->empty() ) {
 
     for ( auto digitizerinfo : *digitizerinfoHandle ) {
 
@@ -165,7 +165,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   art::Handle< std::vector<raw::OpDetWaveform> > opdetHandle;
   evt.getByLabel( m_opdetwaveform_tag, opdetHandle );
 
-  if( opdetHandle->isValid() && !opdetHandle->empty() ) {
+  if( opdetHandle.isValid() && !opdetHandle->empty() ) {
 
     // Create a sample with only one waveforms per channel
 
