@@ -7,40 +7,31 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
-#include "lardataobj/RawData/RawDigit.h"
-#include "artdaq-core/Data/Fragment.hh"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "canvas/Utilities/InputTag.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "cetlib_except/exception.h"
+#include "canvas/Utilities/InputTag.h"
+
 #include "fhiclcpp/ParameterSet.h"
 #include "fhiclcpp/types/TableAs.h"
 #include "fhiclcpp/types/Sequence.h"
 #include "fhiclcpp/types/OptionalAtom.h"
 #include "fhiclcpp/types/Atom.h"
-#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
-#include "canvas/Utilities/InputTag.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-
-#include "messagefacility/MessageLogger/MessageLogger.h"
-
-#include "cetlib_except/exception.h"
 
 #include <memory>
-#include <iostream>
-#include <stdlib.h>
-#include <chrono>
-#include <thread>
-#include <string>
 #include <vector>
+#include <array>
+#include <utility> // std::pair, std::move()
+#include <stdlib.h>
 
 #include "art/Framework/Core/ModuleMacros.h"
-
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
 #include "sbndaq-artdaq-core/Overlays/Common/CAENV1730Fragment.hh"
-#include "sbndqm/dqmAnalysis/ChannelMapping/IICARUSChannelMap.h"
-
+#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 
