@@ -9,7 +9,6 @@
 
 sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
-  , m_pmtditigitizerinfo_tag{ pset.get<art::InputTag>("PMTDigitizerInfoLabel") }
   , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
@@ -67,7 +66,7 @@ sbndaq::CAENV1730Streams::~CAENV1730Streams(){};
 
 void sbndaq::CAENV1730Streams::clean() {
 
-  m_get_temperature.clear();
+  //m_get_temperature.clear();
 
 }
 
@@ -129,7 +128,6 @@ int16_t sbndaq::CAENV1730Streams::Min(std::vector<int16_t> data, size_t n_adc, i
 
 void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
-  // Get the event timestamp
 
   int level = 3; 
 
@@ -138,28 +136,6 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
   std::string groupName = "PMT";
 
-
-  // We check the fragments 
-  art::Handle<std::vector<pmtAnalysis::PMTDigitizerInfo>> digitizerinfoHandle;
-  evt.getByLabel( m_pmtditigitizerinfo_tag, digitizerinfoHandle );
-  if( digitizerinfoHandle.isValid() && !digitizerinfoHandle->empty() ) {
-
-    for ( auto digitizerinfo : *digitizerinfoHandle ) {
-
-      unsigned int boardId = digitizerinfo.getBoardId();
-
-      m_get_temperature[ boardId ] = digitizerinfo.getTemperature();
-
-    }
-
-  }
-
-   else {
-
-     mf::LogError("sbndaq::CAENV1730Streams::analyze") 
-          << "No PMT digitizer information is contained in '" << m_pmtditigitizerinfo_tag.encode() << "' data product.\n";
-
-  }
 
   // Now we look at the waveforms 
   art::Handle< std::vector<raw::OpDetWaveform> > opdetHandle;
@@ -198,13 +174,9 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
         auto const& pulses = threshAlg->GetPulses();
         double npulses = (double)pulses.size();
 
-        unsigned int board = pmtId / nChannelsPerBoard;
-
-        float temperature = m_get_temperature[ board ];
-
+        // Send the metrics 
         sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
         sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
-        sbndaq::sendMetric(groupName, pmtId_s, "temperature", temperature, level, mode); // Send rms information
         sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rms information
         
 
@@ -240,7 +212,8 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   }
  
 
-  clean();
+  // In case we need to clean something
+  //clean();
 
   // Ronf for two seconds 
   //sleep(2); // Is it still necessary ? uncomment if so

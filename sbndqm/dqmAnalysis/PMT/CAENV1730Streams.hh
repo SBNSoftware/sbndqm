@@ -56,7 +56,6 @@ namespace sbndaq {
 			const unsigned int nBoards = 24;
 			unsigned int nTotalChannels = nBoards*nChannelsPerBoard;
   			
-  			art::InputTag m_pmtditigitizerinfo_tag;
   			art::InputTag m_opdetwaveform_tag;
 
   			std::string m_redis_hostname;
@@ -71,11 +70,11 @@ namespace sbndaq {
   			pmtana::PMTPulseRecoBase* threshAlg;
   			pmtana::PMTPedestalBase*  pedAlg;
 
-  			std::map<unsigned int, float> m_get_temperature;
-
+ 
   			void clean();
 
   			int16_t Median(std::vector<int16_t> data, size_t n_adc);
+  			
   			double Median(std::vector<double> data, size_t n_adc);
  			
  			double RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline );
