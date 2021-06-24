@@ -6,11 +6,21 @@
 // mailto ascarpel@bnl.gov ( with great help of G. Petrillo et al .. )
 ////////////////////////////////////////////////////////////////////////
 
+#include "art/Framework/Core/EDProducer.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "artdaq-core/Data/Fragment.hh"
+#include "fhiclcpp/ParameterSet.h"
+#include "fhiclcpp/types/TableAs.h"
+#include "fhiclcpp/types/Sequence.h"
+#include "fhiclcpp/types/OptionalAtom.h"
+#include "fhiclcpp/types/Atom.h"
+#include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
+#include "canvas/Utilities/InputTag.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
-#include "canvas/Utilities/InputTag.h"
+
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "cetlib_except/exception.h"
@@ -20,6 +30,8 @@
 #include <stdlib.h>
 #include <chrono>
 #include <thread>
+#include <string>
+#include <vector>
 
 #include "art/Framework/Core/ModuleMacros.h"
 
@@ -32,7 +44,72 @@
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 
-#include "DaqDecoderIcarusPMT.h"
+
+namespace daq 
+{
+
+  class DaqDecoderIcarusPMT : public art::EDProducer 
+  {
+
+    public:
+
+      struct Config 
+      {
+
+        using Name = fhicl::Name;
+
+        using Comment = fhicl::Comment;
+
+        fhicl::Sequence<art::InputTag> FragmentsLabels {
+          Name("FragmentLabels"), 
+          Comment("data products lables for the PMT fragments from the DAQ"), 
+          std::vector<art::InputTag>{ "daq:CAENV1730", "daq:ContainerCAENV1730" }
+        };
+
+      };
+
+      using Parameters = art::EDProducer::Table<Config>;
+
+      explicit DaqDecoderIcarusPMT(Parameters const & params);
+
+      DaqDecoderIcarusPMT(DaqDecoderIcarusPMT const &) = delete;
+      
+      DaqDecoderIcarusPMT(DaqDecoderIcarusPMT &&) = delete;
+      
+      DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT const &) = delete;
+      
+      DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT &&) = delete;
+
+      std::vector<art::Handle<artdaq::Fragments>> readHandles( art::Event & event );
+
+      artdaq::Fragments readFragments( std::vector<art::Handle<artdaq::Fragments>> handles );
+
+      void processFragment( const artdaq::Fragment &artdaqFragment );
+
+      void produce(art::Event & e) override;
+
+    private:
+
+      template <std::size_t NBits, typename T>
+        static constexpr std::pair<std::array<std::size_t, NBits>, std::size_t>
+          setBitIndices(T value) noexcept;
+      
+      std::vector<art::InputTag> m_input_tags;
+
+      using OpDetWaveformCollection    = std::vector<raw::OpDetWaveform>;
+      using OpDetWaveformCollectionPtr = std::unique_ptr<OpDetWaveformCollection>;
+      OpDetWaveformCollectionPtr fOpDetWaveformCollection;  
+    
+      using PMTDigitizerInfoCollection    = std::vector<pmtAnalysis::PMTDigitizerInfo>;
+      using PMTDigitizerInfoCollectionPtr = std::unique_ptr<PMTDigitizerInfoCollection>;
+      PMTDigitizerInfoCollectionPtr fPMTDigitizerInfoCollection;  
+
+      // Association
+
+  };
+
+}
+
 
 
 daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(Parameters const & params)
@@ -196,7 +273,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
     fOpDetWaveformCollection = OpDetWaveformCollectionPtr(new OpDetWaveformCollection);
     fPMTDigitizerInfoCollection = PMTDigitizerInfoCollectionPtr(new PMTDigitizerInfoCollection);
     
-    if ( fragments.size() > 0 ){
+    if ( !fragments.empty()){
  
       for( auto const & fragment : fragments ) {   
   
