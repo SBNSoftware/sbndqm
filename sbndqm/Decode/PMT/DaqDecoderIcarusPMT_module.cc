@@ -71,7 +71,7 @@ namespace daq
       
       DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT &&) = delete;
 
-      std::vector<art::Handle<artdaq::Fragments>> readHandles( art::Event & event );
+      std::vector<art::Handle<artdaq::Fragments>> readHandles( art::Event const & event ) const;
 
       artdaq::Fragments readFragments( std::vector<art::Handle<artdaq::Fragments>> handles );
 
@@ -131,7 +131,7 @@ daq::DaqDecoderIcarusPMT::setBitIndices(T value) noexcept {
 } 
 
 
-std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderIcarusPMT::readHandles( art::Event & event ){
+std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderIcarusPMT::readHandles( art::Event const & event ) const{
 
   // Normally or the CAENV1730 or the ContainerCAENV1730 are full
   // We return all the non-empty ones 

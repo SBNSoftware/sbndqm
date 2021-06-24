@@ -30,8 +30,6 @@
 #include "sbndaq-online/helpers/Utilities.h"
 #include "sbndaq-online/helpers/EventMeta.h"
 
-#include "TH1F.h"
-#include "TNtuple.h"
 #include <algorithm>
 #include <cassert>
 #include <stdio.h>
@@ -79,14 +77,14 @@ namespace sbndaq {
  
         void clean();
 
-        int16_t Median(std::vector<int16_t> data, size_t n_adc);
-        
-        double Median(std::vector<double> data, size_t n_adc);
-      
-      double RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline );
-        
-        int16_t Min(std::vector<int16_t> data, size_t n_adc, int16_t baseline );
+        template<typename T> T Median( std::vector<T> data ) const ;
 
+        //int16_t Median(std::vector<int16_t> data, size_t n_adc);
+        
+        //double Median(std::vector<double> data, size_t n_adc);
+      
+        //double RMS(std::vector<int16_t> const& data, size_t n_adc, int16_t baseline ) const;
+    
   };
 
 
@@ -162,6 +160,7 @@ void sbndaq::CAENV1730Streams::clean() {
 
 //-------------------------------------------------------------------------------------------------------------------
 
+/*
 int16_t sbndaq::CAENV1730Streams::Median(std::vector<int16_t> data, size_t n_adc) 
 {
   // First we sort the array
@@ -186,12 +185,13 @@ double sbndaq::CAENV1730Streams::Median(std::vector<double> data, size_t n_adc)
 
   return (data[(n_adc - 1) / 2] + data[n_adc / 2]) / 2.0;
 }
+*/
 
 
 //------------------------------------------------------------------------------------------------------------------
 
-
-double sbndaq::CAENV1730Streams::RMS(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
+/*
+double sbndaq::CAENV1730Streams::RMS(std::vector<int16_t> const& data, size_t n_adc, int16_t baseline ) const
 {
   double ret = 0;
   for (size_t i = 0; i < n_adc; i++) {
@@ -199,21 +199,21 @@ double sbndaq::CAENV1730Streams::RMS(std::vector<int16_t> data, size_t n_adc, in
   }
   return sqrt(ret / n_adc);
 }
+*/
 
+//------------------------------------------------------------------------------------------------------------------
+
+template<typename T>
+  T sbndaq::CAENV1730Streams::Median( std::vector<T> data ) const {
+
+    std::nth_element( data.begin(), data.begin() + data.size()/2, data.end() );
+    
+    return data[ data.size()/2 ];
+
+  }  
 
 //------------------------------------------------------------------------------------------------------------------
 
-
-int16_t sbndaq::CAENV1730Streams::Min(std::vector<int16_t> data, size_t n_adc, int16_t baseline )
-{
-  int16_t min = baseline;
-  for (size_t i = 0; i < n_adc; i++) {
-    if( data[i] < min ) { min = data[i]; } ;
-  }
-  return min;
-}
-
-//------------------------------------------------------------------------------------------------------------------
 
 void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
@@ -244,51 +244,45 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
       
       auto findIt = std::find( m_unique_channels.begin(), m_unique_channels.end(), pmtId );
 
-      if( findIt == m_unique_channels.end() ) {
+      if( findIt != m_unique_channels.end() ) { continue; }
 		
-        // We have never seen this channel before
-        m_unique_channels.push_back( pmtId );
+      // We have never seen this channel before
+      m_unique_channels.push_back( pmtId );
       
-        std::string pmtId_s = std::to_string(pmtId);
+      std::string pmtId_s = std::to_string(pmtId);
 
-        unsigned int const nsamples = opdetwaveform.size();
-
-        int16_t baseline = Median(opdetwaveform, nsamples);
+      int16_t baseline = Median( opdetwaveform );
 	
-        pulseRecoManager.Reconstruct( opdetwaveform );
-        std::vector<double>  pedestal_sigma = pedAlg->Sigma();
+      pulseRecoManager.Reconstruct( opdetwaveform );
+      std::vector<double>  pedestal_sigma = pedAlg->Sigma();
         
-        double rms = Median(pedestal_sigma, pedestal_sigma.size());
+      double rms = Median( pedestal_sigma );
 
-        auto const& pulses = threshAlg->GetPulses();
-        double npulses = (double)pulses.size();
+      auto const& pulses = threshAlg->GetPulses();
+      double npulses = (double)pulses.size();
 
-        // Send the metrics 
-        sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
-        sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
-        sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rms information
+      std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
+
+      // Send the metrics 
+      sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
+      sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
+      sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rms information
         
 
-        // Now we send a copy of the waveforms 
-        double tickPeriod = 0.002; // [us] 
-        std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
-        std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
+      // Now we send a copy of the waveforms 
+      double tickPeriod = 0.002; // [us] 
+      std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
+      std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
 
-        sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
-        sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
-
-
-      } 
-
-      else { continue; }
+      sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
+      sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
 
     } // for      
 
     if( m_unique_channels.size() < nTotalChannels ) {
 
          mf::LogError("sbndaq::CAENV1730Streams::analyze") 
-          << "Event has less than 360 waveforms'\n'";
-
+          << "Event has " << m_unique_channels.size() << " channels, " << nTotalChannels << " expected.\n";
     }
 
   }
