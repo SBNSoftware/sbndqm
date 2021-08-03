@@ -261,8 +261,8 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
     auto fragments = readFragments( fragmentHandles );
 
     // initialize the data product 
-    fOpDetWaveformCollection = OpDetWaveformCollectionPtr(new OpDetWaveformCollection);
-    fPMTDigitizerInfoCollection = PMTDigitizerInfoCollectionPtr(new PMTDigitizerInfoCollection);
+    fOpDetWaveformCollection = std::make_unique<OpDetWaveformCollection>();
+    fPMTDigitizerInfoCollection = std::make_unique<PMTDigitizerInfoCollection>();
     
     if ( !fragments.empty()){
  
