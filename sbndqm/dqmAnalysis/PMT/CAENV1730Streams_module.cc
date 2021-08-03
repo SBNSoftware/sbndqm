@@ -50,7 +50,6 @@ namespace sbndaq {
     public:
 
         explicit CAENV1730Streams(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
-        virtual ~CAENV1730Streams();
   
         virtual void analyze(art::Event const & evt);
   
