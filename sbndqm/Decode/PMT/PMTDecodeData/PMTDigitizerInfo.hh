@@ -28,7 +28,7 @@ namespace pmtAnalysis
     
     float getTemperature() const { return m_digitizer_temperature; };
     
-    uint62_t getFragmentTimestamp() const { return m_fragmentTimestamp; };
+    uint64_t getFragmentTimestamp() const { return m_fragmentTimestamp; };
     
     unsigned int getTimeTag() const { return m_time_tag; };
   
