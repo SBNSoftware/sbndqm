@@ -145,11 +145,6 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
 //------------------------------------------------------------------------------------------------------------------
 
 
-sbndaq::CAENV1730Streams::~CAENV1730Streams(){};
-
-//------------------------------------------------------------------------------------------------------------------
-
-
 void sbndaq::CAENV1730Streams::clean() {
 
   //m_get_temperature.clear();
