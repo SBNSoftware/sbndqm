@@ -36,7 +36,7 @@ fwdir   product_dir scripts
 
 product             version  whichqual optional
 sbndaq_online       v0_07_05
-sbncode             v09_27_00_02
+sbncode             v09_28_01
 fhiclpy             v4_00_02
 cetbuildtools   v7_17_01 - only_for_build
 
