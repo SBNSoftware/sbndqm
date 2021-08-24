@@ -1,0 +1,129 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+
+
+
+icarus_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
+icarus_opreco_pedestal_rmsslider.BeamGateSamples:   1
+icarus_opreco_pedestal_rmsslider.SampleSize:        30
+icarus_opreco_pedestal_rmsslider.Threshold:         4.0
+icarus_opreco_pedestal_rmsslider.Verbose:           false
+icarus_opreco_pedestal_rmsslider.NWaveformsToFile:  0
+icarus_opreco_pedestal_rmsslider.MaxSigma:          4.0
+icarus_opreco_pedestal_rmsslider.PedRangeMax:       16000
+icarus_opreco_pedestal_rmsslider.PedRangeMin:       13000
+icarus_opreco_pedestal_rmsslider.NumPreSample:      10
+icarus_opreco_pedestal_rmsslider.NumPostSample:     20
+
+icarus_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
+icarus_opreco_hit_slidingwindow.PositivePolarity:    false
+icarus_opreco_hit_slidingwindow.NumPreSample:        5
+icarus_opreco_hit_slidingwindow.NumPostSample:       10
+icarus_opreco_hit_slidingwindow.ADCThreshold:        10 # ADC threshold (absolute) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
+icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
+icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
+icarus_opreco_hit_slidingwindow.Verbosity:           false
+
+
+physics: {
+  
+  producers: {
+
+    daqPMT: {
+      module_type: DaqDecoderIcarusPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+
+  }
+
+  analyzers: {
+
+   pmtAnalysis: {
+
+      module_type: CAENV1730Streams
+      
+
+      OpDetWaveformLabel: "daqPMT"
+
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
+
+
+      PMTMetricConfig: {
+
+        hostname: "icarus-db01.fnal.gov"
+    
+        groups: {
+            PMT: [ [0, 380] ]
+        }
+
+        streams: ["30s"]
+        
+        metrics: {
+        
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [0., 100.]
+          }
+
+          pedestal: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [-1000, 1000]
+          }
+          
+          rate: {
+            untis: Hz 
+            title: "%(group)s channel %(instance)s single PMT rate" 
+            display_range: [ 100000, 300000 ]
+          }
+
+        }   
+      }
+    }
+  }
+
+
+  my_producer_modules: [ daqPMT ]
+  trigger_paths: [ my_producer_modules ]
+  
+  ana: [ pmtAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+  TFileService: { fileName: "waveformtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}
+
+
+process_name: ICARUSPMTANALYSIS

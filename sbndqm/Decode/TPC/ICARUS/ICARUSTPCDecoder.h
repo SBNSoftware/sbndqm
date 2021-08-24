@@ -1,9 +1,9 @@
-#ifndef DaqDecoderIcarus_h
-#define DaqDecoderIcarus_h
+#ifndef ICARUSTPCDecoder_h
+#define ICARUSTPCDecoder_h
 ////////////////////////////////////////////////////////////////////////
-// Class:       DaqDecoderIcarus
+// Class:       ICARUSTPCDecoder
 // Plugin Type: producer (art v2_09_06)
-// File:        DaqDecoderIcarus.h
+// File:        ICARUSTPCDecoder.h
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -15,6 +15,7 @@
 
 //#include "sbnddaq-datatypes/Overlays/NevisTPCFragment.hh"
 
+#include "../HeaderData.hh"
 //some standard C++ includes
 #include <iostream>
 #include <stdlib.h>
@@ -48,21 +49,21 @@
 */
 
 namespace daq {
-  class DaqDecoderIcarusPMT;
+  class ICARUSTPCDecoder;
 }
 
 
-class daq::DaqDecoderIcarusPMT : public art::EDProducer {
+class daq::ICARUSTPCDecoder : public art::EDProducer {
 public:
-  explicit DaqDecoderIcarusPMT(fhicl::ParameterSet const & p);
+  explicit ICARUSTPCDecoder(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  DaqDecoderIcarusPMT(DaqDecoderIcarusPMT const &) = delete;
-  DaqDecoderIcarusPMT(DaqDecoderIcarusPMT &&) = delete;
-  DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT const &) = delete;
-  DaqDecoderIcarusPMT & operator = (DaqDecoderIcarusPMT &&) = delete;
+  ICARUSTPCDecoder(ICARUSTPCDecoder const &) = delete;
+  ICARUSTPCDecoder(ICARUSTPCDecoder &&) = delete;
+  ICARUSTPCDecoder & operator = (ICARUSTPCDecoder const &) = delete;
+  ICARUSTPCDecoder & operator = (ICARUSTPCDecoder &&) = delete;
 
   // Required functions.
   void produce(art::Event & e) override;
@@ -104,6 +105,9 @@ private:
   // whether the given nevis readout channel is mapped to a wire
   //bool is_mapped_channel(const sbnddaq::NevisTPCHeader *header, uint16_t nevis_channel_id);
 
+  // build a HeaderData object from the Icarus Header
+  tpcAnalysis::HeaderData Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag);
+
   art::InputTag _tag;
   Config _config;
   // keeping track of incrementing numbers
@@ -111,4 +115,4 @@ private:
   uint32_t _last_trig_frame_number;
 };
 
-#endif /* DaqDecoderIcarus_h */
+#endif /* ICARUSTPCDecoder_h */

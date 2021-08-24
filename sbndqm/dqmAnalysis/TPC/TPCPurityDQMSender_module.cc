@@ -51,6 +51,12 @@ private:
   // Declare member data here.
   std::vector<art::InputTag> const fPurityInfoLabels;
   bool fPrintInfo;
+  const size_t fNReport;
+
+  std::map<int,size_t> fNtrks;
+  std::map<int,double> fAttenSum;
+
+  std::string CryoToString(int) const;
 
 };
 
@@ -59,6 +65,7 @@ dqm::TPCPurityDQMSender::TPCPurityDQMSender(fhicl::ParameterSet const& p)
   : EDAnalyzer{p}  // ,
   , fPurityInfoLabels(p.get< std::vector<art::InputTag> >("PurityInfoLabels"))
   , fPrintInfo(p.get<bool>("PrintInfo",true))
+  , fNReport(p.get<size_t>("MinTracksToReport",1))
 {
   for(auto const& label : fPurityInfoLabels)
     consumes< std::vector<anab::TPCPurityInfo> >(label);
@@ -70,20 +77,35 @@ dqm::TPCPurityDQMSender::TPCPurityDQMSender(fhicl::ParameterSet const& p)
     sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   }
 }
+
+std::string dqm::TPCPurityDQMSender::CryoToString(int c) const
+{
+  if(c==0)
+    return std::string("EastCryostat");
+  else if(c==1)
+    return std::string("WestCryostat");
+  
+  return std::string("UnknownCryostat");
+}
   
 void dqm::TPCPurityDQMSender::beginJob(){
-
 }
 
 void dqm::TPCPurityDQMSender::analyze(art::Event const& e)
 {
 
-  if(fPrintInfo)
+  if(fPrintInfo){
     std::cout << "Processing Run " << e.run() 
 	      << ", Subrun " << e.subRun()
 	      << ", Event " << e.event() 
 	      << ":" << std::endl;
-  
+    for(auto const& x : fNtrks){
+      std::cout << "\t Cryo " << x.first << " : " 
+		<< x.second << " / " << fNReport << " tracks."
+		<< std::endl;
+    }
+  }
+
   for( auto const& label : fPurityInfoLabels){
     art::Handle< std::vector<anab::TPCPurityInfo> > purityInfoHandle;
     e.getByLabel(label,purityInfoHandle);
@@ -96,13 +118,23 @@ void dqm::TPCPurityDQMSender::analyze(art::Event const& e)
     for(auto const& pinfo : purityInfoVec){
       if(fPrintInfo) pinfo.Print();
 
-      std::string instance=std::to_string(pinfo.Cryostat);
-      sbndaq::sendMetric("tpc_purity", instance, "attenuation", pinfo.Attenuation, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("tpc_purity", instance, "INVERT/lifetime", pinfo.Attenuation, 0, artdaq::MetricMode::Average);
+      fNtrks[pinfo.Cryostat] = fNtrks[pinfo.Cryostat]+1;
+      fAttenSum[pinfo.Cryostat] = fAttenSum[pinfo.Cryostat] + 1000.*pinfo.Attenuation;
+
+
+      if(fNtrks[pinfo.Cryostat]>=fNReport){
+	auto instance = CryoToString(pinfo.Cryostat);
+
+	if(fPrintInfo) std::cout << "Sending out " << instance << " attenuation_raw=" << fAttenSum[pinfo.Cryostat]/fNtrks[pinfo.Cryostat] << std::endl;
+	sbndaq::sendMetric("tpc_purity", instance, "attenuation_raw", fAttenSum[pinfo.Cryostat]/fNtrks[pinfo.Cryostat], 0, artdaq::MetricMode::Average);
+	if(fPrintInfo) std::cout << "Sending out " << instance << " lifetime_raw=" << 1./(fAttenSum[pinfo.Cryostat]/fNtrks[pinfo.Cryostat]) << std::endl;
+	sbndaq::sendMetric("tpc_purity", instance, "lifetime_raw", fAttenSum[pinfo.Cryostat]/fNtrks[pinfo.Cryostat], 0, artdaq::MetricMode::Average,"INVERT/");
       
+	fNtrks[pinfo.Cryostat]=0;
+	fAttenSum[pinfo.Cryostat]=0;
+      }
     }
-  }  
-  
+  }
 }
 
 DEFINE_ART_MODULE(dqm::TPCPurityDQMSender)

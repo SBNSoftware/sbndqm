@@ -1,14 +1,31 @@
 import logging
 import argparse
 import redis
+from redis import RedisError
 from subprocess import Popen
 import time
 
 def main(args):
     redis = connect_to_redis_args(args)
     process = Popen(args.command, shell=True) 
+    last_connection_was_error = False
     while process.poll() is None:
-        redis.xadd(args.key, {"dat": "alive"}, maxlen=1)
+        # attempt to run the query
+        try:
+            redis.xadd(args.key, {"dat": "alive"}, maxlen=1)
+        except RedisError as e: # catches all errors related to executing redis
+            # Redis is sometimes busy executing a script -- don't print these
+            # errors to the screen to avoid polluting the terminal
+            is_busy_error = 'busy redis is busy' in ''.join(e.args).lower()
+            if not is_busy_error:
+                print("ERROR: Unable to to communicate to redis. Error text:")
+                print(e)
+                last_connection_was_error = True
+        else: # runs if xadd worked
+            if last_connection_was_error:
+                 print("Able to communicate with Redis! All copacetic now.")
+            last_connection_was_error = False
+
         time.sleep(args.sleep)
     return process.returncode
 

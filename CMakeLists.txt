@@ -18,15 +18,9 @@ cmake_minimum_required (VERSION 3.14)
 
 project(sbndqm)
 
-# cetbuildtools contains our cmake modules
-SET ( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
-IF (NOT CETBUILDTOOLS_VERSION)
-    MESSAGE (FATAL_ERROR "ERROR: setup cetbuildtools to get the cmake modules")
-ENDIF()
 
-set(CMAKE_MODULE_PATH $ENV{ART_DIR}/Modules
-		      $ENV{CETBUILDTOOLS_DIR}/Modules
-		      ${CMAKE_MODULE_PATH})
+find_package(cetbuildtools REQUIRED)
+list(APPEND CMAKE_MODULE_PATH $ENV{ART_DIR}/Modules)
 
 include(CetCMakeEnv)
 cet_cmake_env()
@@ -50,9 +44,10 @@ find_ups_product( artdaq_utilities v1_05_02 )
 find_ups_product( jsoncpp v1_00_00 )
 find_ups_product( artdaq_core v3_05_07 )
 find_ups_product( fftw )
-find_ups_product( sbndaq_decode v0_03_00 )
+#find_ups_product( sbndaq_decode v0_03_00 )
 find_ups_product( sbndaq_online v0_03_00 )
 find_ups_product( sbnobj )
+find_ups_product( sbncode )
 # include_directories($ENV{JSONCPP_LIB})
 
 # macros for dictionary and simple_plugin
