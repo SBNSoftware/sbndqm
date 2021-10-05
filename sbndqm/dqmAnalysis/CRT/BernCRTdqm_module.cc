@@ -47,9 +47,12 @@ public:
   virtual ~BernCRTdqm();
   
   virtual void analyze(art::Event const & evt);
-  
+ 
 private:
   void analyze_fragment(artdaq::Fragment & frag);  
+   uint64_t lastbighit[32];
+
+  uint16_t silly = 0;
 
   //sample histogram
   TH1F* fSampleHist;
@@ -83,7 +86,7 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
 
   //gets a pointers to the data and metadata from the fragment
   BernCRTEvent const* evt = bern_fragment.eventdata();
-//  const BernCRTFragmentMetadata* md = bern_fragment.metadata();
+  const BernCRTFragmentMetadata* md = bern_fragment.metadata();
 
 //  std::cout << *evt << std::endl;
 //  std::cout << *md << std::endl;
@@ -91,8 +94,8 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
   //Get information from the fragment
   //unused variables must be commented, as the compiler treats warnings as errors
   //header:
-  //    uint64_t fragment_timestamp = frag.timestamp();
-  //    uint64_t fragment_id        = frag.fragmentID();
+      uint64_t fragment_timestamp = frag.timestamp();
+      uint64_t fragment_id        = frag.fragmentID();
 
   //data from FEB:
   int mac5     = evt->MAC5();
@@ -112,21 +115,26 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
   bool     isTS1    = evt->IsReference_TS1();
 
   uint16_t adc[32];
-//  uint16_t rms[32];
-/////  uint16_t& waveform[32];
 
+  silly++;
   for(int ch=0; ch<32; ch++) {
      adc[ch] = evt->ADC(ch);
-/////     waveform = evt->ADC(ch);
-/////     short baseline = Median(waveform, waveform.size());
-/////     double rms = RMS( waveform, waveform.size(), baseline);
+     if( adc[ch] > 600 ) {
+       //cout << ts1 << std::endl;
+       //sbndaq::BernCRTdqm::lastbighit[ch] = ts1 - 1e9;
+       //std::cout << "Okay a big hit!";
+       //std::cout << frag.timestamp() << "\n";
+       sbndaq::BernCRTdqm::lastbighit[ch] = frag.timestamp();
+       //std::cout << sbndaq::BernCRTdqm::lastbighit[ch] << "\n";
+
+     }
    }
   //metadata
   //    uint64_t run_start_time            = md->run_start_time();
-  //    uint64_t this_poll_start           = md->this_poll_start();
-  //    uint64_t this_poll_end             = md->this_poll_end();
-  //    uint64_t last_poll_start           = md->last_poll_start();
-  //    uint64_t last_poll_end             = md->last_poll_end();
+//      uint64_t this_poll_start           = md->this_poll_start();
+      uint64_t this_poll_end             = md->this_poll_end();
+      uint64_t last_poll_start           = md->last_poll_start();
+//      uint64_t last_poll_end             = md->last_poll_end();
   //    int32_t  system_clock_deviation    = md->system_clock_deviation();
   //    uint32_t feb_events_per_poll       = md->feb_events_per_poll();
   //    uint32_t feb_event_number          = md->feb_event_number();
@@ -139,8 +147,8 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
   size_t ADCchannel = 0;
 
 
-  //    std::string FEBID_str = std::to_string(fragment_id);
-  //    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
+      std::string FEBID_str = std::to_string(fragment_id);
+      sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
 
 
   //let's fill our sample hist with the Time_TS0()-1e9 if 
@@ -156,17 +164,34 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
   for(int i = 0; i<32; i++) {
     totaladc  += adc[i];
     ADCchannel = adc[i];
+    uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
 /////    RMSchannel = rms[i];
     sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
+    sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
 
     if(adc[i] > max){
       max = adc[i];
     }
   }
   int baseline = (totaladc-max)/31;
-  std::cout<<" Maximum ADC value:"<<max<<std::endl;
-  std::cout<<" Average without Max value:"<<baseline<<std::endl;
-  std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
+//  std::cout<<" Maximum ADC value:"<<max<<std::endl;
+//  std::cout<<" Average without Max value:"<<baseline<<std::endl;
+//  std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
+//  std::cout<<" TS1: " << ts1 << std::endl;
+//  std::cout<<" TSO: " << ts0 << std::endl;
+//  std::cout<<" last_poll_start   : " << last_poll_start << std::endl;
+//  std::cout<<" fragment_timestamp: " << fragment_timestamp << std::endl;
+//  std::cout<<" this_poll_end     : " << this_poll_end << std::endl;
+//  for(int i = 0; i < 32; i++ ){
+//    std::cout<<" adc " << i << ": " << adc[i];
+//    std::cout<<" lastbighit " << i << ": " << sbndaq::BernCRTdqm::lastbighit[i] << std::endl;
+//
+//  }
+//  std::cout<<" silly: " << silly << std::endl;
+
+  uint64_t earlysynch = last_poll_start - fragment_timestamp;
+  uint64_t latesynch = fragment_timestamp - this_poll_end;
+
   sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
 
   sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
@@ -175,10 +200,11 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
   sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
 
-/////////////Other metrics: rms like in PMT stuff
+  //Sychronization Metrics
+  sbndaq::sendMetric("CRT_board", readout_number_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
+  sbndaq::sendMetric("CRT_board", readout_number_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
 
 
-  //ADC Analysis metric group
 
 } //analyze_fragment
 
@@ -201,6 +227,9 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
     if (handle->front().type() == artdaq::Fragment::ContainerFragmentType) {
       //Container fragment
+      for(int i = 0; i < 32; i++ ){
+        lastbighit[i]=-1;
+      }
       for (auto cont : *handle) {
         artdaq::ContainerFragment contf(cont);
         if (contf.fragment_type() != sbndaq::detail::FragmentType::BERNCRT)
