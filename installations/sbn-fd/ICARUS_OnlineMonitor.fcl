@@ -403,19 +403,25 @@ physics.analyzers:
     module_type: BernCRTdqm
 
     metric_board_config: {
-      groups:
-      {
-        CRT_board:[[25,96]] //73 crt boards
-      }
-      streams:[archiving]
+      groups:{
+        CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
+      }                  //missing 2, 12, 18, 20
+      streams:[slow,fast]
+				
       metrics:{
         TS0:{}
-        TS1:{}
-        n_events:{}
-        MaxADCValue:{}
-        baseline:{}	
+	TS1:{}
+	n_events:{}
+	MaxADCValue:{}
+	baseline:{}
+
+	earlysynch:{alarmrange: [-100000,100000] }
+	latesynch:{ alarmrange: [-100000,100000] }
+
+	lastbighit:{ alarmrange: [0,100000000] }
       }
     }
+
     metric_channel_config: {
       groups:
       {
