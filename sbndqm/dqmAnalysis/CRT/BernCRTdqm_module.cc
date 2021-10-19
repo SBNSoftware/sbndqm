@@ -233,7 +233,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       }
       for (auto cont : *handle) {
         artdaq::ContainerFragment contf(cont);
-        if (contf.fragment_type() != sbndaq::detail::FragmentType::BERNCRT)
+        if (contf.fragment_type() != sbndaq::detail::FragmentType::BERNCRTV2)
           continue;
         std::cout << " has " <<  contf.block_count() << " CRT fragment(s)." << std::endl;
         for (size_t ii = 0; ii < contf.block_count(); ++ii)
@@ -242,7 +242,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     }
 
     else{
-      if (handle->front().type() != sbndaq::detail::FragmentType::BERNCRT) continue;
+      if (handle->front().type() != sbndaq::detail::FragmentType::BERNCRTV2) continue;
       std::cout << " has " << handle->size() << " CRT fragment(s)." << std::endl; 
       for (auto frag : *handle) 
         analyze_fragment(frag);

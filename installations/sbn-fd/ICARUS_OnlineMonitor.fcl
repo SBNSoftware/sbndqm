@@ -291,7 +291,7 @@ physics.analyzers:
             display_range: [0., 50.]
           }
 
-          pedestal: {
+          baseline: {
             units: ADC
             title: "%(group)s channel %(instance)s Pedestal"
             display_range: [13000, 16000]
