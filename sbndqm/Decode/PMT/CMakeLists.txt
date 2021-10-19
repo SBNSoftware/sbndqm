@@ -3,10 +3,10 @@ simple_plugin( DaqDecoderIcarusPMT "module"
   art_Utilities
   canvas
   
-  artdaq-core_Data  
-  artdaq-core_Utilities
-  sbndaq-artdaq-core_Overlays_COMMON
-  sbndaq-artdaq-core_Overlays_ICARUS 
+  artdaq_core::artdaq-core_Data  
+  artdaq_core::artdaq-core_Utilities
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS 
 
   ${LARDATAOBJ}
   lardataobj_RawData

@@ -191,8 +191,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
   //loop over fragments in event
   //two different loop logics, depending on whether we have fragment containers or fragments
-  std::vector<art::Handle<artdaq::Fragments>> fragmentHandles;
-  evt.getManyByType(fragmentHandles);
+  auto fragmentHandles = evt.getMany<artdaq::Fragments>();
   for (auto handle : fragmentHandles) {
     if (!handle.isValid() || handle->size() == 0)
       continue;

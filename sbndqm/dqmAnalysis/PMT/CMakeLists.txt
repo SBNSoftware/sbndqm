@@ -18,10 +18,10 @@ simple_plugin( CAENV1730Streams "module"
   art_root_io_tfile_support
   art_root_io_TFileService_service
 
-  sbndaq-artdaq-core_Overlays_Common 
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
 
-  artdaq-core_Utilities
-  artdaq-utilities_Plugins
+  artdaq_core::artdaq-core_Utilities
+  artdaq_utilities::artdaq-utilities_Plugins
 
   sbndaq_online_storage
   sbndaq_online_redis_connection

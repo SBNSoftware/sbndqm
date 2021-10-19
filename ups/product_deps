@@ -2,8 +2,8 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v1_02_03)
-parent sbndqm v0_07_07
-defaultqual e19
+parent sbndqm
+defaultqual e20
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -34,17 +34,16 @@ fwdir   product_dir scripts
 # With "product  version" table below, we now define dependencies
 # Add the dependent product and version
 
-product             version  whichqual optional
-sbndaq_online       v0_07_05
-sbncode             v09_27_00_02
-fhiclpy             v4_00_02
-cetbuildtools   v7_17_01 - only_for_build
+product             version  
+sbndaq_online       v1_00_00
+sbncode             v09_33_00
+fhiclpy             v4_01_04
+cetbuildtools       v8_18_05 - only_for_build
+end_product_list
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes".
 qualifier         sbndaq_online   sbncode    fhiclpy notes
-e19:prof          e19:prof        e19:prof   e19:prof
-e19:debug         e19:debug       e19:debug  e19:debug
 e20:prof          e20:prof        e20:prof   e20:prof
 e20:debug         e20:debug       e20:debug  e20:debug
 end_qualifier_list

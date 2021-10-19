@@ -1,8 +1,5 @@
-find_ups_product( lardataobj)
-
-include_directories($ENV{FFTW_LIBRARY})
-
-find_library(FFTW fftw3 HINTS $ENV{FFTW_LIBRARY})
+include_directories(${FFTW_INCLUDE_DIR})
+cet_find_library(FFTW_LIBRARY NAMES fftw3 fftw3-3 PATHS ENV FFTW_LIBRARY )
 
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
@@ -36,14 +33,13 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		${ART_UTILITIES}
 		${FHICLCPP}
 		${ROOT_BASIC_LIB_LIST} 
-		${FFTW}
+		FFTW_LIBRARY
                            larcore_Geometry_Geometry_service
                            larcorealg_Geometry
                            lardataobj_Simulation
                            lardata_Utilities
                            lardataobj_RawData
                            lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
-													 #nutools_RandomUtils_NuRandomService_service
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
                            canvas
@@ -112,7 +108,7 @@ simple_plugin( OnlineAnalysis module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq-utilities_Plugins
+  artdaq_utilities::artdaq-utilities_Plugins
 )
 
 simple_plugin( TPCPurityDQMSender module
@@ -134,7 +130,7 @@ simple_plugin( TPCPurityDQMSender module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq-utilities_Plugins
+  artdaq_utilities::artdaq-utilities_Plugins
 )
 simple_plugin( TPCWaveformAndFftRedis module
   tpcAnalysis_SBN
@@ -152,7 +148,7 @@ simple_plugin( TPCWaveformAndFftRedis module
                         art_root_io_TFileService_service
                         art_Persistency_Common
                 ${ART_FRAMEWORK_IO_SOURCES}
-  artdaq-utilities_Plugins
+  artdaq_utilities::artdaq-utilities_Plugins
   sbndaq_online_storage
   sbndaq_online_hiredis
   sbndaq_online_redis_connection

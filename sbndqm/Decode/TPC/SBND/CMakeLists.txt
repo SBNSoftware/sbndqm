@@ -1,10 +1,10 @@
 simple_plugin( SBNDTPCDecoder module
   sbndqm_Decode_Mode
-  sbndaq-artdaq-core_Overlays_SBND
-  sbndaq-artdaq-core_Overlays_SBND_NevisTPC
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
   ${LARDATAOBJ}
   lardataobj_RawData
-	artdaq-core_Utilities
+  artdaq_core::artdaq-core_Utilities
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${MF_MESSAGELOGGER}

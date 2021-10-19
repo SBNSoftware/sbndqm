@@ -14,7 +14,7 @@ simple_plugin( ReportMetadata module
 			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq-utilities_Plugins
+  artdaq_utilities::artdaq-utilities_Plugins
 )
 install_headers()
 install_fhicl()
