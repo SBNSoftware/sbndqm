@@ -406,7 +406,7 @@ physics.analyzers:
       groups:{
         CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
       }                  //missing 2, 12, 18, 20
-      streams:[slow,fast]
+      streams:[archiving]
 				
       metrics:{
         TS0:{}
@@ -456,8 +456,8 @@ physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRa
 physics.anapmt: [ MetaPMT, pmtAnalysis ]
 physics.anacrt: [ CRTAna ]
 
-#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
