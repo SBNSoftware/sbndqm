@@ -7,7 +7,6 @@ simple_plugin( DaqDecoderIcarusPMT "module"
   artdaq_core::artdaq-core_Utilities
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS 
-
   ${LARDATAOBJ}
   lardataobj_RawData
   ${ART_UTILITIES}
