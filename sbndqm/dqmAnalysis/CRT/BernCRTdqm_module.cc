@@ -21,6 +21,9 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 //---
 //#include "art/Framework/Services/Optional/TFileService.h"
+
+#include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
+
 #include "TH1F.h"
 #include "TNtuple.h"
 
@@ -209,11 +212,12 @@ void sbndaq::BernCRTdqm::analyze_fragment(artdaq::Fragment & frag) {
 } //analyze_fragment
 
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
-  sleep(2);
+  //sleep(2);
 
   std::cout << "######################################################################" << std::endl;
   std::cout << std::endl;  
   std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+
 
   //loop over fragments in event
   //two different loop logics, depending on whether we have fragment containers or fragments
@@ -222,8 +226,6 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     if (!handle.isValid() || handle->size() == 0)
       continue;
 
-
-
     if (handle->front().type() == artdaq::Fragment::ContainerFragmentType) {
       //Container fragment
       for(int i = 0; i < 32; i++ ){
@@ -231,16 +233,16 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       }
       for (auto cont : *handle) {
         artdaq::ContainerFragment contf(cont);
-        if (contf.fragment_type() != sbndaq::detail::FragmentType::BERNCRT)
+        if (contf.fragment_type() != sbndaq::detail::FragmentType::BERNCRTV2)
           continue;
         std::cout << " has " <<  contf.block_count() << " CRT fragment(s)." << std::endl;
         for (size_t ii = 0; ii < contf.block_count(); ++ii)
           analyze_fragment(*contf[ii].get());
       }
     }
-    else {
-      //normal fragment
-      if (handle->front().type() != sbndaq::detail::FragmentType::BERNCRT) continue;
+
+    else{
+      if (handle->front().type() != sbndaq::detail::FragmentType::BERNCRTV2) continue;
       std::cout << " has " << handle->size() << " CRT fragment(s)." << std::endl; 
       for (auto frag : *handle) 
         analyze_fragment(frag);
