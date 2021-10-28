@@ -1,0 +1,65 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+physics: {
+  
+  producers: {
+
+  }
+
+  analyzers: {
+
+   triggerAnalysis: {
+
+      module_type: TriggerStreams
+
+      PMTMetricConfig: {
+
+        hostname: "icarus-db01.fnal.gov"
+  
+        streams: ["30s"]
+        
+        metrics: {
+        
+        }   
+      }
+    }
+  }
+
+
+  my_producer_modules: [ ]
+  trigger_paths: [ my_producer_modules ]
+  
+  ana: [ triggerAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+  TFileService: { fileName: "waveformtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}
+
+
+process_name: ICARUSPMTANALYSIS
