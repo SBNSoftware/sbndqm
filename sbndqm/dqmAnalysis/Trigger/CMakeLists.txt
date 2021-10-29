@@ -7,6 +7,7 @@ simple_plugin( TriggerStreams "module"
 
   ${LARDATAOBJ}
   lardataobj_RawData
+  lardataobj_Simulation
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${MF_MESSAGELOGGER}
@@ -28,6 +29,8 @@ simple_plugin( TriggerStreams "module"
   sbndaq_online_hiredis
 
   sbndqm_Decode_PMT_PMTDecodeData
+  
+
 
 )
 

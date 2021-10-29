@@ -1,10 +1,12 @@
+#include "services_common_icarus.fcl"
 #include "simple_channel_info.fcl"
+#include "decoderdefs_icarus.fcl"
 #include "redis_connection.fcl"
 
 physics: {
   
   producers: {
-
+     daqTrigger: @local::decodeTrigger
   }
 
   analyzers: {
@@ -12,8 +14,10 @@ physics: {
    triggerAnalysis: {
 
       module_type: TriggerStreams
-
-      PMTMetricConfig: {
+      
+      TriggerLabel: "daqTrigger"      
+      
+      TriggerMetricConfig: {
 
         hostname: "icarus-db01.fnal.gov"
   
@@ -27,7 +31,7 @@ physics: {
   }
 
 
-  my_producer_modules: [ ]
+  my_producer_modules: [ daqTrigger ]
   trigger_paths: [ my_producer_modules ]
   
   ana: [ triggerAnalysis ]
@@ -39,6 +43,8 @@ physics: {
 services: {
 
   TFileService: { fileName: "waveformtest.root"}
+
+  DetectorClocksService: @local::icarus_detectorclocks
 
   RedisConnection: @local::redis_connection
 
@@ -58,8 +64,8 @@ services.RedisConnection.host: "icarus-db01.fnal.gov"
 source:
 {
   module_type: RootInput
-  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+  fileNames: ["../data/data_dl1_fstrmNUMI_run6983_8_20211028T113506.root"]
 }
 
 
-process_name: ICARUSPMTANALYSIS
+process_name: ICARUSTRIGGERANALYSIS
