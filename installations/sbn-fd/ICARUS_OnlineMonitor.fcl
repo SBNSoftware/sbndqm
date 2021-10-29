@@ -1,5 +1,7 @@
 #include "redis_connection.fcl"
 #include "opticaldetectormodules.fcl"
+#include "decoderdefs_icarus.fcl"
+#include "services_common_icarus.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
@@ -107,8 +109,10 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 services.DetectorPropertiesService: @erase
+services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
+
 
 #replace the source
 source:
@@ -182,6 +186,8 @@ physics.producers.daqPMT:
   module_type: DaqDecoderIcarusPMT
   FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
 }
+
+physics.producers.daqTrigger: @local::decodeTrigger
 
 #add online purity producers
 physics.producers.purityana0:
@@ -484,21 +490,25 @@ physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale2, daqTPC ]
 physics.pmt_only: [ daqPMT ]
+physics.trigger_only: [ daqTrigger ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
+physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path ]
+		         @sequence::physics.pmt_path,
+			 @sequence::physics.trigger_path]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
+physics.anatrigger: [ triggerAnalysis ]
 physics.anapmt: [ MetaPMT, pmtAnalysis ]
 physics.anacrt: [ CRTAna ]
 
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
+physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
