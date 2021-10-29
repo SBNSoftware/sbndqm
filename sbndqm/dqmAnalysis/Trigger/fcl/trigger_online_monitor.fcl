@@ -24,8 +24,32 @@ physics: {
         streams: ["30s"]
         
         metrics: {
-        
-        }   
+	    Offbeam_BNB_RATE:{
+		units: Hz 
+		title: "Offbeam BNB triggers rate"
+		display_range:[0, 2]
+	    }
+            BNB_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+            Offbeam_NuMI_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+            NuMI_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+	    Unknown_RATE:{
+		units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }		 
+	}   
       }
     }
   }

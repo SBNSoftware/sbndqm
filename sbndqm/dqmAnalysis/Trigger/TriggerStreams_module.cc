@@ -60,6 +60,8 @@ namespace sbndaq {
 
         void clean();
     
+        std::vector<std::string> bitsToName{ "Offbeam_BNB", "BNB", "Offbeam_NuMI", "NuMI" };
+        std::unordered_map<int, int> bitsCountsMap;
   };
 
 }
@@ -79,7 +81,11 @@ sbndaq::TriggerStreams::TriggerStreams(fhicl::ParameterSet const & pset)
 //------------------------------------------------------------------------------------------------------------------
 
 
-void sbndaq::TriggerStreams::clean() {}
+void sbndaq::TriggerStreams::clean() {
+  
+  bitsCountsMap.clear();
+
+}
 
 
 //------------------------------------------------------------------------------------------------------------------
@@ -87,12 +93,19 @@ void sbndaq::TriggerStreams::clean() {}
 
 void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
 
+  //Redis stuff
+  int level = 3; 
+  std::string groupName = "Trigger";
+  artdaq::MetricMode rate = artdaq::MetricMode::Rate;
+
   // Now we get the trigger information
   art::Handle< std::vector<raw::Trigger> > triggerHandle;
   evt.getByLabel( m_trigger_tag, triggerHandle );
 
   if( triggerHandle.isValid() && !triggerHandle->empty() ) {
-    std::cout << "OK" << std::endl;
+    for( auto const trigger : *triggerHandle ){
+      bitsCountsMap[ trigger.TriggerBits() ]++;
+    }
   }   
   else {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product raw::Trigger not found!\n";
@@ -103,7 +116,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   evt.getByLabel( m_trigger_tag, extTriggerHandle );
 
   if( extTriggerHandle.isValid() && !extTriggerHandle->empty() ) {
-    std::cout << "OK" << std::endl;
+    //std::cout << "OK" << std::endl;
   }
   else {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product raw::ExternalTrigger not found!\n";
@@ -114,14 +127,32 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   evt.getByLabel( m_trigger_tag, gateHandle );
 
   if( gateHandle.isValid() && !gateHandle->empty() ) {
-    std::cout << "OK" << std::endl;
+    //std::cout << "OK" << std::endl;
   }
   else {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product sim::GeteBeamInfo not found!\n";
   }
 
+  // Now we send the metrics. There is probably one trigger per event, but agnostically we created a map to count the different types, hence we send them separarately
+  for( const auto bits : bitsCountsMap ){
+    
+    std::string triggerid_s;
 
- 
+    if( (size_t)bits.first-1 < bitsToName.size() ){
+      triggerid_s = bitsToName[ bits.first-1 ];
+    }
+    else{ triggerid_s = "Unknown"; } 
+    
+    triggerid_s+="_RATE";
+
+    //Send the trigger rate 
+    sbndaq::sendMetric(groupName, triggerid_s, "trigger_rate", bits.second, level, rate);
+  
+  }
+  
+
+  // Sweep the dust away 
+  clean();
 
 }
 
