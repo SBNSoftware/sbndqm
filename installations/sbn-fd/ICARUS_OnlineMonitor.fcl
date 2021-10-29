@@ -260,6 +260,47 @@ physics.analyzers:
 
     SelectEvents: [tpc_only]
   }
+  
+     triggerAnalysis: {
+
+      module_type: TriggerStreams
+      
+      TriggerLabel: "daqTrigger"      
+      
+      TriggerMetricConfig: {
+
+        hostname: "icarus-db01.fnal.gov"
+  
+        streams: ["30s"]
+        
+        metrics: {
+	    Offbeam_BNB_RATE:{
+		units: Hz 
+		title: "Offbeam BNB triggers rate"
+		display_range:[0, 2]
+	    }
+            BNB_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+            Offbeam_NuMI_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+            NuMI_RATE:{
+                units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }
+	    Unknown_RATE:{
+		units: Hz
+                title: "Offbeam BNB triggers rate"
+                display_range:[0, 2]
+            }		 
+	}   
+      }
 
    pmtAnalysis: {
 
