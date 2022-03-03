@@ -52,6 +52,8 @@ public:
   virtual void analyze(art::Event const & evt);
  
 private:
+  bool IsSideCRT(const icarus::crt::BernCRTTranslator & hit);
+
    uint64_t lastbighit[32];
 
   uint16_t silly = 0;
@@ -81,6 +83,13 @@ sbndaq::BernCRTdqm::~BernCRTdqm()
 {
 }
 
+bool sbndaq::BernCRTdqm::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
+  /**
+   * Fragment ID described in SBN doc 16111
+   */
+  return (hit.fragment_ID & 0x3100) == 0x3100;
+}
+
 
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //sleep(2);
@@ -104,8 +113,21 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //loop over all CRT hits in an event
   for(const auto & hit : hit_vector) {
 
-    const uint64_t & fragment_timestamp = hit.timestamp;
+    enum Detector {SIDE_CRT, TOP_CRT};
+//    const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
     const uint16_t & fragment_id        = hit.fragment_ID;
+    /**
+     * TODO:
+     * In order to distinguish between Top and Side CRT
+     * use the variable detector, defined above
+     * Otherwise, MAC address alone is not sufficient,
+     * as some MACs overlap between Top and Side
+     *
+     * Alternative: use fragment_ID directly (fragment_IDs
+     * are unique)
+     */
+
+    const uint64_t & fragment_timestamp = hit.timestamp;
 
     //data from FEB:
     const uint8_t & mac5     = hit.mac5;
