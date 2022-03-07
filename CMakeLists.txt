@@ -16,7 +16,7 @@
 # use cmake 2.8 or later
 cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
-project(sbndqm VERSION 1.01.00 LANGUAGES CXX)
+project(sbndqm VERSION 1.02.00 LANGUAGES CXX)
 
 message(STATUS "\n\n  ==========================   ${PROJECT_NAME}   ==========================")
 
