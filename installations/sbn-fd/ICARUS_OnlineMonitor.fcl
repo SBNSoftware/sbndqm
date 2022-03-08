@@ -1,5 +1,6 @@
 #include "redis_connection.fcl"
 #include "opticaldetectormodules.fcl"
+#include "stage0_icarus_defs.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
@@ -80,8 +81,8 @@ END_PROLOG
 
 
 ###use icaruscode decoder.fcl as a base
-#include "decoder.fcl"
-
+###include "decoder.fcl"
+#include "stage0_icarus_driver_common.fcl"
 
 #service overrides
 services.RedisConnection: @local::redis_connection
