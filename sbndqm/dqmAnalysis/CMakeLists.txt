@@ -4,6 +4,7 @@ cet_find_library( BOOST_DATE_TIME     NAMES boost_date_time     PATHS ENV BOOST_
 
 add_subdirectory(PMT)
 add_subdirectory(TPC)
+add_subdirectory(Trigger)
 add_subdirectory(Nevis)
 add_subdirectory(CRT)
 add_subdirectory(Meta)
