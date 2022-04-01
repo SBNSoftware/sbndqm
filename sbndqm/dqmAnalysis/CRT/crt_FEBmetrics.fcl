@@ -8,9 +8,9 @@ services: {
 #  message: @local::standard_debug
   InitMetricManager: {
     connections: {
-      fast: @local::redis_metric_fast
-      slow: @local::redis_metric_slow
-      archive: @local::redis_metric_archive
+      #fast: @local::redis_metric_fast
+      #slow: @local::redis_metric_slow
+      #archive: @local::redis_metric_archive
     }
   }
 }
@@ -40,8 +40,8 @@ physics:
 
     metric_board_config: {
 	groups:{
-		CRT_board:[[0,8]] //8 crt boards
-		}
+		CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
+		}                  //missing 2, 12, 18, 20
 	streams:[slow,fast]
 		
 	metrics:{
@@ -50,6 +50,11 @@ physics:
 		n_events:{}
 		MaxADCValue:{}
 		baseline:{}	
+
+                earlysynch:{alarmrange: [-100000,100000] }
+                latesynch:{ alarmrange: [-100000,100000] }
+
+                lastbighit:{ alarmrange: [0,100000000] }
 }
 }
     metric_channel_config: {

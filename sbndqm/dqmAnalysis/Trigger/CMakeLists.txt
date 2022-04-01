@@ -1,4 +1,4 @@
-simple_plugin( CAENV1730Streams "module"
+simple_plugin( TriggerStreams "module"
 
   art_Utilities
   canvas
@@ -7,6 +7,7 @@ simple_plugin( CAENV1730Streams "module"
 
   ${LARDATAOBJ}
   lardataobj_RawData
+  lardataobj_Simulation
   ${ART_UTILITIES}
   ${FHICLCPP}
   ${MF_MESSAGELOGGER}
@@ -28,8 +29,8 @@ simple_plugin( CAENV1730Streams "module"
   sbndaq_online_hiredis
 
   sbndqm_Decode_PMT_PMTDecodeData
+  
 
-  larana_OpticalDetector_OpHitFinder
 
 )
 

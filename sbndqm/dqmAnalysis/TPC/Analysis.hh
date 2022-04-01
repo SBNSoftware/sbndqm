@@ -22,7 +22,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "ChannelData.hh"
-#include "sbndaq-decode/TPC/HeaderData.hh"
+#include "sbndqm/Decode/TPC/HeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 

@@ -15,7 +15,7 @@
 #include "art_root_io/TFileService.h"
 
 #include "ChannelData.hh"
-#include "sbndaq-decode/TPC/HeaderData.hh"
+#include "sbndqm/Decode/TPC/HeaderData.hh"
 #include "Analysis.hh"
 
 #include "sbndaq-online/helpers/SBNMetricManager.h"

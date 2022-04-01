@@ -1,6 +1,5 @@
 #include "redis_connection.fcl"
 #include "opticaldetectormodules.fcl"
-#include "stage0_icarus_defs.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
@@ -81,8 +80,8 @@ END_PROLOG
 
 
 ###use icaruscode decoder.fcl as a base
-###include "decoder.fcl"
-#include "stage0_icarus_driver_common.fcl"
+#include "decoder.fcl"
+
 
 #service overrides
 services.RedisConnection: @local::redis_connection
@@ -108,10 +107,8 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 services.DetectorPropertiesService: @erase
-services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
-
 
 #replace the source
 source:
@@ -185,8 +182,6 @@ physics.producers.daqPMT:
   module_type: DaqDecoderIcarusPMT
   FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
 }
-
-physics.producers.daqTrigger: @local::decodeTrigger
 
 #add online purity producers
 physics.producers.purityana0:
@@ -265,47 +260,6 @@ physics.analyzers:
 
     SelectEvents: [tpc_only]
   }
-  
-     triggerAnalysis: {
-
-      module_type: TriggerStreams
-      
-      TriggerLabel: "daqTrigger"      
-      
-      TriggerMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-  
-        streams: ["30s"]
-        
-        metrics: {
-	    Offbeam_BNB_RATE:{
-		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
-	    }
-            BNB_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }		 
-	}   
-      }
 
    pmtAnalysis: {
 
@@ -337,7 +291,7 @@ physics.analyzers:
             display_range: [0., 50.]
           }
 
-          baseline: {
+          pedestal: {
             units: ADC
             title: "%(group)s channel %(instance)s Pedestal"
             display_range: [13000, 16000]
@@ -449,25 +403,19 @@ physics.analyzers:
     module_type: BernCRTdqm
 
     metric_board_config: {
-      groups:{
-        CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
-      }                  //missing 2, 12, 18, 20
+      groups:
+      {
+        CRT_board:[[25,96]] //73 crt boards
+      }
       streams:[archiving]
-				
       metrics:{
         TS0:{}
-	TS1:{}
-	n_events:{}
-	MaxADCValue:{}
-	baseline:{}
-
-	earlysynch:{alarmrange: [-100000,100000] }
-	latesynch:{ alarmrange: [-100000,100000] }
-
-	lastbighit:{ alarmrange: [0,100000000] }
+        TS1:{}
+        n_events:{}
+        MaxADCValue:{}
+        baseline:{}	
       }
     }
-
     metric_channel_config: {
       groups:
       {
@@ -489,25 +437,21 @@ physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale2, daqTPC ]
 physics.pmt_only: [ daqPMT ]
-physics.trigger_only: [ daqTrigger ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
-physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path,
-			 @sequence::physics.trigger_path]
+		         @sequence::physics.pmt_path ]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
-physics.anatrigger: [ triggerAnalysis ]
 physics.anapmt: [ MetaPMT, pmtAnalysis ]
 physics.anacrt: [ CRTAna ]
 
-physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt ]
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatpc ]
 
 physics.decoded_stream: [ decodedout ]
 

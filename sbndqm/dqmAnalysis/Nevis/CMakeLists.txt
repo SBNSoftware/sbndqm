@@ -1,6 +1,6 @@
 simple_plugin( NevisProductionTest module
-  sbndaq-artdaq-core_Overlays_SBND
-  sbndaq-artdaq-core_Overlays_SBND_NevisTPC
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
   sbndaq_online_hiredis
   ${LARDATAOBJ}
   lardataobj_RawData
