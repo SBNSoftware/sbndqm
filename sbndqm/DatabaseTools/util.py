@@ -50,7 +50,7 @@ def parse_binary(binary, typename):
     size = type_to_size(typename)
     form = type_to_struct_type(typename)
     ret = []
-    for i in range(len(binary) / size):
+    for i in range(len(binary) // size):
        dat = binary[i*size : (i+1)*size]
        ret.append(struct.unpack(form, dat)[0]) 
 
@@ -59,5 +59,6 @@ def parse_binary(binary, typename):
 
 def read_datum(dat):
     for key, val in dat.items():
+        key = key.decode("utf-8")
         if key == "dat": return val
         return parse_binary(val, key)[0]

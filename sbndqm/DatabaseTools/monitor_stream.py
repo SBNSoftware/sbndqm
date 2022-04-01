@@ -9,7 +9,7 @@ def handle_user_stop(signum, frame):
     sys.exit(0)
 
 def value_display(datum):
-    timestamp = int(datum[0].split("-")[0]) / 1000 # ms -> s
+    timestamp = int(datum[0].decode("utf-8").split("-")[0]) / 1000 # ms -> s
     timestr = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
     value = util.read_datum(datum[1])
     return "%s at time %s" % (value, timestr)
@@ -31,7 +31,7 @@ def main(args):
         keys = redis.keys("%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream))
         if len(keys) == 0:
             keys = ["%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream)]
-        keys = [str(k) for k in keys]
+        keys = [k.decode("utf-8") for k in keys]
 
     # read the initial value for each key
     last_seen_ids = {}
