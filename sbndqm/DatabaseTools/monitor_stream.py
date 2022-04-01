@@ -31,6 +31,7 @@ def main(args):
         keys = redis.keys("%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream))
         if len(keys) == 0:
             keys = ["%s:%s:%s:%s" % (args.group, args.instance, args.metric, args.stream)]
+        keys = [str(k) for k in keys]
 
     # read the initial value for each key
     last_seen_ids = {}
@@ -41,10 +42,10 @@ def main(args):
         try:
             lastval = redis.xrevrange(key, count=1)
         except:
-            print("Error: key (%s) has mis-formed value") % key
+            print("Error: key (%s) has mis-formed value" % key)
             return
         if len(lastval) == 0:
-            print("Key (%s) has no prior values") % key
+            print("Key (%s) has no prior values" % key)
             last_seen_ids[key] = "0-0"
         else:
             print( ("Key (%s) last value: " % key) + value_display(lastval[0]) )
