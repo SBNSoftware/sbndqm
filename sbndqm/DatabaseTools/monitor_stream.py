@@ -5,7 +5,7 @@ import signal
 import sys
 
 def handle_user_stop(signum, frame):
-    print "User Ctrl-C, shutting down..."
+    print("User Ctrl-C, shutting down...")
     sys.exit(0)
 
 def value_display(datum):
@@ -19,7 +19,7 @@ def main(args):
     try:
         redis.ping()
     except:
-        print "Error: trouble connecting to redis database on server (%s) port (%i)" % (args.server, args.port)
+        print("Error: trouble connecting to redis database on server (%s) port (%i)") % (args.server, args.port)
         return
 
     # build the list of keys
@@ -41,16 +41,16 @@ def main(args):
         try:
             lastval = redis.xrevrange(key, count=1)
         except:
-            print "Error: key (%s) has mis-formed value" % key
+            print("Error: key (%s) has mis-formed value") % key
             return
         if len(lastval) == 0:
-            print "Key (%s) has no prior values" % key
+            print("Key (%s) has no prior values") % key
             last_seen_ids[key] = "0-0"
         else:
-            print ("Key (%s) last value: " % key) + value_display(lastval[0])
+            print( ("Key (%s) last value: " % key) + value_display(lastval[0]) )
             last_seen_ids[key] = lastval[0][0]
 
-    print "Listening for new values"
+    print("Listening for new values")
     # setup to exit nice on Ctrl-C
     signal.signal(signal.SIGINT, handle_user_stop)
     # now listen for new values
@@ -60,7 +60,7 @@ def main(args):
             key = v[0]
             data = v[1]
             for d in data:
-                print ("Key (%s) updated: " % key) + value_display(d)
+                print( ("Key (%s) updated: " % key) + value_display(d))
             last_seen_ids[key] = data[-1][0]
 
 if __name__ == "__main__":

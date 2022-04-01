@@ -6,7 +6,7 @@ monitoring data stored in a redis databse.
 To use these scripts, you will first need to setup a python environment.
 To do this, run (all inside this directory):
 
-virtualenv env
+python -m venv env
 . env/bin/activate
 pip install -r requirements.txt
 
