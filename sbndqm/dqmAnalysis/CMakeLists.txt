@@ -9,4 +9,5 @@ add_subdirectory(Nevis)
 add_subdirectory(CRT)
 add_subdirectory(Meta)
 add_subdirectory(example)
+add_subdirectory(FragmentAna)
 
