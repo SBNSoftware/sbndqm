@@ -42,8 +42,9 @@ physics:
 
     metric_board_config: {
 	groups:{
-                CRT_board:[[1,97]] // CHANGE: to whatever channels the CRT analysis is processing
-		}                  //missing 2, 12, 18, 20
+                CRT_board:[[1,97]] 
+                CRT_board_top:[[1,123]] 
+		}                  
 	streams:[archiving]
 		
 	metrics:{
