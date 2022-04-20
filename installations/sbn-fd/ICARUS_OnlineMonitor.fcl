@@ -451,7 +451,8 @@ physics.analyzers:
     metric_board_config: {
       groups:{
         CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
-      }                  //missing 2, 12, 18, 20
+        CRT_board_top:[[1,123]]
+     }                  //missing 2, 12, 18, 20
       streams:[archiving]
 				
       metrics:{
