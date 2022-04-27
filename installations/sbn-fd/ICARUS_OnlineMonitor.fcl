@@ -182,6 +182,11 @@ physics.producers.purityana1.CryostatFCL: 1
 #declare a filters section
 physics.filters:
 {
+  prescale1:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 1
+    prescaleOffset: 0
+  }
   prescale2:{ 
     module_type: "Prescaler"
     prescaleFactor: 2
@@ -282,6 +287,7 @@ physics.analyzers:
             }		 
 	}   
       }
+   }
 
    pmtAnalysis: {
 
@@ -501,20 +507,20 @@ physics.analyzers:
 physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale10,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale10, daqTPC ]
-physics.pmt_only: [ daqPMT ]
-physics.trigger_only: [ daqTrigger ]
-physics.crt_only: [ ]
+physics.pmt_only: [ prescale1, daqPMT ]
+physics.trigger_only: [ prescale1, daqTrigger ]
+physics.crt_only: [ prescale1 ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
 physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
-physics.crt_path: [crt_only]
+physics.crt_path: [ crt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
 		         @sequence::physics.pmt_path,
-			 @sequence::physics.crt_path,
-			 @sequence::physics.trigger_path]
+			 @sequence::physics.crt_path]
+#			 @sequence::physics.trigger_path]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
@@ -522,7 +528,8 @@ physics.anatrigger: [ triggerAnalysis ]
 physics.anapmt: [ MetaPMT, pmtAnalysis, fragana ]
 physics.anacrt: [ CRTAna, fragana ]
 
-physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
 
 physics.decoded_stream: [ decodedout ]
 

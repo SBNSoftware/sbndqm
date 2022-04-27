@@ -96,7 +96,7 @@ void sbndaq::FragmentDQMAna::analyze_fragment(artdaq::Fragment frag) {
     sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, level, average);
     sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, level, rate);
 
-    std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;
+    //std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;
 
   }
 

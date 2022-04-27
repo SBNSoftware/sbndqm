@@ -168,11 +168,11 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     //it's a GPS reference pulse
     if(isTS0){
       //    fSampleHist->Fill(ts0 - 1e9); //bug!!! fSampleHist is not defined
-      std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+      //std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
     }
     if(isTS1){
       //    fSampleHist->Fill(ts1 - 1e9); //bug!!! fSampleHist is not defined
-      std::cout<<" TS1 "<<ts0 - 1e9<<std::endl; 
+      //std::cout<<" TS1 "<<ts0 - 1e9<<std::endl; 
     }
     for(int i = 0; i<32; i++) {
       totaladc  += adc[i];
@@ -187,9 +187,9 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       }
     }
     int baseline = (totaladc-max)/31;
-     std::cout<<" Maximum ADC value:"<<max<<std::endl;
-      std::cout<<" Average without Max value:"<<baseline<<std::endl;
-      std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
+    //std::cout<<" Maximum ADC value:"<<max<<std::endl;
+    //std::cout<<" Average without Max value:"<<baseline<<std::endl;
+    //std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
     //  std::cout<<" TS1: " << ts1 << std::endl;
     //  std::cout<<" TSO: " << ts0 << std::endl;
     //  std::cout<<" last_poll_start   : " << last_poll_start << std::endl;
