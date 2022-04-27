@@ -242,6 +242,7 @@ physics.analyzers:
   }
   
      triggerAnalysis: {
+      SelectEvents: [trigger_only]
 
       module_type: TriggerStreams
       
@@ -421,6 +422,7 @@ physics.analyzers:
   }
 
   CRTAna:{
+    SelectEvents: [ crt_only ]
     module_type: BernCRTdqm
 
     metric_board_config: {
@@ -459,37 +461,72 @@ physics.analyzers:
     }
   }
 
+
+  fragana:{
+    SelectEvents: [ pmt_only, crt_only ]
+
+    module_type: FragmentDQMAna
+    
+    metric_config: {
+      
+      groups: { 
+        PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 8199, 
+		         8211, 8213, 8198, 8215, 8205, 8212, 8201, 8210, 8192, 8196, 
+			 8195, 8197, 8207, 8193]
+ 
+        CRT_cont_frag : [12551, 12568, 12614, 12598, 12595, 12593, 12591, 12618, 12586, 12559, 
+		         12576, 12580, 12552, 12605, 12560, 12594, 12570, 12630, 12550, 12615, 
+			 12589, 12620, 12554, 12578, 12596, 12627, 12641, 12621, 12588, 12590, 
+			 12637, 12555, 12638, 12579, 12553, 12563, 12608, 12592, 12634, 12585, 
+			 12632, 12583, 12624, 12558, 12566, 12613, 12597, 12635, 12622, 12610, 
+			 12587, 12603, 12629, 12600, 12569, 12584, 12609, 12581, 12606, 12619, 
+			 12561, 12626, 12577, 12548, 12582, 12607, 12625, 12631, 12599, 12575, 
+			 12617, 12573, 12628, 12640, 12557, 12639, 12567, 12636, 12616, 12545, 
+			 12601, 12549, 12572, 12571, 12623, 12547, 12633, 12565, 12612, 12602, 
+			 12604, 12611, 12574]         
+      }
+        
+  
+      streams: [archiving]
+      metrics: {
+        frag_count: {}
+        zero_rate: {}
+      }
+
+    }
+  }
+
 }
 
 physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
-physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale2, daqTPC ]
+physics.online_purity:   [prescale10,  daqTPC, purityana0, purityana1]
+physics.tpc_only: [ prescale10, daqTPC ]
 physics.pmt_only: [ daqPMT ]
 physics.trigger_only: [ daqTrigger ]
+physics.crt_only: [ ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
 physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
+physics.crt_path: [crt_only]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
 		         @sequence::physics.pmt_path,
+			 @sequence::physics.crt_path,
 			 @sequence::physics.trigger_path]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anatrigger: [ triggerAnalysis ]
-physics.anapmt: [ MetaPMT, pmtAnalysis ]
-physics.anacrt: [ CRTAna ]
+physics.anapmt: [ MetaPMT, pmtAnalysis, fragana ]
+physics.anacrt: [ CRTAna, fragana ]
 
 physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
 physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
-#physics.end_paths: [ anatpc, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
-#physics.end_paths: [ anapmt, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
 
