@@ -1,0 +1,85 @@
+#include "redis_connection.fcl"
+
+process_name: FragmentDQMAnaTesting
+
+services: {
+#  TFileService: { fileName: "crt_test_1.root" }
+#  RedisConnection: {
+#    host: "icarus-db01.fnal.gov"
+#  }
+#  message: @local::standard_debug
+#  InitMetricManager: {
+#    connections: {
+#      #fast: @local::redis_metric_fast
+#      #slow: @local::redis_metric_slow
+#      #archive: @local::redis_metric_archive
+#    }
+#  }
+  RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+
+#source is a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:   9999999        # Number of events to create
+}
+
+outputs:
+{
+}
+
+physics:
+{
+
+ producers:{}
+
+ filters:{}
+
+ analyzers:{
+
+   fragana: {
+       module_type: FragmentDQMAna
+
+       metric_config: {
+          
+         groups: {
+           PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 8199, 8211, 8213, 8198, 8215, 8205, 8212, 8201, 8210, 8192, 8196, 8195, 8197, 8207, 8193]
+ 
+           CRT_cont_frag : [12551, 12568, 12614, 12598, 12595, 12593, 12591, 12618, 12586, 12559, 12576, 12580, 12552, 12605, 12560, 12594, 12570, 12630, 12550, 12615, 12589, 12620, 12554, 12578, 12596, 12627, 12641, 12621, 12588, 12590, 12637, 12555, 12638, 12579, 12553, 12563, 12608, 12592, 12634, 12585, 12632, 12583, 12624, 12558, 12566, 12613, 12597, 12635, 12622, 12610, 12587, 12603, 12629, 12600, 12569, 12584, 12609, 12581, 12606, 12619, 12561, 12626, 12577, 12548, 12582, 12607, 12625, 12631, 12599, 12575, 12617, 12573, 12628, 12640, 12557, 12639, 12567, 12636, 12616, 12545, 12601, 12549, 12572, 12571, 12623, 12547, 12633, 12565, 12612, 12602, 12604, 12611, 12574]         
+          }
+        
+  
+       streams: [archiving]
+       metrics: {
+         frag_count: {}
+         zero_rate: {}
+       }
+
+      }
+       mystringconfig: "here"
+       myintconfig: 10
+       myvectorconfig: ["one","two","three"]
+   }
+
+
+
+ }
+
+
+ #define the output stream, there could be more than one if using filters 
+# stream1:  [ ]
+ ana: [ fragana ]
+
+ #end_paths is a keyword and contains the paths that do not modify the art::Event, 
+ #ie analyzers and output streams.  these all run simultaneously
+ end_paths:     [ ana ]
+}
+
