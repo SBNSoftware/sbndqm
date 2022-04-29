@@ -43,6 +43,7 @@ namespace sbndaq {
 }
 
 /*****/
+bool verbose = false;
 
 class sbndaq::FragmentDQMAna : public art::EDAnalyzer {
 
@@ -56,6 +57,7 @@ private:
   void analyze_fragment(artdaq::Fragment frag);
 
 };
+
 
 //Define the constructor
 sbndaq::FragmentDQMAna::FragmentDQMAna(fhicl::ParameterSet const & pset)
@@ -76,64 +78,51 @@ sbndaq::FragmentDQMAna::~FragmentDQMAna()
 //analyze_fragment
 void sbndaq::FragmentDQMAna::analyze_fragment(artdaq::Fragment frag) {
 
-  artdaq::ContainerFragment cont_frag(frag);
+  int level = 0;
 
+  unsigned int const fragid = frag.fragmentID();
+  std::string fragment_id = std::to_string(fragid);
+
+  artdaq::ContainerFragment cont_frag(frag);
+  //get frag count
   uint64_t frag_count = cont_frag.block_count();
   //get zero rate
-  uint64_t nzero;
+  uint64_t nzero = 0;
   if (frag_count == 0) { nzero = 1; }
-  if (frag_count > 0) { nzero = 0; }
 
-  unsigned int const fragid = (cont_frag[0].get() ->  fragmentID());
-  std::string fragment_id = std::to_string(fragid);
-  int level = 2;
-  artdaq::MetricMode average = artdaq::MetricMode::Average;
-  artdaq::MetricMode rate = artdaq::MetricMode::Rate;
+  std::string group_name = "unknown_cont_frag";
 
-  if (cont_frag.fragment_type() == 2) {
-    std::string group_name = "PMT_cont_frag";
+  if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::CAENV1730) {group_name = "PMT_cont_frag";}
+  else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";}
 
-    sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, level, average);
-    sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, level, rate);
+  sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, level, artdaq::MetricMode::Average);
+  sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, level, artdaq::MetricMode::Rate);
 
-    //std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;
+  if (verbose) {std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;}
 
   }
-
-  if (cont_frag.fragment_type() == 14) {
-    std::string group_name = "CRT_cont_frag";
-
-    sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, level, average);
-    sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, level, rate);
-
-    std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;
-
-  }
-
-
-}
 
 
 //analyze
 void sbndaq::FragmentDQMAna::analyze(art::Event const & evt) {
 
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
-  std::cout << std::endl;
+  if (verbose) {
+    std::cout << "######################################################################" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+    std::cout << std::endl;
+  }
 
   //save fragment counts for the event in a vector
   std::vector<double> fragment_count;
   std::vector<double> fragment_ID;
 
   //loop over fragments in event
-  //two different loop logics, depending on whether we have fragment containers or fragments
   auto fragmentHandles = evt.getMany<artdaq::Fragments>(); //returns std::vector< art::Handle< std::vector<artdaq::Fragment> > >
 
-  std::cout << "We have " << fragmentHandles.size() << " fragment collections." << std::endl;
+  if (verbose) {std::cout << "We have " << fragmentHandles.size() << " fragment collections." << std::endl;}
 
   for (auto const& handle : fragmentHandles) {
-
     //handle is art::Handle< std::vector<artdaq::Fragment> >
 
     if (!handle.isValid() || handle->size() == 0)
@@ -148,18 +137,6 @@ void sbndaq::FragmentDQMAna::analyze(art::Event const & evt) {
 
       artdaq::ContainerFragment cont_frag(frag);
       analyze_fragment(frag);
-
-      //std::cout << "Container fragment type is " << (unsigned int)cont_frag.fragment_type() << std::endl;
-      //2:PMT, 14: CRT
-
-      // all fragments in one container fragment have the same fragment ID
-      //std::cout << "Container fragment ID is " << cont_frag[0].get() ->  fragmentID() << std::endl;
-      //std::cout << "container fragment has " << (unsigned int)cont_frag.block_count() << " fragments" << std::endl;
-
-
-      fragment_count.push_back((unsigned int)cont_frag.block_count());
-      fragment_ID.push_back(cont_frag[0].get()->fragmentID());
-
 
     }//end loop over handle
   }//end loop over all handles

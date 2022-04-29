@@ -4,26 +4,21 @@ process_name: FragmentDQMAnaTesting
 
 services: {
 #  TFileService: { fileName: "crt_test_1.root" }
-#  RedisConnection: {
-#    host: "icarus-db01.fnal.gov"
-#  }
-#  message: @local::standard_debug
-#  InitMetricManager: {
-#    connections: {
-#      #fast: @local::redis_metric_fast
-#      #slow: @local::redis_metric_slow
-#      #archive: @local::redis_metric_archive
-#    }
-#  }
   RedisConnection: @local::redis_connection
+#  host: "icarus-db01.fnal.gov"
   InitMetricManager: {
     connections: {
       archive: @local::redis_metric_archive
     }
   }
 }
+
 services.RedisConnection.host: "icarus-db01.fnal.gov"
 
+analysis_config:
+{
+verbose: false
+}
 
 #source is a root file
 source:
