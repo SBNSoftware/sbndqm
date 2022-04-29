@@ -43,7 +43,6 @@ namespace sbndaq {
 }
 
 /*****/
-bool verbose = false;
 
 class sbndaq::FragmentDQMAna : public art::EDAnalyzer {
 
@@ -55,6 +54,8 @@ public:
 
 private:
   void analyze_fragment(artdaq::Fragment frag);
+  bool fVerbose;
+  int fReportingLevel;
 
 };
 
@@ -63,6 +64,11 @@ private:
 sbndaq::FragmentDQMAna::FragmentDQMAna(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
+
+  //configuration
+  fVerbose = pset.get<bool>("Verbose",false);
+  fReportingLevel = pset.get<int>("ReportingLevel",0);
+
 
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
@@ -78,7 +84,6 @@ sbndaq::FragmentDQMAna::~FragmentDQMAna()
 //analyze_fragment
 void sbndaq::FragmentDQMAna::analyze_fragment(artdaq::Fragment frag) {
 
-  int level = 0;
 
   unsigned int const fragid = frag.fragmentID();
   std::string fragment_id = std::to_string(fragid);
@@ -95,10 +100,10 @@ void sbndaq::FragmentDQMAna::analyze_fragment(artdaq::Fragment frag) {
   if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::CAENV1730) {group_name = "PMT_cont_frag";}
   else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";}
 
-  sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, level, artdaq::MetricMode::Average);
-  sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, level, artdaq::MetricMode::Rate);
+  sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, fReportingLevel, artdaq::MetricMode::Average);
+  sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, fReportingLevel, artdaq::MetricMode::Rate);
 
-  if (verbose) {std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;}
+  if (fVerbose) {std::cout << "sending: " << group_name << ":" << fragment_id << ", frag count: " << frag_count << ", nzero: " << nzero << std::endl;}
 
   }
 
@@ -106,7 +111,7 @@ void sbndaq::FragmentDQMAna::analyze_fragment(artdaq::Fragment frag) {
 //analyze
 void sbndaq::FragmentDQMAna::analyze(art::Event const & evt) {
 
-  if (verbose) {
+  if (fVerbose) {
     std::cout << "######################################################################" << std::endl;
     std::cout << std::endl;
     std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
@@ -120,7 +125,7 @@ void sbndaq::FragmentDQMAna::analyze(art::Event const & evt) {
   //loop over fragments in event
   auto fragmentHandles = evt.getMany<artdaq::Fragments>(); //returns std::vector< art::Handle< std::vector<artdaq::Fragment> > >
 
-  if (verbose) {std::cout << "We have " << fragmentHandles.size() << " fragment collections." << std::endl;}
+  if (fVerbose) {std::cout << "We have " << fragmentHandles.size() << " fragment collections." << std::endl;}
 
   for (auto const& handle : fragmentHandles) {
     //handle is art::Handle< std::vector<artdaq::Fragment> >

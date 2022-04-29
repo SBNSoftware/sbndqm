@@ -17,7 +17,8 @@ services.RedisConnection.host: "icarus-db01.fnal.gov"
 
 analysis_config:
 {
-verbose: false
+Verbose: true
+ReportingLevel: 0
 }
 
 #source is a root file
