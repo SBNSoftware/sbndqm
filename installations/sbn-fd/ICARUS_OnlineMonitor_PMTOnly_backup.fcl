@@ -1,9 +1,34 @@
 #include "redis_connection.fcl"
-#include "stage0_icarus_defs.fcl"
-#include "pmt_online_monitor_configuration.fcl"
+#include "opticaldetectormodules.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
+
+icarus_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
+icarus_opreco_pedestal_rmsslider.BeamGateSamples:   1
+icarus_opreco_pedestal_rmsslider.SampleSize:        30
+icarus_opreco_pedestal_rmsslider.Threshold:         4.0
+icarus_opreco_pedestal_rmsslider.Verbose:           false
+icarus_opreco_pedestal_rmsslider.NWaveformsToFile:  0
+icarus_opreco_pedestal_rmsslider.MaxSigma:          4.0
+icarus_opreco_pedestal_rmsslider.PedRangeMax:       16000
+icarus_opreco_pedestal_rmsslider.PedRangeMin:       13000
+icarus_opreco_pedestal_rmsslider.NumPreSample:      10
+icarus_opreco_pedestal_rmsslider.NumPostSample:     20
+
+icarus_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
+icarus_opreco_hit_slidingwindow.PositivePolarity:    false
+icarus_opreco_hit_slidingwindow.NumPreSample:        5
+icarus_opreco_hit_slidingwindow.NumPostSample:       10
+icarus_opreco_hit_slidingwindow.ADCThreshold:        10 # ADC threshold (absolute) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
+icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
+icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
+icarus_opreco_hit_slidingwindow.Verbosity:           false
+
 
 tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
 tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
@@ -51,13 +76,12 @@ analysis_config: {
   // Change tick period to be 0.4 for ICARUS
   tick_period: 0.4
 }
-
 END_PROLOG
 
 
 ###use icaruscode decoder.fcl as a base
-###include "decoder.fcl"
-#include "stage0_icarus_driver_common.fcl"
+#include "decoder.fcl"
+
 
 #service overrides
 services.RedisConnection: @local::redis_connection
@@ -83,10 +107,8 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 services.DetectorPropertiesService: @erase
-services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
-
 
 #replace the source
 source:
@@ -161,8 +183,6 @@ physics.producers.daqPMT:
   FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
 }
 
-physics.producers.daqTrigger: @local::decodeTrigger
-
 #add online purity producers
 physics.producers.purityana0:
 {
@@ -182,11 +202,6 @@ physics.producers.purityana1.CryostatFCL: 1
 #declare a filters section
 physics.filters:
 {
-  prescale1:{ 
-    module_type: "Prescaler"
-    prescaleFactor: 1
-    prescaleOffset: 0
-  }
   prescale2:{ 
     module_type: "Prescaler"
     prescaleFactor: 2
@@ -245,49 +260,6 @@ physics.analyzers:
 
     SelectEvents: [tpc_only]
   }
-  
-     triggerAnalysis: {
-      SelectEvents: [trigger_only]
-
-      module_type: TriggerStreams
-      
-      TriggerLabel: "daqTrigger"      
-      
-      TriggerMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-  
-        streams: ["30s"]
-        
-        metrics: {
-	    Offbeam_BNB_RATE:{
-		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
-	    }
-            BNB_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }		 
-	}   
-      }
-   }
 
    pmtAnalysis: {
 
@@ -297,8 +269,8 @@ physics.analyzers:
       OpDetWaveformLabel: "daqPMT"
 
       reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
-      PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo 
+      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
 
 
       PMTMetricConfig: {
@@ -306,7 +278,7 @@ physics.analyzers:
         hostname: "icarus-db01.fnal.gov"
     
         groups: {
-            PMT: [ [0, 384] ]
+            PMT: [ [0, 380] ]
         }
 
         streams: ["archiving"]
@@ -316,10 +288,10 @@ physics.analyzers:
           rms: {
             units: ADC
             title: "PMT channel %(instance)s rms"
-            display_range: [0., 20.]
+            display_range: [0., 50.]
           }
 
-          baseline: {
+          pedestal: {
             units: ADC
             title: "%(group)s channel %(instance)s Pedestal"
             display_range: [13000, 16000]
@@ -428,30 +400,22 @@ physics.analyzers:
   }
 
   CRTAna:{
-    SelectEvents: [ crt_only ]
     module_type: BernCRTdqm
 
     metric_board_config: {
-      groups:{
-        CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
-        CRT_board_top:[[1,123]]
-     }                  //missing 2, 12, 18, 20
+      groups:
+      {
+        CRT_board:[[25,96]] //73 crt boards
+      }
       streams:[archiving]
-				
       metrics:{
         TS0:{}
-	TS1:{}
-	n_events:{}
-	MaxADCValue:{}
-	baseline:{}
-
-	earlysynch:{alarmrange: [-100000,100000] }
-	latesynch:{ alarmrange: [-100000,100000] }
-
-	lastbighit:{ alarmrange: [0,100000000] }
+        TS1:{}
+        n_events:{}
+        MaxADCValue:{}
+        baseline:{}	
       }
     }
-
     metric_channel_config: {
       groups:
       {
@@ -467,75 +431,34 @@ physics.analyzers:
     }
   }
 
-
-  fragana:{
-    SelectEvents: [ pmt_only, crt_only ]
-
-    module_type: FragmentDQMAna
-    
-    metric_config: {
-      
-      groups: { 
-        PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 8199, 
-		         8211, 8213, 8198, 8215, 8205, 8212, 8201, 8210, 8192, 8196, 
-			 8195, 8197, 8207, 8193]
- 
-        CRT_cont_frag : [12551, 12568, 12614, 12598, 12595, 12593, 12591, 12618, 12586, 12559, 
-		         12576, 12580, 12552, 12605, 12560, 12594, 12570, 12630, 12550, 12615, 
-			 12589, 12620, 12554, 12578, 12596, 12627, 12641, 12621, 12588, 12590, 
-			 12637, 12555, 12638, 12579, 12553, 12563, 12608, 12592, 12634, 12585, 
-			 12632, 12583, 12624, 12558, 12566, 12613, 12597, 12635, 12622, 12610, 
-			 12587, 12603, 12629, 12600, 12569, 12584, 12609, 12581, 12606, 12619, 
-			 12561, 12626, 12577, 12548, 12582, 12607, 12625, 12631, 12599, 12575, 
-			 12617, 12573, 12628, 12640, 12557, 12639, 12567, 12636, 12616, 12545, 
-			 12601, 12549, 12572, 12571, 12623, 12547, 12633, 12565, 12612, 12602, 
-			 12604, 12611, 12574]         
-      }
-        
-  
-      streams: [archiving]
-      metrics: {
-        frag_count: {}
-        zero_rate: {}
-      }
-
-    }
-  }
-
 }
 
 physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
-physics.online_purity:   [prescale10,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale10, daqTPC ]
-physics.pmt_only: [ prescale1, daqPMT ]
-physics.trigger_only: [ prescale1, daqTrigger ]
-physics.crt_only: [ prescale1 ]
+physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
+physics.tpc_only: [ prescale2, daqTPC ]
+physics.pmt_only: [ daqPMT ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
-physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
-physics.crt_path: [ crt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path,
-			 @sequence::physics.crt_path]
-#			 @sequence::physics.trigger_path]
+		         @sequence::physics.pmt_path ]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
-physics.anatrigger: [ triggerAnalysis ]
+physics.anapmt: [ MetaPMT, pmtAnalysis ]
+physics.anacrt: [ CRTAna ]
 
-# Gray Putnam: TEMPORARY -- remove fragana from analyzers
-physics.anapmt: [ MetaPMT, pmtAnalysis] #, fragana ]
-physics.anacrt: [ CRTAna] #, fragana ]
-
-#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
-physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+#physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+#physics.end_paths: [ anatpc, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+physics.end_paths: [ anapmt, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+
 
 process_name: ICARUSOnlineMonitor
 
