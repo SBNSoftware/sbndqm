@@ -526,9 +526,8 @@ physics.trigger_paths: [ @sequence::physics.tpc_path,
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
 physics.anatrigger: [ triggerAnalysis ]
 
-# Gray Putnam: TEMPORARY -- remove fragana from analyzers
-physics.anapmt: [ MetaPMT, pmtAnalysis] #, fragana ]
-physics.anacrt: [ CRTAna] #, fragana ]
+physics.anapmt: [ MetaPMT, pmtAnalysis, fragana ]
+physics.anacrt: [ CRTAna, fragana ]
 
 #physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
 physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
