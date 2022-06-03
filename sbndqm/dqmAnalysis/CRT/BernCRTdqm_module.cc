@@ -224,7 +224,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
   if(detector==TOP_CRT){
 
-     std::vector<double> adcvalues;
+    std::vector<double> adcvalues;
     for(int i = 0; i<32; i++) {
       totaladc  += adc[i];
       ADCchannel = adc[i];
@@ -239,7 +239,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     int sum = 0;
     for (auto& n : adcvalues)
      sum += n;
-    int baseline = baseline/adcvalues.size();
+    int baseline = sum/adcvalues.size();
 
     sbndaq::sendMetric("CRT_board_top", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
 
