@@ -235,12 +235,11 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
     }
     sort(adcvalues.begin(), adcvalues.end(), std::greater<int>());
-    adcvalues.erase(adcvalues.begin()+3);
+    adcvalues.erase(adcvalues.begin(), adcvalues.begin()+3);
     int sum = 0;
     for (auto& n : adcvalues)
      sum += n;
     int baseline = sum/adcvalues.size();
-
     sbndaq::sendMetric("CRT_board_top", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
 
     sbndaq::sendMetric("CRT_board_top", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
