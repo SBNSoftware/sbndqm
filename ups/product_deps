@@ -35,10 +35,10 @@ fwdir   product_dir scripts
 # Add the dependent product and version
 
 product             version  
-sbndaq_online       v1_00_00
-sbncode             v09_43_00
+sbndaq_online       v1_01_00
+sbncode             v09_64_01
 fhiclpy             v4_01_04
-cetbuildtools       v8_18_05 - only_for_build
+cetbuildtools       v3_20_00 - only_for_build
 end_product_list
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
