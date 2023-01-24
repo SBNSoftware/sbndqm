@@ -93,10 +93,11 @@ bool sbndaq::BernCRTdqm::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
 
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //sleep(2);
-
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;  
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+  //AC: commented out cout ##.. and endl
+  //std::cout << "######################################################################" << std::endl;
+  // std::cout << std::endl;  
+  //AC: commented out cout Run
+  // std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
 
@@ -111,37 +112,43 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   }
 
   //loop over all CRT hits in an event
+
+  //uint64_t fragment_timestamp = frag.timestamp();
+  //uint64_t fragment_id        = frag.fragmentID();
+
+  
+     //data from FEB:
+
   for(const auto & hit : hit_vector) {
 
-    enum Detector {SIDE_CRT, TOP_CRT};
-   const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
+   // enum Detector {SIDE_CRT, TOP_CRT};
+   //const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
     const uint16_t & fragment_id        = hit.fragment_ID;
-    /**
-     * TODO:
-     * In order to distinguish between Top and Side CRT
-     * use the variable detector, defined above
-     * Otherwise, MAC address alone is not sufficient,
-     * as some MACs overlap between Top and Side
-     *
-     * Alternative: use fragment_ID directly (fragment_IDs
-     * are unique)
-     */
     const uint64_t & fragment_timestamp = hit.timestamp;
+
+
+    std::cout <<"Fragment timestamp" << fragment_timestamp << std::endl;
+     std::cout <<"Fragment ID" << fragment_id << std::endl;
+
 
     //data from FEB:
     const uint8_t & mac5     = hit.mac5;
     unsigned readout_number  = mac5;
     std::string readout_number_str = std::to_string(readout_number);
+    const uint16_t  * adc = hit.adc;
+    std::cout <<"Inside loop" << std::endl;
+   
 
-    const int ts0      = hit.ts0;
+
+
+  /*  const int ts0      = hit.ts0;
     const int ts1      = hit.ts1;
     const bool     isTS0    = hit.IsReference_TS0();
     const bool     isTS1    = hit.IsReference_TS1();
-
-    const uint16_t * adc = hit.adc;
+  */
 
     silly++;
-    for(int ch=0; ch<32; ch++) {
+  /*  for(int ch=0; ch<32; ch++) {
       if( adc[ch] > 600 ) {
         //cout << ts1 << std::endl;
         //sbndaq::BernCRTdqm::lastbighit[ch] = ts1 - 1e9;
@@ -152,62 +159,68 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
       }
     }
-    const uint64_t & this_poll_end             = hit.this_poll_end;
-    const uint64_t & last_poll_start           = hit.last_poll_start;
+  
+  */
+  
+    //const uint64_t & this_poll_end             = hit.this_poll_end;
+    //const uint64_t & last_poll_start           = hit.last_poll_start;
 
     size_t max        = 0;
     size_t totaladc   = 0;
     size_t ADCchannel = 0;
 
 
-    std::string FEBID_str = std::to_string(fragment_id);
-    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
-    sbndaq::sendMetric("CRT_board_top", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint);
+    //  std::string FEBID_str = std::to_string(fragment_id);
+    //sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
+    //sbndaq::sendMetric("CRT_board_top", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint);
 
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
-    if(isTS0){
+    //if(isTS0){
       //    fSampleHist->Fill(ts0 - 1e9); //bug!!! fSampleHist is not defined
       //std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
-    }
-    if(isTS1){
+    //}
+    //if(isTS1){
       //    fSampleHist->Fill(ts1 - 1e9); //bug!!! fSampleHist is not defined
       //std::cout<<" TS1 "<<ts0 - 1e9<<std::endl; 
-    }
-    //std::cout<<" Maximum ADC value:"<<max<<std::endl;
-    //std::cout<<" Average without Max value:"<<baseline<<std::endl;
-    //std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
-    //  std::cout<<" TS1: " << ts1 << std::endl;
-    //  std::cout<<" TSO: " << ts0 << std::endl;
-    //  std::cout<<" last_poll_start   : " << last_poll_start << std::endl;
-    //  std::cout<<" fragment_timestamp: " << fragment_timestamp << std::endl;
-    //  std::cout<<" this_poll_end     : " << this_poll_end << std::endl;
-    //  for(int i = 0; i < 32; i++ ){
-    //    std::cout<<" adc " << i << ": " << adc[i];
-    //    std::cout<<" lastbighit " << i << ": " << sbndaq::BernCRTdqm::lastbighit[i] << std::endl;
-    //
-    //  }
-    //  std::cout<<" silly: " << silly << std::endl;
-
-    uint64_t earlysynch = last_poll_start - fragment_timestamp;
-    uint64_t latesynch = fragment_timestamp - this_poll_end;
-
-    if(detector==SIDE_CRT){
-   
+    //}
     for(int i = 0; i<32; i++) {
       totaladc  += adc[i];
       ADCchannel = adc[i];
-      uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
+      std::cout<<" Channel:" << i << ",ADC value:"<< ADCchannel <<std::endl;
+      std::cout<<"Running Total ADC value:"<<totaladc<<std::endl;
+      std::cout<<"Module number:"<< mac5 <<std::endl;
+
+
+      //uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
       /////    RMSchannel = rms[i];
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
+      //  sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
+      //sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
 
       if(adc[i] > max){
         max = adc[i];
       }
     }
     int baseline = (totaladc-max)/31;
- 
+    std::cout<<" Maximum ADC value:"<<max<<std::endl;
+    std::cout<<" Average without Max value:"<<baseline<<std::endl;
+    //std::cout<<" CRT_board number:" << readout_number_str<<std::endl;
+    //  std::cout<<" TS1: " << ts1 << std::endl;
+    //  std::cout<<" TSO: " << ts0 << std::endl;
+    //  std::cout<<" last_poll_start   : " << last_poll_start << std::endl;
+    //  std::cout<<" fragment_timestamp: " << fragment_timestamp << std::endl;
+    //  std::cout<<" this_poll_end     : " << this_poll_end << std::endl;
+      for(int i = 0; i < 32; i++ ){
+        std::cout<<" adc " << i << ": " << adc[i];
+        std::cout<<" lastbighit " << i << ": " << sbndaq::BernCRTdqm::lastbighit[i] << std::endl;    
+      }
+    //  std::cout<<" silly: " << silly << std::endl;
+ /*
+    uint64_t earlysynch = last_poll_start - fragment_timestamp;
+    uint64_t latesynch = fragment_timestamp - this_poll_end;
+
+    if(detector==SIDE_CRT){
+    
     sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
 
     sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
@@ -224,22 +237,6 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
   if(detector==TOP_CRT){
 
-    std::vector<double> adcvalues;
-    for(int i = 0; i<32; i++) {
-      totaladc  += adc[i];
-      ADCchannel = adc[i];
-      adcvalues.push_back(adc[i]);
-      uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
-      /////    RMSchannel = rms[i];
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
-    }
-    sort(adcvalues.begin(), adcvalues.end(), std::greater<int>());
-    adcvalues.erase(adcvalues.begin(), adcvalues.begin()+3);
-    int sum = 0;
-    for (auto& n : adcvalues)
-     sum += n;
-    int baseline = sum/adcvalues.size();
     sbndaq::sendMetric("CRT_board_top", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::Average);
 
     sbndaq::sendMetric("CRT_board_top", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
@@ -254,7 +251,8 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
    }//select top CRT
   } //loop over all CRT hits in an event
-
+*/
+  }
 } //analyze
 
 

@@ -1,0 +1,69 @@
+//#include "services_sbn.fcl"
+
+#This is the default configuration file
+#include "CRTRawDecoder.fcl"
+
+#This is for parsing beam info
+//#include "BeamEvent.fcl"
+
+services:
+{
+  #message:              @local::dune_message_services_prod_debug
+
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+
+  //@table::protodune_rawdecoding_services
+
+  TFileService: {
+   closeFileFast: true  # default
+   fileName:  "RunRawDecoderTFile.root"
+   tmpDir: "<parent-path-of-filename>"  # default
+  }
+
+  IFBeam:            {}
+
+}
+
+physics:
+{
+  producers:
+  {
+
+    //timingrawdecoder: @local::timing_raw_decoder
+    //ssprawdecoder: @local::ssp_raw_decoder_split
+    //tpcrawdecoder: @local::pdsp_tpc_raw_decoder
+    crtrawdecoder: @local::crt_raw_decoder
+    //ctbrawdecoder: @local::ctb_raw_decoder
+    //beamevent:     @local::proto_beamevent
+
+  }
+
+  #Create path to run module
+  #add ctbrawdecoder when it is tested
+  produce: [  crtrawdecoder ]
+  output: [ out1 ]
+  trigger_paths : [ produce ]
+  end_paths: [ output ]
+}
+
+outputs:
+{
+  out1:
+  {
+    outputCommands: [ "keep *"]//, "drop artdaq::Fragments_*_*TPC_*", "drop artdaq::Fragments_*_*FELIX_*" ]
+    compressionLevel: 1
+    module_type: RootOutput
+    fileName: "%ifb_decode.root"
+  }
+
+}
+
+source:
+{
+  module_type: RootInput
+  fileNames: [ "/afs/cern.ch/user/s/sergiand/workspace/artdaq_devel/pdune_r1000077_sr01_20170629T181646_1_0.root" ]
+  maxEvents : -1
+}
+
+process_name: RunRawDecoder
