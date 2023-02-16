@@ -6,6 +6,10 @@ add_subdirectory(Fragments)
 #)
 cet_build_plugin(CRTRawDecoder art::module
                        
+			
+  			sbndaq_online_storage
+  			sbndaq_online_hiredis
+  			artdaq_utilities::artdaq-utilities_Plugins
 			artdaq_core::artdaq-core_Data
 			artdaq_core::artdaq-core_Utilities
 			icarusCRT-raw-data_Overlays
@@ -23,6 +27,10 @@ cet_build_plugin(CRTRawDecoder art::module
 )
 cet_build_plugin(CRTOnlineMonitor art::module
                        
+			
+  			sbndaq_online_storage
+  			sbndaq_online_hiredis
+  			artdaq_utilities::artdaq-utilities_Plugins
 			artdaq_core::artdaq-core_Data
 			artdaq_core::artdaq-core_Utilities
 			icarusCRT-raw-data_Overlays

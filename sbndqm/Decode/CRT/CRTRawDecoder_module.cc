@@ -22,7 +22,8 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 //AC: #include "messagefacility/MessageLogger/MessageLogger.h"
-
+#include "sbndaq-online/helpers/SBNMetricManager.h"
+#include "sbndaq-online/helpers/MetricConfig.h"
 //LArSoft includes
 //AC: #include "larcore/Geometry/Geometry.h"
 //AC: #include "larcorealg/Geometry/GeometryCore.h"
@@ -138,8 +139,15 @@ namespace CRT
     produces<std::vector<CRT::Trigger>>();
     consumes<std::vector<artdaq::Fragment>>(fFragTag);
  
-    //Register callback to make new plots on every file
-
+    if (p.has_key("metrics")) {
+    sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
+    }
+  //if (p.has_key("metric_config")) {
+  //  sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
+  //}
+  //sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics")); //This causes the error for no "metrics" at the beginning or the end
+    sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_channel_config"));
+    //sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_board_config"));  //This line cauess the code to not be able to compile
     //art::ServiceHandle<art::TFileService> tfs;
     //tfs->registerFileSwitchCallback(this, &CRTRawDecoder::createSyncPlots);
   }
@@ -157,6 +165,11 @@ namespace CRT
     for(size_t hitNum = 0; hitNum < frag.num_hits(); ++hitNum)
     {
       const auto hit = *(frag.hit(hitNum));
+      //Metrics per channel  
+      //
+      //	
+      //std::cout<<"Metrics Sent: " << "Channel: "<<std::to_string(hit.channel)<<"ADC: "<< std::to_string(hit.adc) <<'\n'; 
+      sbndaq::sendMetric("CRT_channel_bottom", std::to_string(hit.channel), "ADC", std::to_string(hit.adc), 0, artdaq::MetricMode::Average);
       //MF_LOG_DEBUG("CRTRaw") << "Channel: " << (int)(hit.channel) << "\n"
       //                    << "ADC: " << hit.adc << "\n";
       //Determine the offline channel number for each strip

@@ -1,6 +1,6 @@
 //#include "services_sbn.fcl"
-
 #This is the default configuration file
+#include "redis_connection.fcl"
 #include "CRTRawDecoder.fcl"
 #include "CRT.fcl"
 #This is for parsing beam info
@@ -17,10 +17,12 @@ services:
 
   TFileService: {
    closeFileFast: true  # default
-   fileName:  "RunRawDecoderTFile.root"
+   fileName:  "%ifb_RunRawDecoderTFile.root"
    tmpDir: "<parent-path-of-filename>"  # default
   }
-
+  RedisConnection: {
+    host: "icarus-db01.fnal.gov"
+  }
   IFBeam:            {}
 
 }

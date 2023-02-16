@@ -6,15 +6,7 @@ crt_raw_decoder:
   RawDataTag: "daq:BottomCRT:Driver"
   LookForContainer: false
   MatchOfflineMapping: false
-  metric_channel_config: {
-  	groups: {
-		CRT_channel:[[0,256]] 
-		}
-  	streams:[slow,fast]
-  	metrics:{
-  		ADC:{ display_range: [0, 5000] }
-		}	
-  }
 }
 
+		  
 END_PROLOG
