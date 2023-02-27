@@ -160,7 +160,36 @@ namespace CRT
     frag.print_hits();*/
                                                                                                                                                    
     std::vector<CRT::Hit> hits;
-                                                                                                                                                   
+    //Make Channel Mapping array
+    size_t map_array[64] = {};
+    int count = 1;
+    //for (int i = 64; i>= 1; i--){ //Fills map_array with the correct channel mapping for the ICARUS bottom CRT
+//	map_array[i] = count;
+//	count++; 
+ //   }
+     //Alternative mapping
+
+    int even = 64;
+    int odd = 63;
+    for (int i = 1; i<= 64; i++){
+
+     if (count <= 4) {
+     map_array [i] = even;
+     even-=2;
+     count++;
+     }
+     else if (count <= 8){
+      map_array[i] = odd;
+      odd-=2;
+      if (count != 8){
+      count++;
+      }
+      else{
+      count = 1;
+      }
+     }
+   }
+  
     //Make a CRT::Hit from each non-zero ADC value in this Fragment
     for(size_t hitNum = 0; hitNum < frag.num_hits(); ++hitNum)
     {
@@ -169,19 +198,19 @@ namespace CRT
       //
       //	
       //std::cout<<"Metrics Sent: " << "Channel: "<<std::to_string(hit.channel)<<"ADC: "<< std::to_string(hit.adc) <<'\n'; 
-      sbndaq::sendMetric("CRT_channel_bottom", std::to_string(hit.channel), "ADC", std::to_string(hit.adc), 0, artdaq::MetricMode::Average);
+      //sbndaq::sendMetric("CRT_channel_bottom", std::to_string(hit.channel), "ADC", std::to_string(hit.adc), 0, artdaq::MetricMode::Average);
       //MF_LOG_DEBUG("CRTRaw") << "Channel: " << (int)(hit.channel) << "\n"
       //                    << "ADC: " << hit.adc << "\n";
       //Determine the offline channel number for each strip
       size_t offline_channel = hit.channel;
-      if (frag.module_num() == 14 ||
+      /*if (frag.module_num() == 14 ||
           frag.module_num() == 15 ||
           frag.module_num() == 8 ||
           frag.module_num() == 9 ||
           frag.module_num() == 10 ||
           frag.module_num() == 11 ||
-          frag.module_num() == 4 ||
-          frag.module_num() == 5 ||
+          //frag.module_num() == 4 ||
+          //frag.module_num() == 5 ||
           frag.module_num() == 30 ||
           frag.module_num() == 31 ||
           frag.module_num() == 24 ||
@@ -197,26 +226,31 @@ namespace CRT
           offline_channel = (63-hit.channel)*2+1;
         }
       }
-      else{//Strips do not need to be flipped
-        if (hit.channel<32){
-          offline_channel = hit.channel*2;
-        }
-        else{
-          offline_channel = (hit.channel-32)*2+1;
-        }
-      }
+      */      
+      //else{//Strips do not need to be flipped TODO: Fix channels
+        offline_channel = map_array[hit.channel]; 
+	//if (hit.channel<32){
+        //  offline_channel = hit.channel*2;
+        //}
+        //else{
+        //  offline_channel = (hit.channel-32)*2+1;
+        //}
+      //}
       //Flip the two layers
-      if (offline_channel%2==0) ++offline_channel;
-      else --offline_channel;
+      //if (offline_channel%2==0) ++offline_channel;
+      //else --offline_channel;
       hits.emplace_back(offline_channel, hit.adc);
       //MF_LOG_DEBUG("CRT Hits") CRT::operator << hits.back() << "\n"; //TODO: Some function template from the message service interferes with my  
                                                                     //      function template from namespace CRT.  using namespace CRT seems like 
                                                                     //      it should solve this, but it doesn't seem to.
     }
                                                                                                                                                    
-    //MF_LOG_DEBUG("CRTFragments") << "Module: " << frag.module_num() << "\n"
+    
+    //TLOG(TLVL_WARNING,"CRT")  << "Module: " << frag.module_num() << "\n"
     //                          << "Number of hits: " << frag.num_hits() << "\n"
-    //                          << "Fifty MHz time: " << frag.fifty_mhz_time() << "\n";
+    //                          << "Fifty MHz time: " << frag.fifty_mhz_time() << "\n"
+    //                          << "Fifty MHz time times tick: " << (uint64_t)(frag.fifty_mhz_time()*16) << "\n";
+   
    
     try
     {  

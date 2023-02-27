@@ -149,36 +149,68 @@ namespace CRT
         fRunStartTime = std::numeric_limits<uint64_t>::max();
         fRunStopTime = 0;
       }
-
+      long long timestampDiff=0.0;// runstarttime as a long long
+      double doubletimeDiff =0.0;//time difference as a double between the start time as a long long eg. timestampDiff and the timestamp per trigger
+      //uint64_t oldTime =0;//USed for print debugging	
       void AnalyzeEvent(const std::vector<CRT::Trigger>& triggers) //Make plots from CRT::Triggers
       {
-        for(const auto& trigger: triggers)
+        for(const auto& trigger: triggers)//Loop over each of the events eg.triggers
         {
-          const auto timestamp = trigger.Timestamp();
-          if(timestamp > 1e16)
+          const long long timestamp = trigger.Timestamp();
+          double timestampLessRST = 0.0; //timestamp less than run start time in seconds AC:changed from uint64_t
+	  if(timestamp > 1e16)
           {
             //Update time bounds based on this timestamp
-            if(timestamp < fRunStartTime) 
+            if((uint64_t)(timestamp) < fRunStartTime) 
             {
               //std::cout << "fRunStartTime=" << fRunStartTime << " is >= " << timestamp << ", so setting fRunStartTime.\n";
               fRunStartTime = timestamp;
+	      timestampDiff = timestamp;
             }
-            if(timestamp > fRunStopTime) 
+            if((uint64_t)(timestamp) > fRunStopTime) 
             {
               //std::cout << "fRunStopTime=" << fRunStopTime << " is <= " << timestamp << ", so setting fRunStopTime.\n";
               fRunStopTime = timestamp;
             }
-            if(timestamp < fStartTotalTime) 
+            if((uint64_t)(timestamp) < fStartTotalTime) 
             {
               //std::cout << "fStartTotalTime=" << fStartTotalTime << " is >= " << timestamp << ", so setting fStartTotalTime.\n";
               fStartTotalTime = timestamp;
             }
-
-            const auto module = trigger.Channel();
-            const auto& hits = trigger.Hits(); 
-            for(const auto& hit: hits)
+	    //fClockTicksToNs = 16 this is the tick correction factor.	
+            timestampLessRST = ((uint64_t)(timestamp)-fRunStartTime)*fClockTicksToNs*1.e-9;//Calculate timestamp - run start time.           
+	    //uint64_t timeDiff = (uint64_t)(timestampLessRST)-oldTime;//Helps to just print out whenever we get a new timestamp
+	    //if (timeDiff>1){
+	    //oldTime = (uint64_t)(timestampLessRST);
+	    //doubletimeDiff = Difference in time between timestamp and timetampDiff(which is the runStartTime as a long long) multiplied by tick
+	    //conversion and turned from nanosecond into millisecond.
+	    doubletimeDiff = (timestamp-timestampDiff)*1.e-6*16.;
+	    std::cout <<"TimestampLessRST: " <<(uint64_t)(timestampLessRST)		      
+		      <<" Timestamp times tick: "<<(uint64_t)(timestamp*fClockTicksToNs*1.e-9)
+	    	      <<" RunStartTime Tick divided: "<< (uint64_t)(fRunStartTime*fClockTicksToNs*1.e-9)<<'\n'
+		      <<" RunStartTime Not Tick divided: "<<(uint64_t)(fRunStartTime)<<'\n'
+	              <<" Timestamp unshifted (ticks) : " << (timestamp)  <<'\n'        
+	              //<<" timestampDiff: " << (timestampDiff)  <<'\n'        
+	              <<" Timestamp difference (ns) : " << (timestamp-timestampDiff)*16.  <<'\n'
+	              <<" Timestamp difference (ms) : " << doubletimeDiff  <<'\n';
+	    //}
+	    
+	    const auto module = trigger.Channel();
+            const auto& hits = trigger.Hits();             	    	
+ 	    fCurrentRunPlots->fTimestampPerModule->Fill(doubletimeDiff,module);
+	    fCurrentRunPlots->fTimestamp->Fill(doubletimeDiff);
+            int mapping_array[64] = {};//
+	    int count = 1;
+	    for(int i = 64; i>=1; i--){
+		mapping_array[i] = count;
+		count++;
+	    }	
+	    for(const auto& hit: hits)//Loop over each hit in each trigger.
             {
-              const auto channel = hit.Channel();
+              const auto channel = mapping_array[hit.Channel()];//Changed from just being = to hit.Channel()	      	
+	      //AC timestamp plot
+	      //fCurrentRunPlots->fTimestamp->Fill(doubletimeDiff);
+              //std::cout<<"TS-RunStartTime: "<<timestamp-fRunStartTime<<'\n'; 
               fCurrentRunPlots->fMeanRate->Fill(channel, module); 
               fCurrentRunPlots->fMeanADC->Fill(channel, module, hit.ADC());
               fCurrentRunPlots->fMeanADCPerBoard->Fill(module, hit.ADC());
@@ -190,9 +222,10 @@ namespace CRT
             fCurrentRunPlots->fMeanRatePerBoard->Fill(module);
             fWholeJobPlots.fMeanRatePerBoard->Fill(module);
           } //If UNIX timestamp is not 0
-        }
+        }//Loop over triggers
+        //std::cout<< "Start time: "<<fRunStartTime*1.e-9<<'\n';
+        //std::cout<< "Total runtime: "<<(fRunStopTime-fRunStartTime)*1.e-9<<'\n';
       }
-
     private:
       //Keep track of the current run number
       size_t fRunNum;
@@ -206,8 +239,10 @@ namespace CRT
         PerRunPlots(DIRECTORY&& dir): fDir(dir)
         {
           fMeanRate = dir.template make<TH2D>("MeanRate", "Mean Rates;Channel;Module;Rate", 64, 0, 64, 32, 0, 32);
-          fMeanRate->SetStats(false);
-
+          fMeanRate->SetStats(false);          
+          fTimestampPerModule = dir.template make<TH2D>("TimestampsPerModule", "TimeStamp;Timestamp-RunStartTime(s);Module", 50000, 0, 500000, 7, 0, 7);
+          fTimestampPerModule->SetStats(false);          
+          fTimestamp = dir.template make<TH1D> ("Timestamps","Timestamp",50000,0,500000) ;
           fMeanADC = dir.template make<TProfile2D>("MeanADC", "Mean ADC Values;Channel;Module;Rate [Hz]", 64, 0, 64, 32, 0, 32, 0., 4096);
           fMeanADC->SetStats(false);
 
@@ -229,6 +264,8 @@ namespace CRT
         TProfile2D* fMeanADC; //Plot of mean ADC per channel
         TH1D* fMeanRatePerBoard; //Plot of mean rate for each board
         TProfile* fMeanADCPerBoard; //Plot of mean ADC per board
+	TH1D* fTimestamp; //Timestamps 
+	TH2D* fTimestampPerModule; //Timestamps per Module
       };
 
       std::unique_ptr<PerRunPlots> fCurrentRunPlots; //Per run plots for the current run
