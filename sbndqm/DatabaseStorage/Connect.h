@@ -6,9 +6,9 @@ std::string fRedisHostname;                                                     
 std::string fRedisPassword;    
 
 void RedisConnect{
-  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02")),
+  fRedisHostname(p.get<std::string>("RedisHostname","sbnd-db01")),
   fRedisPort(p.get<int>("RedisPort",6379)),
-  fRedisPassword(p.get<std::string>("RedisPassword","icarus"))
+  fRedisPassword(p.get<std::string>("RedisPassword","sbnd"))
   
     context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort,fRedisPassword);
 

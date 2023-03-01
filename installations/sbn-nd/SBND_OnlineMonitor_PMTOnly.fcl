@@ -1,0 +1,228 @@
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+
+#analysis configuration pieces
+BEGIN_PROLOG
+
+icarus_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
+icarus_opreco_pedestal_rmsslider.BeamGateSamples:   1
+icarus_opreco_pedestal_rmsslider.SampleSize:        30
+icarus_opreco_pedestal_rmsslider.Threshold:         4.0
+icarus_opreco_pedestal_rmsslider.Verbose:           false
+icarus_opreco_pedestal_rmsslider.NWaveformsToFile:  0
+icarus_opreco_pedestal_rmsslider.MaxSigma:          4.0
+icarus_opreco_pedestal_rmsslider.PedRangeMax:       16000
+icarus_opreco_pedestal_rmsslider.PedRangeMin:       13000
+icarus_opreco_pedestal_rmsslider.NumPreSample:      10
+icarus_opreco_pedestal_rmsslider.NumPostSample:     20
+
+icarus_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
+icarus_opreco_hit_slidingwindow.PositivePolarity:    false
+icarus_opreco_hit_slidingwindow.NumPreSample:        5
+icarus_opreco_hit_slidingwindow.NumPostSample:       10
+icarus_opreco_hit_slidingwindow.ADCThreshold:        10 # ADC threshold (absolute) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
+icarus_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
+icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
+icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
+icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
+icarus_opreco_hit_slidingwindow.Verbosity:           false
+
+END_PROLOG
+
+#service overrides
+services.RedisConnection: @local::redis_connection
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+services.InitMetricManager: {
+  connections: {
+    archiving: {
+      level: 3
+      metricPluginType: "redis"
+      reporting_interval: 60.0 # 60s
+      verbose: true
+      // need to add postfix otherwise this metric sender and the other one will collide
+      redis_key_postfix: ":archiving"
+      send_zeros: false
+    }
+  }
+}
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+services.NuRandomService: @erase
+services.MemoryTracker: @erase
+services.TimeTracker: @erase
+services.DetectorPropertiesService: @erase
+services.SignalShapingICARUSService: @erase
+services.TFileService.fileName: "/dev/null"
+
+#replace the source
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 50000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "OnlineMonitor"
+      transferPluginType: Shmem
+      shm_key: 0x40471454
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "OnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "OnlineMonitor"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471454
+
+            max_fragment_size_words: 100000000 #58543672 #33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+#decoder output
+outputs.decodedout:{
+  module_type: RootOutput
+  fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
+  dataTier:    "raw"
+  compressionLevel: 3
+  SelectEvents: [pscale_OnMonFiles]
+
+  fileProperties: { 
+    #maxSubRuns: 1 
+    #maxRuns: 1 
+    maxEvents: 1
+  }
+}
+
+physics.producers.daqPMT:
+{
+  module_type: DaqDecoderSBNDPMT
+  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+}
+
+#declare a filters section
+physics.filters:
+{
+  prescale2:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 2
+    prescaleOffset: 0
+  }
+  prescale10:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 10
+    prescaleOffset: 0
+  }
+  prescale20:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 20
+    prescaleOffset: 0
+  }
+  prescale100:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 100
+    prescaleOffset: 0
+  }
+}
+
+##override the analyzers section
+physics.analyzers:
+{
+
+  MetaPMT: {
+    module_type: ReportMetadata
+    RedisKey: eventmetaPMT
+
+    SelectEvents: [pmt_only]
+  }
+
+   pmtAnalysis: {
+
+      module_type: CAENV1730StreamsSBND
+      
+
+      OpDetWaveformLabel: "daqPMT"
+
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
+
+
+      PMTMetricConfig: {
+
+        hostname: "sbnd-db0.fnal.gov"
+    
+        groups: {
+            PMT: [ [0, 380] ]
+        }
+
+        streams: ["archiving"]
+        
+        metrics: {
+        
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [0., 50.]
+          }
+
+          pedestal: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [13000, 16000]
+          }
+          
+          rate: {
+            untis: Hz 
+            title: "%(group)s channel %(instance)s single PMT rate" 
+            display_range: [ 100000, 300000 ]
+          }
+
+        }   
+      }
+      SelectEvents: [pmt_only]
+    }
+
+}
+
+physics.pmt_only: [ daqPMT ]
+physics.pmt_path: [ pmt_only ]
+physics.trigger_paths: [ @sequence::physics.pmt_path ]
+
+
+physics.anapmt: [ MetaPMT, pmtAnalysis ]
+physics.a: [ @sequence::physics.anapmt ]
+
+physics.decoded_stream: [ decodedout ]
+
+physics.end_paths: [ anapmt, decoded_stream ] 
+
+process_name: SBNDOnlineMonitor
+
