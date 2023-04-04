@@ -1,0 +1,165 @@
+#include "redis_connection.fcl"
+
+# Bits of config -- must be unique
+MONITOR_LABEL: "OnlineMonitor" # make up a name
+SHM_KEY: 0x40471432 # make up a HEX number
+
+# Other config
+
+# what port does the dispatcher run on? Must be on the server
+DISPATCHER_PORT: 6666 
+# where does Redis run?
+REDIS_HOST: "sbnd-db01.fnal.gov"
+
+physics: {
+  analyzers:
+  {
+    ExampleTimeStream: {
+      module_type: ExampleTimeStream
+
+      metric_config: {
+        // Each group name, mapping to the list of instances for this group
+        // The list of instances are the set of instances that you send metrics
+        // to in this group. To make the config more concise, if using instance
+        // names which are sequential numbers you can also provide a pair
+        // of [lo, hi) and it will count as instance names lo,lo+1,...,hi-1
+        groups: {
+          example: [ [0, 10] ]
+          // could also be
+          // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          // or
+          // example: [[0,8], 8, 9]
+        }
+
+        // The names of the streams __must__ be the names of the redis_key_postfix's
+        // for each instance in 'metrics' with the initial colon (':') stripped
+        streams: [archiving, fast]
+
+        metrics: {
+          rms: {
+            // NOTE: all configs for each metric are optional
+
+            // default range over which to display metric
+            display_range: [0., 10.]
+            // if the metric leaves this range, issue a warning
+            warning_range: [1., 5.]
+            // if the metric leaves this range, issue an alarm
+            alarm_range: [0.5, 7.5]
+            // units of metric
+            units: ADC
+            // title of the metric to be shown in displays
+
+            // The title of the metric will be formatted in python
+            // passed the parameters "group" and "instance" as strings
+            // So, or this title, given the group "example" and instance
+            // "1", the title would be: "example Wire 1 RMS" 
+            titie: "%(group)s Wire %(instance)s RMS"
+          }
+        }
+      }
+    }
+  }
+  a: [ExampleTimeStream]
+  end_paths: [a]
+
+}
+
+#replace the source
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 50000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: @local::DISPATCHER_PORT
+
+  transfer_plugin: {
+     unique_label: @local::MONITOR_LABEL
+      transferPluginType: Shmem
+      shm_key: @local::SHM_KEY
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: @local::MONITOR_LABEL
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: @local::MONITOR_LABEL
+            transferPluginType: Shmem
+
+            shm_key: @local::SHM_KEY
+
+            max_fragment_size_words: 100000000 #58543672 #33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+
+services:
+{
+  InitMetricManager: {
+    connections: { 
+      redis_metric_fast: { // can be named anything
+        level: 0
+        metricPluginType: "redis"
+        // period in seconds to send metric to database
+        reporting_interval: 2.0
+        verbose: true
+        // need to add postfix otherwise this metric sender and the other one will collide
+        redis_key_postfix: ":fast" 
+      }
+      redis_metric_archiving: { // can be named anything
+        level: 0
+        metricPluginType: "redis"
+        reporting_interval: 10.0
+        verbose: true
+        // This postfix is special -- these metrics can be accessed by the archiver
+        // if you configure it to
+        redis_key_postfix: ":archiving"  
+      }
+    }
+  }
+
+  RedisConnection: @local::redis_connection
+
+  message: {
+    destinations: {
+      STDCOUT: {
+        threshold: "DEBUG"
+        type: "cout"
+      }
+    }
+  }
+}
+
+services.ArtdaqFragmentNamingServiceInterface:
+{
+  service_provider: "ArtdaqFragmentNamingService"
+}
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+
+services.RedisConnection.host: @local::REDIS_HOST
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
+
+process_name: EXAMPLESTREAMMonitor
