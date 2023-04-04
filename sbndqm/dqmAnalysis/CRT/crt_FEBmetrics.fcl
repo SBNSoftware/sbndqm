@@ -1,3 +1,5 @@
+#include "redis_connection.fcl"
+
 process_name: Dump
 
 services: {
@@ -10,7 +12,7 @@ services: {
     connections: {
       #fast: @local::redis_metric_fast
       #slow: @local::redis_metric_slow
-      #archive: @local::redis_metric_archive
+      archive: @local::redis_metric_archive
     }
   }
 }
@@ -40,9 +42,10 @@ physics:
 
     metric_board_config: {
 	groups:{
-		CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
-		}                  //missing 2, 12, 18, 20
-	streams:[slow,fast]
+                CRT_board:[[1,97]] 
+                CRT_board_top:[[1,123]] 
+		}                  
+	streams:[archiving]
 		
 	metrics:{
 		TS0:{}

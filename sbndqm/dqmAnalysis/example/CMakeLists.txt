@@ -24,4 +24,6 @@ simple_plugin( ExampleAlarm "module"
   sbndaq_online_redis_connection
 )
 
-
+install_source()
+install_headers()
+install_fhicl()

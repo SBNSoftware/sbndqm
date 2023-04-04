@@ -1,5 +1,16 @@
 #include "redis_connection.fcl"
 
+# Bits of config -- must be unique
+MONITOR_LABEL: "OnlineMonitor" # make up a name
+SHM_KEY: 0x40471432 # make up a HEX number
+
+# Other config
+
+# what port does the dispatcher run on? Must be on the server
+DISPATCHER_PORT: 6666 
+# where does Redis run?
+REDIS_HOST: "sbnd-db01.fnal.gov"
+
 physics: {
   analyzers:
   {
@@ -22,7 +33,7 @@ physics: {
 
         // The names of the streams __must__ be the names of the redis_key_postfix's
         // for each instance in 'metrics' with the initial colon (':') stripped
-        streams: [slow, fast]
+        streams: [archiving, fast]
 
         metrics: {
           rms: {
@@ -53,33 +64,32 @@ physics: {
 
 }
 
+#replace the source
 source:
 {
   module_type: TransferInput
-
-  # The timeout shouldn't be much smaller than the period between events, otherwise 
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
   # there's a spew of timeout messages
-
-  # timeoutInUsecs: 10000000
-  timeoutInUsecs: 10000000
+  timeoutInUsecs: 50000000
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
-  dispatcherPort: 7166
+  dispatcherPort: @local::DISPATCHER_PORT
 
   transfer_plugin: {
-
-     unique_label: "ExampleOnlineMonitor"
+     unique_label: @local::MONITOR_LABEL
       transferPluginType: Shmem
-      shm_key: 0x40471453
-      max_fragment_size_words: 2097152
+      shm_key: @local::SHM_KEY
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
   }
 
   dispatcher_config: {
-    unique_label: "ExampleOnlineMonitor"
+    unique_label: @local::MONITOR_LABEL
     path: [ out ]
     physics: {}
     outputs: {
@@ -87,12 +97,12 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "ExampleOnlineMonitor"
+           unique_label: @local::MONITOR_LABEL
             transferPluginType: Shmem
 
-            shm_key: 0x40471453
+            shm_key: @local::SHM_KEY
 
-            max_fragment_size_words: 2097152
+            max_fragment_size_words: 100000000 #58543672 #33554432
               first_event_builder_rank: 0
               destination_rank: 6
         }
@@ -101,18 +111,55 @@ source:
   }
 }
 
+
 services:
 {
-  RedisConnection: @local::redis_connection
   InitMetricManager: {
-    connections: {
-      fast: @local::redis_metric_fast
-      slow: @local::redis_metric_slow
-      archive: @local::redis_metric_archive
+    connections: { 
+      redis_metric_fast: { // can be named anything
+        level: 0
+        metricPluginType: "redis"
+        // period in seconds to send metric to database
+        reporting_interval: 2.0
+        verbose: true
+        // need to add postfix otherwise this metric sender and the other one will collide
+        redis_key_postfix: ":fast" 
+      }
+      redis_metric_archiving: { // can be named anything
+        level: 0
+        metricPluginType: "redis"
+        reporting_interval: 10.0
+        verbose: true
+        // This postfix is special -- these metrics can be accessed by the archiver
+        // if you configure it to
+        redis_key_postfix: ":archiving"  
+      }
+    }
+  }
+
+  RedisConnection: @local::redis_connection
+
+  message: {
+    destinations: {
+      STDCOUT: {
+        threshold: "DEBUG"
+        type: "cout"
+      }
     }
   }
 }
 
-services.RedisConnection.passfile: "/var/adm/krb5/redis_password"
+services.ArtdaqFragmentNamingServiceInterface:
+{
+  service_provider: "ArtdaqFragmentNamingService"
+}
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+
+services.RedisConnection.host: @local::REDIS_HOST
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
 
 process_name: EXAMPLESTREAMMonitor
