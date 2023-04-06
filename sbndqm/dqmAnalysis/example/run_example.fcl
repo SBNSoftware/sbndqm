@@ -53,7 +53,7 @@ physics: {
             // passed the parameters "group" and "instance" as strings
             // So, or this title, given the group "example" and instance
             // "1", the title would be: "example Wire 1 RMS" 
-            titie: "%(group)s Wire %(instance)s RMS"
+            title: "%(group)s Wire %(instance)s RMS"
           }
         }
       }
