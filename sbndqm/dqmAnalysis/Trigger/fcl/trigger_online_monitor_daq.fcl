@@ -106,8 +106,52 @@ services.InitMetricManager.connections.archive.send_zeros: false
 
 source:
 {
-  module_type: RootInput
+  module_type: TransferInput
+
+  # The timeout shouldn't be much smaller than the period between events, otherwise 
+  # there's a spew of timeout messages
+
+  # timeoutInUsecs: 10000000
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "TriggerOnlineMonitor"
+      transferPluginType: Shmem
+      shm_key: 0x40471999
+      max_fragment_size_words: 2097152
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "TriggerOnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "TriggerOnlineMonitor"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471999
+
+            max_fragment_size_words: 2097152
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
 }
+
 
 
 process_name: ICARUSTRIGGERANALYSIS

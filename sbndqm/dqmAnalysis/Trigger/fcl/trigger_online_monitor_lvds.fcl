@@ -26,7 +26,9 @@ physics: {
           //   which need to match the hard-coded ones;
           //   each channel contains the metric value of an event
           TriggerGate:  [ [ 0, 500 ] ]
-          
+
+          TriggerLVDS: [ [0, 192]]
+
           // could also be
           // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
           // or
@@ -51,16 +53,16 @@ physics: {
             display_range: [ -0.5, 11.0 ]
           }
           
-          cryo1Bits:{ // intended for group "Trigger"
-            units: "Count"
-            title: "Cryo 1 LVDS bits "
-            display_range: [ -1., 130.0 ]
+          LVDSRate_cryo1_east01:{ // intended for group "TriggerLVDS"
+            units: "rate"
+            title: "Cryo1 East 01 LVDS bits "
+            display_range: [ -1., 65.0 ]
           }
 
-          cryo2Bits:{ // intended for group "Trigger"
-            units: "Count"
-            title: "Cryo 2 LVDS bits "
-            display_range: [ -1., 130.0 ]
+          cryo2Bits:{ // intended for group "TriggerLVDS"
+            units: "rate"
+            title: "Cryo2 LVDS bits "
+            display_range: [ -1., 65.0 ]
           } 
 
 
