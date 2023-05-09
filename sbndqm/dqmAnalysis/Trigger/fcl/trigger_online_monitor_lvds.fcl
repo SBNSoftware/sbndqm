@@ -59,9 +59,9 @@ physics: {
             display_range: [ -1., 65.0 ]
           }
 
-          cryo2Bits:{ // intended for group "TriggerLVDS"
-            units: "rate"
-            title: "Cryo2 LVDS bits "
+          LVDSRate_cryo1_east02:{ // intended for group "TriggerLVDS"
+            units: "value"
+            title: "Cryo1 East 02 LVDS bits "
             display_range: [ -1., 65.0 ]
           } 
 

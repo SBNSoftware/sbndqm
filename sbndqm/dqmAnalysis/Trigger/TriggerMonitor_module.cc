@@ -638,7 +638,10 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     if ( gt_info[i].gt_triggerSource == 1 ) {
     std::cout << "Trigger source in Cryo1  " << gt_info[i].gt_triggerSource << std::endl;
     //getting the LVDS bits for cryo1East01
-    std::cout << "Extracting  the bits from cryo1East01   "  << std::hex << cryo1East01 << "   " << std::dec << cryo1East01 << std::endl;     
+    std::cout << "Checking  the bits from cryo1East01   "  << std::hex << cryo1East01 << "   " << std::dec << cryo1East01 << std::endl;     
+    std::cout << "Checking  the bits from cryo1East23   "  << std::hex << cryo1East23 << "   " << std::dec << cryo1East23 << std::endl;
+
+    std::cout << "Extracting  the bits from cryo1East01   "  << std::hex << cryo1East01 << "   " << std::dec << cryo1East01 << std::endl;
     std::bitset<64U> LVDSbitsEast01{ cryo1East01 };
     for (int bit = 0; bit < 64; ++bit) {
     //std::cout << "In bits loop  "  << bit << std::endl;
@@ -647,11 +650,14 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
      if (LVDSbitsEast01[bit]) { 
        std::cout << " bit " << std::dec << bit << std::endl;
        
-     //fill vector
-     //   int pos = cryo1_east01_bits.begin() + bit;
+     //fill vector ??
+     //  int pos = cryo1_east01_bits.begin() + bit;
      //  cryo1_east01_bits.fill_n(pos, 1, 1);
+     //sending the metric here only sends the non-zero bits
      sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", 1, level, value);
      }
+    //sending the metric here alos send the zeroes
+    //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", int(LVDSbitsEast01[bit]), level, value);
     }
     //bndaq::sendMetric(gateGroupName, nextSpillTimeChannel(gateIndex), metricName, trigFromBeam, level, value);
     //std::cout << " Vector " << cryo1_east01_bits;
@@ -659,22 +665,24 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     ///sbndaq::sendMetric(groupName, bits_cryostat1, "Cryostat 1 LVDS bits ", n_cryostat1_bit , level, value);
     
     //getting the LVDS bits for cryo1East02
-    std::cout << "Extracting  the bits from cryo1East02   "  << std::hex << cryo1East02 << "   " << std::dec << cryo1East02 << std::endl;
-    std::bitset<64U> LVDSbitsEast02{ cryo1East02 };
+    std::cout << "Extracting  the bits from cryo1East23   "  << std::hex << cryo1East23 << "   " << std::dec << cryo1East23 << std::endl;
+    std::bitset<64U> LVDSbitsEast02{ cryo1East23 };
     for (int bit = 0; bit < 64; ++bit) {
     //std::cout << "In bits loop  "  << bit << std::endl;
     //????  
     //if (LVDSbitsEast01[bit]) fHistLVDSbitsEast01->Fill(bit);
      if (LVDSbitsEast02[bit]) {
        std::cout << " bit " << std::dec << bit << std::endl;
-       n_cryostat1_east02_bit = bit;
-     }
+     //fill vector ??
+     //sending the metric here only send the non-zero bits
+     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", int(LVDSbitsEast02(bit]), level, value);
     }
-    //send bits
-    ////sbndaq::sendMetric(groupName, bits_cryostat1, "Cryostat 1 LVDS bits ", n_cryostat1_bit , level, value);
+    //sending the metric here also sends the zeros
+    //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", int(LVDSbitsEast02[bit]), level, value);
+    }
 
+    }//triggersource ==1
 
-}
     //
     // Cryostat 2
     if ( gt_info[i].gt_triggerSource == 2 ) {
