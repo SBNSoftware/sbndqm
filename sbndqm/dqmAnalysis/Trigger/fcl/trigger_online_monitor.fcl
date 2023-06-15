@@ -11,23 +11,21 @@ physics: {
       
       TriggerLabel: "daq:ICARUSTriggerV3"      
       
-      metric_config: {
+      metric_config_gates: {
 
         hostname: "icarus-db01.fnal.gov"
   
         streams: [ "slow", "fast", "archive" ]
         
         groups: {
-          // we use several metric groups:
-          // - general trigger metrics have one channel:
-          Trigger: [ 0 ]
           
           // - all metrics in the gate-specific group have this many channels,
           //   which need to match the hard-coded ones;
           //   each channel contains the metric value of an event
           TriggerGate:  [ [ 0, 500 ] ]
-          
-          // could also be
+          //TriggerEnable: [ [ 0, 500] ]
+
+          // [ [0, 10] ] could also be
           // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
           // or
           // example: [[0,8], 8, 9]
@@ -35,39 +33,91 @@ physics: {
         
         metrics: {
 
-          // TODO: configure the `Trigger` and `TriggerBNB`/`NuMI` separately
           # ----------------------------------------------------------------
           # beam metrics
           #
-          BNBspillTime:{ // intended for group "TriggerGate"
+          BNBspillTime:{
             units: "us"
             title: "BNB trigger time minus beam gate opening time"
-            display_range: [ -0.5, 3.0 ]
+            # display_range: [ -0.5, 3.0 ]
           }
           
-          NuMIspillTime:{ // intended for group "TriggerGate"
+          NuMIspillTime:{
             units: "us"
             title: "NuMI trigger time minus beam gate opening time"
-            display_range: [ -0.5, 11.0 ]
-          }
-          
-          cryo1Bits:{ // intended for group "Trigger"
-            units: "Count"
-            title: "Cryo 1 LVDS bits "
-            display_range: [ -1., 130.0 ]
+            # display_range: [ -0.5, 11.0 ]
           }
 
-          cryo2Bits:{ // intended for group "Trigger"
-            units: "Count"
-            title: "Cryo 2 LVDS bits "
-            display_range: [ -1., 130.0 ]
+
+          BNBEnableTime:{
+            units: "us"
+            title: "BNB beam time minus enable  gate opening time"
+            display_range: [ -0.5, 2000.0 ]
+          }
+
+          NuMIEnableTime:{
+            units: "us"
+            title: "NuMI beam time minus enable gate opening time"
+            display_range: [ -0.5, 2000.0 ]
+          }
+
+
+
+          
+          # ----------------------------------------------------------------
+          
+        }
+      } # metric_config_gates
+      
+      metric_config_LVDS: {
+
+        hostname: "icarus-db01.fnal.gov"
+  
+        streams: [ "slow", "fast", "archive" ]
+        
+        groups: {
+          TriggerLVDS: [ [0, 192] ]
+
+          // [ [0, 10] ] could also be
+          // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          // or
+          // example: [[0,8], 8, 9]
+        }
+        
+        metrics: {
+
+          # ----------------------------------------------------------------
+          # LVDS metrics
+          #
+          LVDSRate_cryo1_east01:{
+            units: "rate"
+            title: "Cryo1 East Conn 01 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+
+          LVDSRate_cryo1_east02:{
+            units: "value"
+            title: "Cryo1 East Conn 23 LVDS bits "
+            # display_range: [ -1., 65.0 ]
           } 
+
+          LVDSRate_cryo2_west01:{
+            units: "rate"
+            title: "Cryo1 West Conn 01 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+
+          LVDSRate_cryo2_west02:{
+            units: "value"
+            title: "Cryo1 West Conn 23 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
 
 
           # ----------------------------------------------------------------
           
         }
-      }
+      } # metric_config_LVDS
     }
   }
 

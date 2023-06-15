@@ -161,7 +161,7 @@ physics.producers.daqPMT:
   FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
 }
 
-physics.producers.daqTrigger: @local::decodeTrigger
+physics.producers.daqTrigger: @local::decodeTriggerAutodetect
 
 #add online purity producers
 physics.producers.purityana0:
@@ -251,48 +251,106 @@ physics.analyzers:
     SelectEvents: [tpc_only]
   }
   
+  //START TRIGGER SECTION
      triggerAnalysis: {
       SelectEvents: [trigger_only]
 
-      module_type: TriggerStreams
+      //module_type: TriggerStreams
+      module_type: TriggerMonitor
       
-      TriggerLabel: "daqTrigger"      
+      TriggerLabel: "daq:ICARUSTriggerV3"
       
-      TriggerMetricConfig: {
+      //adding metrics tested on root data file
+
+      //first group
+      metric_config_gates: {
 
         hostname: "icarus-db01.fnal.gov"
-  
-        streams: ["30s"]
-        
+
+        #streams: [ "slow", "fast", "archive" ]
+	streams: [ "archiving" ]
+
+        groups: {
+
+          // - all metrics in the gate-specific group have this many channels,
+          //   which need to match the hard-coded ones;
+          //   each channel contains the metric value of an event
+          TriggerGate:  [ [ 0, 500 ] ]
+
+          // [ [0, 10] ] could also be
+          // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          // or
+          // example: [[0,8], 8, 9]
+        }
+
         metrics: {
-	    Offbeam_BNB_RATE:{
-		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
-	    }
-            BNB_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }		 
-	}   
-      }
-   }
+          # ----------------------------------------------------------------
+          # beam metrics
+          #
+          BNBspillTime:{
+            units: "us"
+            title: "BNB trigger time minus beam gate opening time"
+            display_range: [ -1.5, 3.0 ]
+          }
+
+          NuMIspillTime:{
+            units: "us"
+            title: "NuMI trigger time minus beam gate opening time"
+            display_range: [ -1.5, 11.0 ]
+          }
+
+          # ----------------------------------------------------------------
+        }
+      } # metric_config_gates
+
+
+      //secong group : LVDS bits
+      metric_config_LVDS: {
+
+        hostname: "icarus-db01.fnal.gov"
+
+#        streams: [ "slow", "fast", "archive" ]
+	streams: [ "archiving" ]
+
+        groups: {
+          TriggerLVDS: [ [0, 192] ]
+
+          // [ [0, 10] ] could also be
+          // example: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          // or
+          // example: [[0,8], 8, 9]
+        }
+
+        metrics: {
+          # ----------------------------------------------------------------
+          # LVDS metrics
+          #
+          LVDSRate_cryo1_east01:{
+            units: "rate"
+            title: "Cryo1 East Conn 01 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+          LVDSRate_cryo1_east02:{
+            units: "value"
+            title: "Cryo1 East Conn 23 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+          LVDSRate_cryo2_west01:{
+            units: "rate"
+            title: "Cryo1 West Conn 01 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+          LVDSRate_cryo2_west02:{
+            units: "value"
+            title: "Cryo1 West Conn 23 LVDS bits "
+            # display_range: [ -1., 65.0 ]
+          }
+          # ----------------------------------------------------------------
+        }
+      } # metric_config_LVDS
+
+
+   }//END TRIGGER SECTION
 
    pmtAnalysis: {
 
@@ -527,19 +585,20 @@ physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale5,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale5, daqTPC ]
 physics.pmt_only: [ prescale1, daqPMT ]
-physics.trigger_only: [ prescale1, daqTrigger ]
+physics.trigger_only: [ prescale1 ]
+# physics.trigger_only: [ prescale1, daqTrigger ]
 physics.crt_only: [ prescale1 ]
 
 # BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
-physics.trigger_path: [trigger_only]
+physics.trg_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
 physics.crt_path: [ crt_only ]
 
-physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path,
-			 @sequence::physics.crt_path]
-#			 @sequence::physics.trigger_path]
+physics.trigger_paths: [ #@sequence::physics.tpc_path,
+		         #@sequence::physics.pmt_path,
+			 #@sequence::physics.crt_path,
+			 @sequence::physics.trg_path]
 
 
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
@@ -549,11 +608,16 @@ physics.anapmt: [ MetaPMT, pmtAnalysis , fragana ]
 physics.anacrt: [ CRTAna , fragana ]
 
 #physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [
+  #@sequence::physics.anatpc,
+  #@sequence::physics.anapmt,
+  #@sequence::physics.anacrt,
+  @sequence::physics.anatrigger
+]
 
 physics.decoded_stream: [ decodedout ]
 
-physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
+physics.end_paths: [ a ]#, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
 

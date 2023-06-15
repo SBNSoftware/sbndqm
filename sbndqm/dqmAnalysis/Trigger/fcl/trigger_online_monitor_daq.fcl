@@ -104,6 +104,13 @@ services.InitMetricManager.connections.fast.send_zeros: false
 services.InitMetricManager.connections.slow.send_zeros: false
 services.InitMetricManager.connections.archive.send_zeros: false
 
+
+services.ArtdaqSharedMemoryServiceInterface:
+{  service_provider: "ArtdaqSharedMemoryService"}
+
+ArtdaqFragmentNamingServiceInterface: 
+{ service_provider: IcarusFragmentNamingService }
+
 source:
 {
   module_type: TransferInput
@@ -122,8 +129,8 @@ source:
 
      unique_label: "TriggerOnlineMonitor"
       transferPluginType: Shmem
-      shm_key: 0x40471999
-      max_fragment_size_words: 2097152
+      shm_key: 0x40471454
+      max_fragment_size_words: 33554432
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
@@ -141,9 +148,9 @@ source:
            unique_label: "TriggerOnlineMonitor"
             transferPluginType: Shmem
 
-            shm_key: 0x40471999
+            shm_key: 0x40471454
 
-            max_fragment_size_words: 2097152
+            max_fragment_size_words: 33554432
               first_event_builder_rank: 0
               destination_rank: 6
         }

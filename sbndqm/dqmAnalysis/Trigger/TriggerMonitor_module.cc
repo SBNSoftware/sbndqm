@@ -50,6 +50,7 @@ namespace sbndaq {
         explicit TriggerMonitor(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
   
         void beginJob() override;
+        void beginRun(art::Run const& ) override;
         
         void analyze(art::Event const & evt) override;
         
@@ -168,6 +169,34 @@ namespace sbndaq {
         /// Gate counting information for all gates (index as in `GateIndex_t`).
         std::array<GateCounters_t, NGateIndices> fGateCounters;
         
+
+
+        /// Data for a gate type (BNB, NuMI etc.)
+        struct EnableGateCounters_t {
+
+            /// Number of events displayed for spill time plots
+            /// (same number for all gates; one channel per event)
+            static constexpr std::size_t NEnableTimeChannels = 500;
+
+            /// Highest accepted value for the spill time [ns]
+            double EnableTimeMaxAlarm;
+
+            /// Number of spill times above the accepted interval.
+            unsigned int nEnableTimeMaxAlarms = 0;
+
+            std::string name; ///< Name of the gate.
+
+            /// The next available channel for spill time plots.
+            std::size_t nextEnableTimeChannel = 0;
+
+        }; // GateCounters_t
+
+        /// Gate counting information for all gates (index as in `GateIndex_t`).
+        std::array<EnableGateCounters_t, NGateIndices> fEnableGateCounters;
+
+
+
+
         
         // --- BEGIN -- settings to match to configuration ---------------------
         
@@ -196,6 +225,18 @@ namespace sbndaq {
                 );
             }
 
+        std::string nextEnableTimeChannel(GateIndex_t gateIndex)
+            {
+                EnableGateCounters_t& gateCounters = fEnableGateCounters.at(gateIndex);
+                return std::to_string(
+                    gateCounters.nextEnableTimeChannel++
+                    % gateCounters.NEnableTimeChannels
+                );
+            }
+
+
+
+
  };
 
 }
@@ -216,10 +257,12 @@ sbndaq::TriggerMonitor::TriggerMonitor(fhicl::ParameterSet const & pset)
 {
 
   // Configure the redis metrics
-  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config_gates"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config_LVDS"));
   
   /// initialization of the counters
   GateCounters_t* gateCounters = nullptr;
+  EnableGateCounters_t* enablegateCounters = nullptr;
   
   gateCounters = &(fGateCounters[ixBNB]);
   gateCounters->name              = "BNB";
@@ -229,6 +272,15 @@ sbndaq::TriggerMonitor::TriggerMonitor(fhicl::ParameterSet const & pset)
   gateCounters->name              = "NuMI";
   gateCounters->SpillTimeMaxAlarm = 9600.0; // ns
   
+
+  enablegateCounters = &(fEnableGateCounters[ixBNB]);
+  enablegateCounters->name              = "BNB";
+  enablegateCounters->EnableTimeMaxAlarm = 2000000.0; // ns
+
+  enablegateCounters = &(fEnableGateCounters[ixNuMI]);
+  enablegateCounters->name              = "NuMI";
+  enablegateCounters->EnableTimeMaxAlarm = 2000000.0; // ns
+
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -253,8 +305,10 @@ void sbndaq::TriggerMonitor::clean() {
 //------------------------------------------------------------------------------------------------------------------
 void sbndaq::TriggerMonitor::beginJob() {
 
-  ResetMetricChannels();
+}
 
+void sbndaq::TriggerMonitor::beginRun(art::Run const& ) {
+  ResetMetricChannels();
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -270,6 +324,19 @@ void sbndaq::TriggerMonitor::ResetMetricChannels() {
         (gateGroupName, channelName, metricName, -999.0, level, artdaq::MetricMode::LastPoint);
     } // for channels
   } // for gates
+
+
+  for (EnableGateCounters_t const& counters: fEnableGateCounters) {
+    std::string const metricNameEnable = counters.name + "enableTime";
+
+    for (std::size_t channel = 0; channel < counters.NEnableTimeChannels; ++channel) {
+      std::string const channelNameEnable = std::to_string(channel);
+      sbndaq::sendMetric
+        (gateGroupName, channelNameEnable, metricNameEnable, -999.0, level, artdaq::MetricMode::LastPoint);
+    } // for channels
+  } // for enables
+
+
 } // sbndaq::TriggerMonitor::ResetMetricChannels()
 
 
@@ -289,6 +356,7 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
   artdaq::MetricMode const rate = artdaq::MetricMode::Rate;
   artdaq::MetricMode const mode = artdaq::MetricMode::Average;
   artdaq::MetricMode const value = artdaq::MetricMode::LastPoint;
+  artdaq::MetricMode const sum = artdaq::MetricMode::Accumulate;
 
   auto const & daqHandle = evt.getValidHandle<artdaq::Fragments>(m_trigger_tag);
   for( auto const & rawFrag: *daqHandle ){
@@ -311,7 +379,7 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
 			pBeamGateInfo->getNumber<unsigned int>(2U)
 		);
 
-		beamGate = rawBeamGateTS - 1'000'000'000ULL; 
+		beamGate = rawBeamGateTS - 1'000'000'000ULL; //'//KEEP!
 	}
 
 	std::cout << "-------------> Beam_TS          : " << beamGate << std::endl;
@@ -345,7 +413,7 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
                         pEnableInfo->getNumber<unsigned int>(2U)
                 );
 
-                enableTS = rawEnableTS - 1'000'000'000ULL;
+                enableTS = rawEnableTS - 1'000'000'000ULL; //'//GIANLUCA! HAVE PITY ON THIS POOR EMACS!
         }
 
         std::cout << "-------------> Enable_TS        : " << enableTS << std::endl;
@@ -565,13 +633,26 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     std::cout << i << "  " << gt_info[i].gt_gateType << std::endl;
     //beamTS
     std::cout << i << "  " << gt_info[i].gt_beamTS << std::endl;
+    //enable TS
+    std::cout << i << "  " << gt_info[i].gt_enableTS << std::endl;
     //global Trigger TS
     std::cout << i << "  " << gt_info[i].gt_globalTriggerTS << std::endl;
+
 
     //check if GT outside beam gate
 
     double const trigFromBeam
       = ((gt_info[i].gt_globalTriggerTS - gt_info[i].gt_beamTS) - 4000) / 1000.0; // 4000 ns: veto
+      std::cout
+        << " BEAM CHECKS: GT TS  " << gt_info[i].gt_globalTriggerTS  << "  Beam TS  " << gt_info[i].gt_beamTS    << "   trigFromBeam " << trigFromBeam
+        << std::endl;
+
+    double const trigFromEnable
+      = ((gt_info[i].gt_beamTS - gt_info[i].gt_enableTS)) / 1000.0 ; // 1000000 == 1ms  == enable
+      std::cout
+        << " ENABLE CHECKS: Beam TS  " << gt_info[i].gt_beamTS  << "  Enable TS  " << gt_info[i].gt_enableTS    << "   trigFromEnable " << trigFromEnable 
+        << std::endl;
+
 
     // identify which gate we are dealing with:
     GateIndex_t gateIndex = NGateIndices;
@@ -584,7 +665,9 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     if (gateIndex != NGateIndices) { // metrics here only support BNB and NuMI
     
       GateCounters_t& gateCounters = fGateCounters.at(gateIndex);
+      EnableGateCounters_t& enablegateCounters = fEnableGateCounters.at(gateIndex);
       
+      //print GT TS - beam TS
       std::cout 
         << "beam " << gateCounters.name << " (" << gt_info[i].gt_gateType << ")"
         << "\nCheck " << gateCounters.name << " (GT TS - beam TS) :  " << trigFromBeam
@@ -595,13 +678,39 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
         std::cout << "ERROR GT TS AFTER end of " << gateCounters.name << " Beam gate !!!" << std::endl;
         ++gateCounters.nSpillTimeMaxAlarms;
       }
+
+      // GT TS - enable TS
+      std::cout
+        << "beam " << enablegateCounters.name << " (" << gt_info[i].gt_gateType << ")"
+        << "\nCheck " << enablegateCounters.name << " (Beam TS - enable TS) :  " << trigFromEnable
+        << "\nCall sendMetric enableTime"
+        << std::endl;
+
+      if ( trigFromEnable > enablegateCounters.EnableTimeMaxAlarm) {
+        std::cout << "ERROR GT TS AFTER end of " << enablegateCounters.name << " Enable Beam gate !!!" << std::endl;
+        ++enablegateCounters.nEnableTimeMaxAlarms;
+      }
+
       
       std::string metricName;
       metricName = gateCounters.name + "spillTime";
-      sbndaq::sendMetric(gateGroupName, nextSpillTimeChannel(gateIndex), metricName, trigFromBeam, level, value);
-      
+      {
+        auto chan_name = nextSpillTimeChannel(gateIndex);
+        std::cout << "TRIGGER! SEND METRIC " << gateGroupName << " " << chan_name << " " << metricName << " " << trigFromBeam << std::endl;
+        sbndaq::sendMetric(gateGroupName, chan_name, metricName, trigFromBeam, level, value);
+      }
+
+      std::string enablemetricName;
+      enablemetricName = enablegateCounters.name + "enableTime";
+      {
+        auto chan_name = nextEnableTimeChannel(gateIndex);
+        std::cout << "TRIGGER! SEND METRIC " << gateGroupName << " " << chan_name << " " << enablemetricName << " " << trigFromEnable << std::endl;
+        sbndaq::sendMetric(gateGroupName, chan_name, enablemetricName, trigFromEnable, level, value);
+      }
+
     } // if supported gate
     //
+
 
     int doEnable = 0;
     if (doEnable == 1) {
@@ -634,7 +743,8 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     if (doCryos == 1)  {
 
     //check on Trigger Source distribution (ie triggers by Cryostat)
-    // Cryostat 1
+  
+     // Cryostat 1 (EAST)
     if ( gt_info[i].gt_triggerSource == 1 ) {
     std::cout << "Trigger source in Cryo1  " << gt_info[i].gt_triggerSource << std::endl;
     //getting the LVDS bits for cryo1East01
@@ -645,54 +755,81 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
     std::bitset<64U> LVDSbitsEast01{ cryo1East01 };
     for (int bit = 0; bit < 64; ++bit) {
     //std::cout << "In bits loop  "  << bit << std::endl;
-    //????  
-    //if (LVDSbitsEast01[bit]) fHistLVDSbitsEast01->Fill(bit);
      if (LVDSbitsEast01[bit]) { 
        std::cout << " bit " << std::dec << bit << std::endl;
        
-     //fill vector ??
-     //  int pos = cryo1_east01_bits.begin() + bit;
-     //  cryo1_east01_bits.fill_n(pos, 1, 1);
      //sending the metric here only sends the non-zero bits
-     sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", 1, level, value);
+     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", 1, level, value);
+     //we are sending the Accumulate metric
+     sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", 1, level, sum);
      }
-    //sending the metric here alos send the zeroes
+    //sending the metric here also sends the zeroes
     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", int(LVDSbitsEast01[bit]), level, value);
     }
-    //bndaq::sendMetric(gateGroupName, nextSpillTimeChannel(gateIndex), metricName, trigFromBeam, level, value);
-    //std::cout << " Vector " << cryo1_east01_bits;
-    //send bits
-    ///sbndaq::sendMetric(groupName, bits_cryostat1, "Cryostat 1 LVDS bits ", n_cryostat1_bit , level, value);
     
     //getting the LVDS bits for cryo1East02
     std::cout << "Extracting  the bits from cryo1East23   "  << std::hex << cryo1East23 << "   " << std::dec << cryo1East23 << std::endl;
     std::bitset<64U> LVDSbitsEast02{ cryo1East23 };
     for (int bit = 0; bit < 64; ++bit) {
     //std::cout << "In bits loop  "  << bit << std::endl;
-    //????  
-    //if (LVDSbitsEast01[bit]) fHistLVDSbitsEast01->Fill(bit);
      if (LVDSbitsEast02[bit]) {
        std::cout << " bit " << std::dec << bit << std::endl;
-     //fill vector ??
+
      //sending the metric here only send the non-zero bits
-     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", int(LVDSbitsEast02(bit]), level, value);
+     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", 1, level, mode);
+     //we are sending the Accumulate metric
+     sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", 1, level,sum );
     }
     //sending the metric here also sends the zeros
     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", int(LVDSbitsEast02[bit]), level, value);
     }
 
-    }//triggersource ==1
+    }//triggersource == 1
 
-    //
-    // Cryostat 2
+    
+    // Cryostat 2 (WEST)
     if ( gt_info[i].gt_triggerSource == 2 ) {
-    std::cout << "Trigger source in Cryo1  " << gt_info[i].gt_triggerSource << std::endl;
-    n_cryostat2_rate++;
-    //send rate;
-    //sbndaq::sendMetric(groupName, rate_cryostat2, "Cryostat 2 rate ", n_cryostat2_rate , level, rate);
+    std::cout << "Trigger source in Cryo2  " << gt_info[i].gt_triggerSource << std::endl;
+    //getting the LVDS bits for cryo2West01
+    std::cout << "Checking  the bits from cryo2West01   "  << std::hex << cryo2West01 << "   " << std::dec << cryo2West01 << std::endl;
+    std::cout << "Checking  the bits from cryo2West23   "  << std::hex << cryo2West23 << "   " << std::dec << cryo2West23 << std::endl;
+
+    std::cout << "Extracting  the bits from cryo2West01   "  << std::hex << cryo2West01 << "   " << std::dec << cryo2West01 << std::endl;
+    std::bitset<64U> LVDSbitsWest01{ cryo2West01 };
+    for (int bit = 0; bit < 64; ++bit) {
+    //std::cout << "In bits loop  "  << bit << std::endl;
+     if (LVDSbitsWest01[bit]) {
+       std::cout << " bit " << std::dec << bit << std::endl;
+
+     //sending the metric here only sends the non-zero bits
+     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", 1, level, value);
+     //we are sending the Accumulate metric
+     sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo2_west01", 1, level, sum);
+     }
+    //sending the metric here also sends the zeroes
+    //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east01", int(LVDSbitsEast01[bit]), level, value);
     }
 
-    }//doCryos
+    //getting the LVDS bits for cryo1West02
+    std::cout << "Extracting  the bits from cryo2West23   "  << std::hex << cryo2West23 << "   " << std::dec << cryo2West23 << std::endl;
+    std::bitset<64U> LVDSbitsWest02{ cryo2West23 };
+    for (int bit = 0; bit < 64; ++bit) {
+    //std::cout << "In bits loop  "  << bit << std::endl;
+     if (LVDSbitsWest02[bit]) {
+       std::cout << " bit " << std::dec << bit << std::endl;
+
+     //sending the metric here only send the non-zero bits
+     //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", 1, level, mode);
+     //we are sending the Accumulate metric
+     sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo2_west02", 1, level,sum );
+    }
+    //sending the metric here also sends the zeros
+    //sbndaq::sendMetric("TriggerLVDS", std::to_string(bit), "LVDSRate_cryo1_east02", int(LVDSbitsEast02[bit]), level, value);
+    }
+
+    }//triggersource == 2
+
+    }//end doCryos
 
 
     //check rates by beam type and trigger type
@@ -778,6 +915,7 @@ void sbndaq::TriggerMonitor::analyze(art::Event const & evt) {
 }//end of loop on events ??        
 
 
+  //OLD trigger code by Andrea/Wes. CANNOT find Data product raw::Trigger now
   // Now we get the trigger information
   art::Handle< std::vector<raw::Trigger> > triggerHandle;
   evt.getByLabel( m_trigger_tag, triggerHandle );
