@@ -131,7 +131,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // name of producer of raw::RawDigits
   //std::string producers = param.get<std::string>("producer_name");
   producers = param.get<std::vector<std::string>>("raw_digit_producers");
-  std::string header_producer = param.get<std::string>("header_producer");
+  header_producer = param.get<std::string>("header_producer");
 
   instance = param.get<std::string>("raw_digit_instance", "");  
 

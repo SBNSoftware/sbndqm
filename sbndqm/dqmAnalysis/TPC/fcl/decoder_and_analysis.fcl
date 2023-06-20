@@ -29,7 +29,7 @@ physics:
       module_type: OfflineAnalysis
       // producer of digits and header info
       raw_digit_producers: [daq]
-      header_producer: ""
+      header_producer: "daq"
 
       // channel info
       channel_info: @local::SBND_simple_channel_info
