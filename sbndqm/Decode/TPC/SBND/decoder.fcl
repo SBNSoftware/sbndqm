@@ -17,7 +17,7 @@ physics:
       // produce timestamps in units of mus
       frame_to_dt: 0.5
       // parameters for header index
-      min_slot_no: 5
+      min_slot_no: 3
       channel_per_slot: 64
     }
   }
