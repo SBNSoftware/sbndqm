@@ -46,7 +46,9 @@ physics:
 
       metric_config: {
         streams: [slow, fast]
-        groups: [tpc_channel]
+        groups: {
+            tpc_channel:[[0,1024]]
+        }
         metrics: {
           rms: {
             units: ADC
@@ -88,6 +90,9 @@ services:
     }
   }
 } 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile" 
 
 source:
 {
