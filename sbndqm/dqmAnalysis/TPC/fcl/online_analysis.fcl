@@ -41,7 +41,7 @@ physics:
       reduce_data: false
 
       // number of headers per event provided by input (will be ignored if value is negative)
-      // 16 for SBND data
+      // 16 for SBND data, 1 header per FEM
       n_headers: 16
 
       metric_config: {
