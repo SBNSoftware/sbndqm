@@ -23,6 +23,7 @@
 
 #include "ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
+//#include "sbndqm/Decode/TPC/NTBHeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 
@@ -92,9 +93,11 @@ public:
     std::vector<std::string> producers;
     std::string instance;
     std::string header_producer;
+    //std::string ntbheader_producer;
     int static_input_size;
 
     int n_headers;
+    //int ntbn_headers;
     float threshold;
     float threshold_sigma;
     
@@ -136,6 +139,7 @@ public:
   // other functions
   void ProcessChannel(const raw::RawDigit &digits);
   void ProcessHeader(const tpcAnalysis::HeaderData &header);
+  //void ProcessNTBHeader(const ntbAnalysis::NTBHeaderData &ntbheader);
 
   // if the containers filled by the analysis are ready to be processed
   bool EmptyEvent();
@@ -155,7 +159,7 @@ public:
   // raw digits container for each event
   std::vector<art::Ptr<raw::RawDigit>> _raw_digits_handle;
   FFTManager _fft_manager;
-
+  //  std::vector<ntbAnalysis::NTBHeaderData> _ntbheader_data;
 private:
   unsigned _event_ind;
   // keep track of timing data (maybe)
@@ -163,7 +167,9 @@ private:
 
   // header data container for each event
   art::Handle<std::vector<tpcAnalysis::HeaderData>> _header_data_handle;
+  //art::Handle<std::vector<ntbAnalysis::NTBHeaderData>> _ntbheader_data_handle;
 };
+
 
 
 

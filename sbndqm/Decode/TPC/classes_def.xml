@@ -3,4 +3,9 @@
   <class name="std::vector<tpcAnalysis::HeaderData>"/>
   <class name="art::Wrapper<tpcAnalysis::HeaderData>"/>
   <class name="art::Wrapper<std::vector<tpcAnalysis::HeaderData>>"/>
+
+  <class name="ntbAnalysis::NTBHeaderData"/>
+  <class name="std::vector<ntbAnalysis::NTBHeaderData>"/>                                                                                  
+  <class name="art::Wrapper<ntbAnalysis::NTBHeaderData>"/>    
+  <class name="art::Wrapper<std::vector<ntbAnalysis::NTBHeaderData>>"/>      
 </lcgdict>

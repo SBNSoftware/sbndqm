@@ -42,6 +42,7 @@
 #include "Analysis.hh"
 #include "ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
+//#include "sbndqm/Decode/TPC/NTBHeaderData.hh"
 #include "FFT.hh"
 #include "Noise.hh"
 #include "PeakFinder.hh"
@@ -59,7 +60,7 @@ Analysis::Analysis(fhicl::ParameterSet const & p) :
   _header_data(std::max(_config.n_headers,0)),
   _thresholds( (_config.threshold_calc == 3) ? _channel_info.NChannels() : 0),
   _fft_manager(  (_config.static_input_size > 0) ? _config.static_input_size: 0)
-
+//_ntbheader_data(std::max(_config.ntbn_headers,1))
 {
   _event_ind = 0;
 }
@@ -119,6 +120,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // how many headers to expect (set to negative if don't process) 
   // Expects the passed in HeaderData objects to have "index" values in [0, n_headers)
   n_headers = param.get<int>("n_headers", -1);
+  //ntbn_headers = param.get<int>("ntbn_headers", -1);
 
   // whether to calculate/save certain things
   fft_per_channel = param.get<bool>("fft_per_channel", false);
@@ -132,7 +134,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   //std::string producers = param.get<std::string>("producer_name");
   producers = param.get<std::vector<std::string>>("raw_digit_producers");
   std::string header_producer = param.get<std::string>("header_producer");
-
+  //std::string ntbheader_producer = param.get<std::string>("ntbheader_producer");
   instance = param.get<std::string>("raw_digit_instance", "");  
 
 }
@@ -241,6 +243,15 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
       ProcessHeader(header);
     }
   }
+
+  /* if (_config.ntbn_headers > 0) {
+    // get the header data                                                                                                          
+    event.getByLabel(_config.ntbheader_producer, _ntbheader_data_handle);
+    for (const ntbAnalysis::NTBHeaderData &ntbheader: *_ntbheader_data_handle) {
+      ProcessNTBHeader(ntbheader);
+    }
+    }*/
+
   if (_config.timing) {
     _timing.EndTime(&_timing.copy_headers);
   }
@@ -259,7 +270,14 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
 
 void Analysis::ProcessHeader(const tpcAnalysis::HeaderData &header) {
   _header_data[header.index] = header;
+  
 }
+
+
+/*void Analysis::ProcessNTBHeader(const ntbAnalysis::NTBHeaderData &ntbheader) {
+  _ntbheader_data = ntbheader;
+
+  }*/
 	      
 void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   auto channel = digits.Channel();

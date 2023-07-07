@@ -6,4 +6,6 @@
 
 #pragma link C++ class HeaderData+;
 #pragma link C++ class std::vector<HeaderData>+;
+#pragma link C++ class NTBHeaderData+;
+#pragma link C++ class std::vector<NTBHeaderData>+;
 #endif
