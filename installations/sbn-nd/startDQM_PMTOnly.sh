@@ -1,7 +1,5 @@
 #!/bin/bash
 
-MRBDIR=/home/nfs/sbnddqm/DQM_DevAreas/LN_DQM_22Feb2023/
-
 function printhelp() {
   echo "Starts the online monitoring. Can be run in the foreground or background."
   echo "To stop while running in the foreground, type Ctrl-C to send SIGINT."
@@ -46,7 +44,6 @@ function fail() {
 
 function main() {
   trap cleanup SIGINT
-  cd $MRBDIR
   source /daq/software/products/setup
   source $MRB_TOP/localProducts_sbndqm_v1_02_00_e20_prof/setup
   setup mrb
