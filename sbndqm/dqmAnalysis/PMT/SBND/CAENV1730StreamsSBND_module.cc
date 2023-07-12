@@ -42,6 +42,9 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "sbndqm/dqmAnalysis/TPC/FFT.hh"
+#include "sbndqm/dqmAnalysis/TPC/FFT.cc"
+
 
 namespace sbndaq {
 
@@ -73,25 +76,36 @@ namespace sbndaq {
         pmtana::PMTPulseRecoBase* threshAlg;
         pmtana::PMTPedestalBase*  pedAlg;
 
+        FFTManager _fft_manager;
+
  
         void clean();
 
         template<typename T> T Median( std::vector<T> data ) const ;
-
-        //int16_t Median(std::vector<int16_t> data, size_t n_adc);
-        
-        //double Median(std::vector<double> data, size_t n_adc);
-      
-        //double RMS(std::vector<int16_t> const& data, size_t n_adc, int16_t baseline ) const;
-    
   };
+}
 
+//------------------------------------------------------------------------------------------------------------------
+
+
+void sbndaq::CAENV1730StreamsSBND::clean() {
+
+  //m_get_temperature.clear();
 
 }
 
+//------------------------------------------------------------------------------------------------------------------
 
+template<typename T>
+  T sbndaq::CAENV1730StreamsSBND::Median( std::vector<T> data ) const {
 
+    std::nth_element( data.begin(), data.begin() + data.size()/2, data.end() );
+    
+    return data[ data.size()/2 ];
 
+  }  
+
+//------------------------------------------------------------------------------------------------------------------
 
 sbndaq::CAENV1730StreamsSBND::CAENV1730StreamsSBND(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
@@ -100,6 +114,7 @@ sbndaq::CAENV1730StreamsSBND::CAENV1730StreamsSBND(fhicl::ParameterSet const & p
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
   , pulseRecoManager()
+  , _fft_manager(0)
 {
 
   // Configure the redis metrics 
@@ -142,75 +157,7 @@ sbndaq::CAENV1730StreamsSBND::CAENV1730StreamsSBND(fhicl::ParameterSet const & p
   
 }
 
-//------------------------------------------------------------------------------------------------------------------
-
-
-void sbndaq::CAENV1730StreamsSBND::clean() {
-
-  //m_get_temperature.clear();
-
-}
-
-
-//-------------------------------------------------------------------------------------------------------------------
-
-/*
-int16_t sbndaq::CAENV1730StreamsSBND::Median(std::vector<int16_t> data, size_t n_adc) 
-{
-  // First we sort the array
-  std::sort(data.begin(), data.end());
-
-  // check for even case
-  if (n_adc % 2 != 0)
-    return data[n_adc / 2];
-
-  return (data[(n_adc - 1) / 2] + data[n_adc / 2]) / 2.0;
-}
-
-
-double sbndaq::CAENV1730StreamsSBND::Median(std::vector<double> data, size_t n_adc) 
-{
-  // First we sort the array
-  std::sort(data.begin(), data.end());
-
-  // check for even case
-  if (n_adc % 2 != 0)
-    return data[n_adc / 2];
-
-  return (data[(n_adc - 1) / 2] + data[n_adc / 2]) / 2.0;
-}
-*/
-
-
-//------------------------------------------------------------------------------------------------------------------
-
-/*
-double sbndaq::CAENV1730StreamsSBND::RMS(std::vector<int16_t> const& data, size_t n_adc, int16_t baseline ) const
-{
-  double ret = 0;
-  for (size_t i = 0; i < n_adc; i++) {
-    ret += (data[i] - baseline) * (data[i] - baseline);
-  }
-  return sqrt(ret / n_adc);
-}
-*/
-
-//------------------------------------------------------------------------------------------------------------------
-
-template<typename T>
-  T sbndaq::CAENV1730StreamsSBND::Median( std::vector<T> data ) const {
-
-    std::nth_element( data.begin(), data.begin() + data.size()/2, data.end() );
-    
-    return data[ data.size()/2 ];
-
-  }  
-
-//------------------------------------------------------------------------------------------------------------------
-
-
 void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
-
 
   int level = 3; 
 
@@ -260,16 +207,46 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       // Send the metrics 
       sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
       sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
-      sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rms information
-        
+      sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rate information
+          
 
-      // Now we send a copy of the waveforms 
-      double tickPeriod = 0.002; // [us] 
+      // Now we send a copy of the waveforms
+      double tickPeriod = 0.002; // [us]
       std::vector<std::vector<raw::ADC_Count_t>> adcs {opdetwaveform};
-      std::vector<int> start { 0 }; // We are considreing each waveform independent for now 
+      std::vector<int> start { 0 }; // We are considreing each waveform independent for now
 
+      // send waveform
       sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
+
+
+      // Now we send a copy of the waveeform FFT
+      size_t NADC = opdetwaveform.Waveform().size();
+      double tickPeriodFFT = 1./tickPeriod; // [us], change this harcoding
+      //std::cout<<"Waveform size: "<<NADC<<" tickPeriodFFT="<<tickPeriodFFT<<std::endl;
+      _fft_manager.Set(NADC);
+      
+      // fill FFT
+      for (size_t i = 0; i < NADC; i ++) {
+	double *input = _fft_manager.InputAt(i);
+        *input = (double) opdetwaveform.Waveform().at(i);
+      }
+      _fft_manager.Execute();
+
+      std::vector<float> adcsFFT;
+      double real=0, im=0;
+      for(size_t k=0; k<_fft_manager.OutputSize();k++){
+        real=_fft_manager.ReOutputAt(k);
+        im=_fft_manager.ImOutputAt(k);
+        adcsFFT.push_back( std::sqrt(real*real+im*im) );
+        //std::cout<<real<<":"<<im<<" FFT: "<<k<<" "<<adcsFFT.at(k).size()<<std::endl;
+      }
+
+      // send waveform FFT
+      sbndaq::SendWaveform("snapshot:fft:PMT:" + pmtId_s, adcsFFT, tickPeriodFFT);
+      
+      // send EventMeta
       sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
+
 
     } // for      
 

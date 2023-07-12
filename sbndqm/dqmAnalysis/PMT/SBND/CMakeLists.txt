@@ -28,6 +28,7 @@ simple_plugin( CAENV1730StreamsSBND "module"
   sbndaq_online_hiredis
 
   sbndqm_Decode_PMT_PMTDecodeData
+  tpcAnalysis_SBN
 
   larana_OpticalDetector_OpHitFinder
 
