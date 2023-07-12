@@ -48,16 +48,7 @@ function main() {
   trap cleanup SIGINT
   cd $MRBDIR
   source /daq/software/products/setup
-  
-  setup mrb
-  #added and removed by Fran
-#  unsetup mrb
-#  setup mrb v5_19_05
-  
-  #added and removed by Fran
-  #source localProducts_sbndqm_v0_05_00_e19_prof_s94/setup
   source $MRB_TOP/localProducts_sbndqm_v1_02_00_e20_prof/setup
-  
   setup mrb
   mrbsetenv
   mrbslp
