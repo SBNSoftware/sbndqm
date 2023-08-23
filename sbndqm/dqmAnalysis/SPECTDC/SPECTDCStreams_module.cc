@@ -106,39 +106,79 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> DAQTimestampVec;
   art::fill_ptr_vector(DAQTimestampVec, DAQTimestampHandle);
 
-  // Example: Fill SPECTDC variables to local vector for doing maths
+  // Fill SPECTDC variables to local vector for doing metric maths
   unsigned nDAQTimestamps = DAQTimestampVec.size();
-  std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl;
-  
+  unsigned nCRTT1 = 0;
+  unsigned nBES = 0;
+  unsigned nRWM = 0;
+  unsigned nFTRIG = 0;
+  unsigned nETRIG = 0;
+ 
   _tdc_channel.resize(nDAQTimestamps);
   _tdc_timestamp.resize(nDAQTimestamps);
   _tdc_offset.resize(nDAQTimestamps);
   _tdc_name.resize(nDAQTimestamps);
-
+ 
   for(unsigned i = 0; i < nDAQTimestamps; ++i) {
       auto ts = DAQTimestampVec[i];
-
+      
+      if (ts->Channel() == 0) nCRTT1++;
+      if (ts->Channel() == 1) nBES++;
+      if (ts->Channel() == 2) nRWM++;
+      if (ts->Channel() == 3) nFTRIG++;
+      if (ts->Channel() == 4) nETRIG++;
+     
       _tdc_channel[i] = ts->Channel();
+      _tdc_name[i] = ts->Name();
       _tdc_timestamp[i] = ts->Timestamp();
-      _tdc_offset[i]    = ts->Offset();
-      _tdc_name[i]      = ts->Name();
+      _tdc_offset[i] = ts->Offset();
 
       std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl;
   }
+  
+  std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl;
+  std::cout << "nCRTT1 = " << nCRTT1 << std::endl;
+  std::cout << "nBES = " << nBES << std::endl;
+  std::cout << "nRWM = " << nRWM << std::endl;
+  std::cout << "nFTRIG = " << nFTRIG << std::endl;
+  std::cout << "nETRIG = " << nETRIG << std::endl;
  
+  //------------------------------------------------------------------------------//
   // TODO: Do math metrics here
   
   /* Reminder: SPEC TDC channel inputs
-     ch0: CRT T1 reset  -- once per event
-     ch1: BES -- once per event
-     ch2: RWM  -- once per event
-     ch3: FTRIG from PTB  -- multiple per event
-     ch4: ETRIG from PTB  -- once per event
+     ch0: CRT T1 reset (from PTB)  -- once per event
+     ch1: BES (Beam Early Signal) -- once per event
+     ch2: RWM (Resistor Wall Monitor) -- once per event
+     ch3: FTRIG (Flash trigger from PTB)  -- multiple per event
+     ch4: ETRIG (Event trigger from PTB)  -- once per event
   */
 
+  // Metric 1: Exact 1 ETRIG
+   
+  // Metric 2: Exact 1 CRT T1 Reset (different number of CRT T1 for different streams)
 
+  // Metric 3: ~10 FTRIG
+
+  // Metric 4: Exact 1 BES
+
+  // Metric 5: Exact 1 RWM
+
+  // Metric 6: RWM - BES diff constant
+
+  // Metric 7: CRT T1 - BES diff constant
+
+  // Metric 8: ETRIG - BES diff ~1.6us + jitter
+
+  // Metric 9: ETRIG - RWM diff ~1.6us + jitter
+
+  // Metric 10: ETRIG - FTRIG diff ~3ms + jitter
+
+  // Metric 11: BES - FTRIG diff ~3ms + jitter  
+
+  //------------------------------------------------------------------------------//
   // TODO: Then send metrics
-  // Example 3: change metric_ID (i.e. channel ID), metric_name (i.e. channel name), metric_value (i.e. channel timestamp)
+  // Example: change metric_ID (i.e. channel ID), metric_name (i.e. channel name), metric_value (i.e. channel timestamp)
   // sbndaq::sendMetric(groupName, metric_ID, "metric_name", metric_value , level, mode); 
 
   std::cout << "--------------Finish event " << _event << std::endl << std::endl;
