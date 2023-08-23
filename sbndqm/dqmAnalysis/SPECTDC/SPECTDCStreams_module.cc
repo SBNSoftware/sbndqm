@@ -64,10 +64,25 @@ namespace sbndaq {
         //Define your variables         
         int _event;
 
-        std::vector<uint32_t>    _tdc_channel;
-        std::vector<uint64_t>    _tdc_timestamp;
-        std::vector<uint64_t>    _tdc_offset;
-        std::vector<std::string> _tdc_name;
+        //Group by channel 0
+        std::vector<uint64_t>    _tdc_timestamp0;
+        std::vector<std::string> _tdc_name0;
+        
+        //Group by channel 1 
+        std::vector<uint64_t>    _tdc_timestamp1;
+        std::vector<std::string> _tdc_name1;
+        
+        //Group by channel 2 
+        std::vector<uint64_t>    _tdc_timestamp2;
+        std::vector<std::string> _tdc_name2;
+        
+        //Group by channel 3 
+        std::vector<uint64_t>    _tdc_timestamp3;
+        std::vector<std::string> _tdc_name3;
+        
+        //Group by channel 4 
+        std::vector<uint64_t>    _tdc_timestamp4;
+        std::vector<std::string> _tdc_name4;
   };
 }
 
@@ -89,6 +104,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   //artdaq::MetricMode rate = artdaq::MetricMode::Rate;
   //std::string groupName = "SPECTDC";
 
+  //------------------------------------------------------------------------------//
   //Get event number
   _event = e.id().event();
 
@@ -108,40 +124,59 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
 
   // Fill SPECTDC variables to local vector for doing metric maths
   unsigned nDAQTimestamps = DAQTimestampVec.size();
-  unsigned nCRTT1 = 0;
-  unsigned nBES = 0;
-  unsigned nRWM = 0;
-  unsigned nFTRIG = 0;
-  unsigned nETRIG = 0;
- 
-  _tdc_channel.resize(nDAQTimestamps);
-  _tdc_timestamp.resize(nDAQTimestamps);
-  _tdc_offset.resize(nDAQTimestamps);
-  _tdc_name.resize(nDAQTimestamps);
+  unsigned nch0 = 0;
+  unsigned nch1 = 0;
+  unsigned nch2 = 0;
+  unsigned nch3 = 0;
+  unsigned nch4 = 0;
  
   for(unsigned i = 0; i < nDAQTimestamps; ++i) {
-      auto ts = DAQTimestampVec[i];
-      
-      if (ts->Channel() == 0) nCRTT1++;
-      if (ts->Channel() == 1) nBES++;
-      if (ts->Channel() == 2) nRWM++;
-      if (ts->Channel() == 3) nFTRIG++;
-      if (ts->Channel() == 4) nETRIG++;
-     
-      _tdc_channel[i] = ts->Channel();
-      _tdc_name[i] = ts->Name();
-      _tdc_timestamp[i] = ts->Timestamp();
-      _tdc_offset[i] = ts->Offset();
+    auto ts = DAQTimestampVec[i];
+    
+    if (ts->Channel() == 0) nch0++;
+    if (ts->Channel() == 1) nch1++;
+    if (ts->Channel() == 2) nch2++;
+    if (ts->Channel() == 3) nch3++;
+    if (ts->Channel() == 4) nch4++;
 
-      std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl;
+    std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl;
   }
   
   std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl;
-  std::cout << "nCRTT1 = " << nCRTT1 << std::endl;
-  std::cout << "nBES = " << nBES << std::endl;
-  std::cout << "nRWM = " << nRWM << std::endl;
-  std::cout << "nFTRIG = " << nFTRIG << std::endl;
-  std::cout << "nETRIG = " << nETRIG << std::endl;
+  std::cout << "nCRTT1 = " << nch0 << std::endl;
+  std::cout << "nBES = " << nch1 << std::endl;
+  std::cout << "nRWM = " << nch2 << std::endl;
+  std::cout << "nFTRIG = " << nch3 << std::endl;
+  std::cout << "nETRIG = " << nch4 << std::endl;
+  
+  for(unsigned i = 0; i < nDAQTimestamps; ++i) {
+      auto ts = DAQTimestampVec[i];
+      
+      if (ts->Channel() == 0) {
+        _tdc_timestamp0.push_back(ts->Timestamp() + ts->Offset());
+        _tdc_name0.push_back(ts->Name());
+      } 
+      
+      if (ts->Channel() == 1) {
+        _tdc_timestamp1.push_back(ts->Timestamp() + ts->Offset());
+        _tdc_name1.push_back(ts->Name());
+      } 
+      
+      if (ts->Channel() == 2) {
+        _tdc_timestamp2.push_back(ts->Timestamp() + ts->Offset());
+        _tdc_name2.push_back(ts->Name());
+      } 
+      
+      if (ts->Channel() == 3) {
+        _tdc_timestamp3.push_back(ts->Timestamp() + ts->Offset());
+        _tdc_name3.push_back(ts->Name());
+      } 
+      
+      if (ts->Channel() == 4) {
+        _tdc_timestamp4.push_back(ts->Timestamp() + ts->Offset());
+        _tdc_name4.push_back(ts->Name());
+      } 
+   }
  
   //------------------------------------------------------------------------------//
   // TODO: Do math metrics here
@@ -154,17 +189,30 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
      ch4: ETRIG (Event trigger from PTB)  -- once per event
   */
 
-  // Metric 1: Exact 1 ETRIG
-   
+  // Metric 1: Exact 1 ETRIG  
+
   // Metric 2: Exact 1 CRT T1 Reset (different number of CRT T1 for different streams)
 
   // Metric 3: ~10 FTRIG
 
   // Metric 4: Exact 1 BES
+  bool oneBES = false;
+  if (nch1 == 1) oneBES = true; 
+  std::cout << "Is there 1 BES? " << oneBES << std::endl;  
 
   // Metric 5: Exact 1 RWM
+  bool oneRWM = false;
+  if (nch0 == 1) oneRWM = true; 
+  std::cout << "Is there 1 RWM? " << oneRWM << std::endl;  
 
   // Metric 6: RWM - BES diff constant
+  //If you get exact one RWM and BES
+  if( oneBES == true && oneRWM == true) {
+    //Do something here
+   
+  }
+  //What if you don't get exact one?
+  // else {}
 
   // Metric 7: CRT T1 - BES diff constant
 
