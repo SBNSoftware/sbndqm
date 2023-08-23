@@ -1,0 +1,27 @@
+process_name: SPECTDCDQM
+
+physics: {
+  
+  analyzers: {
+
+   dqmSPECTDC: {
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "spectdc"
+    }
+  }
+
+  trigger_paths: [ ]
+  
+  ana: [ dqmSPECTDC ] 
+  end_paths: [ ana ]
+}
+
+services: {
+  TFileService: { fileName: "spectdc_dqm_%d.root"}
+} 
+
+source: {
+  module_type: RootInput
+}
