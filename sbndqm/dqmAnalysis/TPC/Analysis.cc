@@ -46,6 +46,7 @@
 #include "Noise.hh"
 #include "PeakFinder.hh"
 #include "sbndqm/Decode/Mode/Mode.hh"
+#include "sbndaq-artdaq-core/Overlays/SBND/NevisTPCFragment.hh"
 
 using namespace tpcAnalysis;
 
@@ -235,11 +236,12 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   }
   // deal with the header
   if (_config.n_headers > 0) {
-    // get the header data
-    event.getByLabel(_config.header_producer, _header_data_handle);
-    for (const tpcAnalysis::HeaderData &header: *_header_data_handle) {
-      ProcessHeader(header);
-    }
+    art::InputTag tag1 {"daq"};
+    if (auto hdrs = event.getHandle<std::vector<tpcAnalysis::HeaderData>>(tag1)) {
+      for (auto const& hdr: *hdrs){
+        ProcessHeader(hdr);
+     }
+
   }
   if (_config.timing) {
     _timing.EndTime(&_timing.copy_headers);
