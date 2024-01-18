@@ -3,7 +3,7 @@
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v1_02_03)
 parent sbndqm
-defaultqual e20
+defaultqual e26
 
 # These optional lines define the installed directories where headers,
 # libraries, and executables will be found.
@@ -36,7 +36,7 @@ fwdir   product_dir scripts
 
 product             version  
 sbndaq_online       v1_01_00
-sbncode             v09_75_03_02
+sbncode             v09_81_02
 fhiclpy             v4_02_00
 cetmodules          v3_21_01 - only_for_build
 end_product_list
@@ -46,6 +46,8 @@ end_product_list
 qualifier         sbndaq_online   sbncode    fhiclpy notes
 e20:prof          e20:prof        e20:prof   e20:prof
 e20:debug         e20:debug       e20:debug  e20:debug
+e26:prof          e26:prof        e26:prof   e26:prof
+e26:debug         e26:debug       e26:debug  e26:debug
 end_qualifier_list
 
 table_fragment_begin
