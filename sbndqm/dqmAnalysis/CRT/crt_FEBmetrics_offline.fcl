@@ -3,11 +3,13 @@
 process_name: Dump
 
 services: {
-  TFileService: { fileName: "crt_test_1.root" }
-  RedisConnection: {
-    host: "icarus-db01.fnal.gov"
-  }
+  # TFileService: { fileName: "crt_test_1.root" }
+  # RedisConnection: {
+  #  host: "sbnd-db01.fnal.gov"
+  # }
 #  message: @local::standard_debug
+
+  RedisConnection: @local::redis_connection
   InitMetricManager: {
     connections: {
       #fast: @local::redis_metric_fast
@@ -17,11 +19,16 @@ services: {
   }
 }
 
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+# services.RedisConnection.port: 6379
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876" 
+
 #source is a root file
 source:
 {
   module_type: RootInput
   maxEvents:   9999999        # Number of events to create
+  
 }
 
 outputs:
@@ -42,36 +49,76 @@ physics:
 
     metric_board_config: {
 	groups:{
-                CRT_board:[[1,97]] 
-                CRT_board_top:[[1,123]] 
-		}                  
+		CRT_board:[193,85,87,88,89,79,80,81,0]
+		}                
 	streams:[archiving]
 		
 	metrics:{
 		TS0:{}
 		TS1:{}
-		n_events:{}
+		T0clockdrift:{}
+		T1clockdrift:{}
+		
 		MaxADCValue:{}
+		MaxADCChannel:{}
+		Flag:{}
+	
 		baseline:{}	
 
                 earlysynch:{alarmrange: [-100000,100000] }
                 latesynch:{ alarmrange: [-100000,100000] }
 
-                lastbighit:{ alarmrange: [0,100000000] }
+                #lastbighit:{ alarmrange: [0,100000000] }
+		
+		CRT_hits_beam_plane_0:{}
+		CRT_hits_beam_plane_1:{}
+		CRT_hits_beam_plane_2:{}
+		CRT_hits_beam_plane_3:{}
+		CRT_hits_beam_plane_4:{}
+		CRT_hits_beam_plane_5:{}
+		CRT_hits_beam_plane_6:{}
+		
+		T1_resets_per_event:{}
+		
+		num_fragments:{}
+		num_hits:{}
 }
 }
     metric_channel_config: {
 	groups:{
-                CRT_channel:[[0,256]]
+                CRT_channel:[[0,10000]]
 	}
-	streams:[slow,fast]
+	streams:[archiving]
 
         metrics:{
                 ADC:{
 			display_range: [0, 5000]
 		}
+		lastbighit:{}
 		}	
 	}
+	
+    metric_event_config: {
+    	groups:{
+		CRT_event:[0]
+	}
+	streams:[archiving]
+
+        metrics:{
+                
+		}
+    	}
+	
+    metric_fragment_config: {
+    	groups:{
+		CRT_cont_frag:[]
+	}
+	streams:[archiving]
+
+        metrics:{
+                
+	}
+    	}
 
 }
 
@@ -86,3 +133,6 @@ physics:
  #ie analyzers and output streams.  these all run simultaneously
  end_paths:     [ ana ]  
 }
+
+
+

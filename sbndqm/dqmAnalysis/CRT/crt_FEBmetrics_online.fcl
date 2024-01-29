@@ -1,0 +1,229 @@
+#include "redis_connection.fcl"
+
+process_name: Dump
+
+services: {
+  # TFileService: { fileName: "crt_test_1.root" }
+   #RedisConnection: {
+   # host: "sbnd-db01.fnal.gov"
+   #}
+#  message: @local::standard_debug
+
+  RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+# services.RedisConnection.port: 6379
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876" 
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+
+#services.ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: "Artdaq" }
+
+
+#source:
+#{
+#  module_type: TransferInput
+#  
+#  commanderPluginType: xmlrpc
+#  dispatcherHost: localhost
+#  dispatcherPort: 6022
+#
+#  
+#  transfer_plugin: {
+#
+#           unique_label: "SBNDCRTOnlineMonitor"
+#            transferPluginType: Shmem
+#
+#            shm_key: 0x95353988
+#
+#            max_fragment_size_words: 100000000 #58543672 #33554432
+#              first_event_builder_rank: 0
+#              destination_rank: 6
+#        }
+#  
+#  dispatcher_config: {
+#    unique_label: "SBNDCRTOnlineMonitor"
+#    path: [ out ]
+#    physics: {}
+#    outputs: {
+#      out: {
+#        module_type: TransferOutput
+#        transfer_plugin: {
+#
+#           unique_label: "SBNDCRTMonitor"
+#            transferPluginType: Shmem
+#
+#            shm_key: 0x95353988
+#
+#            max_fragment_size_words: 100000000 #58543672 #33554432
+#              first_event_builder_rank: 0
+#              destination_rank: 6
+#        }
+#      }
+#    }
+#  }
+#}
+#
+source: {
+   commanderPluginType: "xmlrpc"
+   dispatcherHost: "localhost"
+   dispatcherPort: 6022
+   dispatcher_config: {
+      outputs: {
+         out: {
+            module_type: "TransferOutput"
+            transfer_plugin: {
+               destination_rank: 6
+               first_event_builder_rank: 0
+               max_fragment_size_words: 1e8
+               shm_key: 1.078400084e9
+               transferPluginType: "Shmem"
+               unique_label: "OnlineMonitor"
+            }
+         }
+      }
+      path: [
+         "out"
+      ]
+      physics: {}
+      unique_label: "OnlineMonitor"
+}
+   module_type: "TransferInput"
+   register_fragment_types: false
+   timeoutInUsecs: 5e7
+   transfer_plugin: {
+      destination_rank: 6
+      first_event_builder_rank: 0
+      max_fragment_size_words: 1e8
+      shm_key: 1.078400084e9
+      source_rank: 5
+      transferPluginType: "Shmem"
+      unique_label: "OnlineMonitor"
+   }
+}
+
+outputs:
+{
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+
+physics:
+{
+
+ producers:{}
+
+ filters:{}
+
+ analyzers:{
+
+   crtana: {
+     module_type: BernCRTdqm
+
+    metric_board_config: {
+	groups:{
+		#CRT_board:[193,85,87,88,89,79,80,81,0]
+		CRT_board:[88, 152, 156, 153, 159, 134, 135, 238, 155, 151, 150, 136, 157, 158, 182, 149, 73, 181]
+		}                
+	streams:[archiving]
+		
+	metrics:{
+		TS0:{}
+		TS1:{}
+		T0clockdrift:{}
+		T1clockdrift:{}
+		
+		MaxADCValue:{}
+		MaxADCChannel:{}
+		Flag:{}
+		
+		baseline:{}	
+
+                earlysynch:{alarmrange: [-100000,100000] }
+                latesynch:{ alarmrange: [-100000,100000] }
+
+                #lastbighit:{ alarmrange: [0,100000000] }
+		
+		#CRT_hits_beam_plane_0:{}
+		#CRT_hits_beam_plane_1:{}
+		#CRT_hits_beam_plane_2:{}
+		#CRT_hits_beam_plane_3:{}
+		#CRT_hits_beam_plane_4:{}
+		#CRT_hits_beam_plane_5:{}
+		#CRT_hits_beam_plane_6:{}
+		
+		#T1_resets_per_event:{}
+		
+		#num_fragments:{}
+		#num_hits:{}
+}
+}
+    metric_channel_config: {
+	groups:{
+                CRT_channel:[[0,7616]]
+	}
+	streams:[archiving]
+
+        metrics:{
+                ADC:{
+			display_range: [0, 4000]
+		}
+		lastbighit:{}
+		}	
+	}
+	
+    metric_event_config: {
+    	groups:{
+	}
+	streams:[archiving]
+
+        metrics:{
+                
+		}
+    	}
+	
+    metric_fragment_config: {
+    	groups:{
+		CRT_cont_frag:[]
+	}
+	streams:[archiving]
+
+        metrics:{
+                
+		}
+    	}
+
+}
+
+ }
+ 
+ 
+
+
+ #define the output stream, there could be more than one if using filters 
+ stream1:  [ ]
+ ana: [ crtana ]
+
+  out1 : [dumper]
+  end_paths: [ ana ]
+ #end_paths is a keyword and contains the paths that do not modify the art::Event, 
+ #ie analyzers and output streams.  these all run simultaneously
+ #end_paths:     [ ana ]  
+}
+
+
+
