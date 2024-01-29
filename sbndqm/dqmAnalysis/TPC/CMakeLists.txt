@@ -23,8 +23,9 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
+			art_root_io::tfile_support
+			art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
 			art_Persistency_Provenance
         	${ART_FRAMEWORK_IO_SOURCES}
@@ -52,7 +53,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 			${Boost_SYSTEM_LIBRARY}
 )
 
-simple_plugin( OfflineAnalysis module
+cet_build_plugin( OfflineAnalysis art::module
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -64,13 +65,15 @@ simple_plugin( OfflineAnalysis module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
+			art_root_io::tfile_support
+			art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
+		${ROOT_BASIC_LIB_LIST} 
 )
 
-simple_plugin( TPCWaveformCreator module
+cet_build_plugin( TPCWaveformCreator art::module
   sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
@@ -83,13 +86,14 @@ simple_plugin( TPCWaveformCreator module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
+			art_root_io::tfile_support
+			art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
 )
 
-simple_plugin( OnlineAnalysis module
+cet_build_plugin( OnlineAnalysis art::module
   sbndaq_online_storage
   sbndaq_online_redis_connection
   sbndaq_online_hiredis
@@ -104,14 +108,15 @@ simple_plugin( OnlineAnalysis module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
+			art_root_io::tfile_support
+			art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins
 )
 
-simple_plugin( TPCPurityDQMSender module
+cet_build_plugin( TPCPurityDQMSender art::module
   sbndaq_online_storage
   sbndaq_online_redis_connection
   sbndaq_online_hiredis
@@ -126,13 +131,14 @@ simple_plugin( TPCPurityDQMSender module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}#
-			art_root_io_tfile_support#
-			art_root_io_TFileService_service
+			art_root_io::tfile_support#
+			art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins
 )
-simple_plugin( TPCWaveformAndFftRedis module
+cet_build_plugin( TPCWaveformAndFftRedis art::module
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -144,8 +150,9 @@ simple_plugin( TPCWaveformAndFftRedis module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-                        art_root_io_tfile_support
-                        art_root_io_TFileService_service
+                        art_root_io::tfile_support
+                        art_root_io::TFileService_service
+			art_root_io::art_root_io
                         art_Persistency_Common
                 ${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins

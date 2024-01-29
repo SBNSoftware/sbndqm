@@ -10,7 +10,7 @@ physics:
       module_type: OnlineAnalysis
       // producer of digits and header info
       raw_digit_producers: [daq]
-      header_producer: ""
+      header_producer: "daq"
 
       // channel info
       channel_info: @local::SBND_simple_channel_info
@@ -41,12 +41,14 @@ physics:
       reduce_data: false
 
       // number of headers per event provided by input (will be ignored if value is negative)
-      // 10 for SBND data
-      n_headers: 10
+      // 16 for SBND data, 1 header per FEM
+      n_headers: 16
 
       metric_config: {
         streams: [slow, fast]
-        groups: [tpc_channel]
+        groups: {
+            tpc_channel:[[0,11263]]
+        }
         metrics: {
           rms: {
             units: ADC
@@ -88,6 +90,9 @@ services:
     }
   }
 } 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile" 
 
 source:
 {
