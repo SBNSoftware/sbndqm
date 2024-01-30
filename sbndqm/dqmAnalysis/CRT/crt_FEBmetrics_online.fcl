@@ -28,53 +28,7 @@ services.ArtdaqSharedMemoryServiceInterface:
   service_provider: "ArtdaqSharedMemoryService"
 }
 
-#services.ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: "Artdaq" }
 
-
-#source:
-#{
-#  module_type: TransferInput
-#  
-#  commanderPluginType: xmlrpc
-#  dispatcherHost: localhost
-#  dispatcherPort: 6022
-#
-#  
-#  transfer_plugin: {
-#
-#           unique_label: "SBNDCRTOnlineMonitor"
-#            transferPluginType: Shmem
-#
-#            shm_key: 0x95353988
-#
-#            max_fragment_size_words: 100000000 #58543672 #33554432
-#              first_event_builder_rank: 0
-#              destination_rank: 6
-#        }
-#  
-#  dispatcher_config: {
-#    unique_label: "SBNDCRTOnlineMonitor"
-#    path: [ out ]
-#    physics: {}
-#    outputs: {
-#      out: {
-#        module_type: TransferOutput
-#        transfer_plugin: {
-#
-#           unique_label: "SBNDCRTMonitor"
-#            transferPluginType: Shmem
-#
-#            shm_key: 0x95353988
-#
-#            max_fragment_size_words: 100000000 #58543672 #33554432
-#              first_event_builder_rank: 0
-#              destination_rank: 6
-#        }
-#      }
-#    }
-#  }
-#}
-#
 source: {
    commanderPluginType: "xmlrpc"
    dispatcherHost: "localhost"

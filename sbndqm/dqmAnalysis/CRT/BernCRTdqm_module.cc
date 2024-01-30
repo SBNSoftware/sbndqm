@@ -2,9 +2,39 @@
 // Class:       BernCRTdqm
 // Module Type: analyzer
 // File:        BernCRTdqm_module.cc
-// Description: Makes a tree with waveform information.
-// Modified by Matt King August 2023 for use on SBND
+// Description:
+// Modified by Matt King January 2024 for use on SBND
 // mking9@uchicago.edu
+//
+// This Module sends metrics from the SBND CRT modules to the redis database
+// 
+// Current metrics being monitored:
+//	Channel-level:
+//		ADC - the ADC value for a hit on a channel
+//		lastbighit - the time on a given hit since the last hit above 600 ADC threshold
+//	Board-level:
+//		MaxADCValue - Maximum ADC value across all channels on board
+//		MaxADCChannel - Channel which has the maximum ADC Value - given as index 0-31 + 32*mac5 (absolute channel reference)
+//		Baseline - average of channels across board, not including the maximum 2 channel values (cut out possible signals)
+//		T0 - T0 timestamp of a hit
+//		T1 - T1 timestamp of a hit
+//		T0Clockdrift - For T0 reset event, difference of T0 timestamp from pps
+//		T1Clockdrift - For a T1 reset event, difference of T1 timestamp from beam signal (NEED TO IMPLEMENT)
+//		Earlysynch - Difference of timestamp to beginning of pull window
+//		Latesynch - Difference of timestamp to end of pull window
+//	Fragment-Level:
+//		Flag - flag of the fragment
+//		frag_count - number of fragments sent 
+//		zero_rate - number of empty fragments sent
+//	Event-Level (mostly for offline monitoring of artroot events):
+//		num_fragments - number of fragments sent in the event
+//		num_hits - number of hits across all fragments in the event
+//
+// To-do:
+//	1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
+//	2. Turn lastbighit threshold into a fcl parameter
+//	3. Include beam timing information to make T1Clockdrift useful		
+//
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -38,7 +68,6 @@
 #include <iostream>
 #include <unistd.h>
 
-
 namespace sbndaq {
   class BernCRTdqm;
 }
@@ -59,7 +88,6 @@ private:
 
    uint64_t lastbighit[32];
 
-  uint16_t silly = 0;
   bool debug = true;
 
   //sample histogram
@@ -79,12 +107,9 @@ sbndaq::BernCRTdqm::BernCRTdqm(fhicl::ParameterSet const & pset)
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   }
-  //if (p.has_key("metric_config")) {
-  //  sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
-  //}
   //sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics")); //This causes the error for no "metrics" at the beginning or the end
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_channel_config"));
-  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));  //This line cauess the code to not be able to compile -- undefined reference to this thing Commenting out this line allows it to compile
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));
   
   this->reconfigure( pset );
 }
@@ -122,7 +147,10 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
     auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*handle);
     
-    //Send fragment_level metrics here...
+    /////////////////////////////////
+    // Send Fragment Level Metrics //
+    /////////////////////////////////
+    
     //Copied from FragmentDQMAna_module.cc
     
     for (auto const& frag : *handle){
@@ -162,7 +190,11 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     hit_vector.insert(hit_vector.end(),this_hit_vector.begin(),this_hit_vector.end());
   }
   
-  //Event-level variables
+    ///////////////////////////////////////
+    // Extract Information from the Hits //
+    ///////////////////////////////////////
+  
+  //Event-level variables for art root events - basic checks unnecessary for online monitoring
   size_t num_fragments = fragmentHandles.size();
   size_t num_hits = hit_vector.size();
   
@@ -206,16 +238,9 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
     const uint16_t * adc = hit.adc;
 
-    silly++;
     for(int ch=0; ch<32; ch++) {
       if( adc[ch] > 600 ) {
-        //cout << ts1 << std::endl;
-        //sbndaq::BernCRTdqm::lastbighit[ch] = ts1 - 1e9;
-        //std::cout << "Okay a big hit!";
-        //std::cout << frag.timestamp() << "\n";
         sbndaq::BernCRTdqm::lastbighit[ch] = fragment_timestamp;
-        //std::cout << sbndaq::BernCRTdqm::lastbighit[ch] << "\n";
-
       }
     }
     const uint64_t & this_poll_end             = hit.this_poll_end;
@@ -241,19 +266,27 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       num_t1_resets++;
     }
     
+    ///////////////////////////
+    // Channel-Level Metrics //
+    ///////////////////////////
+    
     int maxindex = -1;
     for(int i = 0; i<32; i++) {
       totaladc  += adc[i];
       ADCchannel = adc[i];
-      uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i]; //this means that lastbighit[i] = 0 for now...
+      uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
       /////    RMSchannel = rms[i];
       
-      //Need to incorporate the channel numbers this way into the fcl file. For now, I'll get rid of the board number...
+      //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
       
       //sbndaq::sendMetric("CRT_channel", std::to_string(i), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
       //sbndaq::sendMetric("CRT_channel", std::to_string(i), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
+      
+    /////////////////////////
+    // Board-Level Metrics //
+    /////////////////////////
 
       if(adc[i] > max){
         max = adc[i];
@@ -328,12 +361,8 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
 
     sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
-    
     sbndaq::sendMetric("CRT_board", readout_number_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
-
     sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-
-    //Per board front end metric group
     sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
     
@@ -347,7 +376,9 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     
   } //loop over all CRT hits in an event
   
-  //Event-level metrics:
+    /////////////////////////
+    // Event-Level Metrics //
+    /////////////////////////
   //Currently using "0" as my blank Mac5 address for the event-level metrics.
   
   //Metrics which are on the Grafana:
@@ -370,7 +401,6 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //Other event-level metrics:
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
-
 
 
 } //analyze
