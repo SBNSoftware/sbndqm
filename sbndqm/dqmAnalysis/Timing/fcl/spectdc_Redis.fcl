@@ -1,0 +1,79 @@
+#include "redis_connection.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+
+  producers:  {
+
+    daqSPECTDC: {
+      module_type:           "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+
+    }
+
+  }
+
+  analyzers: {
+
+   dqmSPECTDC: {
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "daqSPECTDC"
+      SPECTDCMetricConfig: {
+
+        hostname: "sbnd-db.fnal.gov"
+
+        streams: ["30s"]
+
+        metrics: {
+          redis_metric_fast: { // can be named anything
+          level: 3
+          metricPluginType: "redis" 
+          // period in seconds to send metric to database
+          reporting_interval: 2.0
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":fast" 
+        }
+        redis_metric_slow: { // can be named anything
+          level: 3
+          metricPluginType: "redis" 
+          reporting_interval: 10.0
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":slow" 
+        }
+
+        }
+      }
+    }
+  }
+  
+  my_producer_modules: [daqSPECTDC]
+  trigger_paths: [my_producer_modules ]
+
+  ana: [ dqmSPECTDC ]
+  end_paths: [ ana ]
+}
+
+services: {
+  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
+ 
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+source: {
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}

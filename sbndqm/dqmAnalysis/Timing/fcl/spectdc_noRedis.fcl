@@ -1,0 +1,38 @@
+process_name: SPECTDCDQM
+
+physics: {
+
+  producers:  {
+
+    daqSPECTDC: {
+      module_type:           "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+
+    }
+
+  }
+
+  analyzers: {
+
+   dqmSPECTDC: {
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "daqSPECTDC"
+    }
+  }
+  
+  my_producer_modules: [daqSPECTDC]
+  trigger_paths: [my_producer_modules ]
+
+  ana: [ dqmSPECTDC ]
+  end_paths: [ ana ]
+}
+
+services: {
+  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
+}
+
+source: {
+  module_type: RootInput
+}

@@ -1,0 +1,63 @@
+nclude "redis_connection.fcl"
+#include "decode_spectdc_sbnd.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+
+  producers: {
+    decodeSPECTDC: @local::spec_tdc_decoder_sbnd
+  }
+
+  analyzers: {
+
+   dqmSPECTDC: {
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "spectdc"
+
+// DQM Stuff: Comment out for now
+//       SPECTDCMetricConfig: {
+//
+//        hostname: "sbnd-db.fnal.gov"
+//
+//        streams: ["30s"]
+//
+//        metrics: {
+//
+//        }
+//      }
+    }
+
+  prod: [ decodeSPECTDC ]
+  trigger_paths: [ prod ]
+
+  ana: [ dqmSPECTDC ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+  TFileService: { fileName: "spectdc_dqm_%d.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+}
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}

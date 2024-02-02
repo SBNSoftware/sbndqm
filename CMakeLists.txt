@@ -81,4 +81,3 @@ add_subdirectory(tools)
 
 # packaging utility
 cet_cmake_config()
-#include(UseCPack)
