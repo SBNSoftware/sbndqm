@@ -9,7 +9,7 @@ my_gitbranch="develop"
 my_devdir=DAQ_02Jun20
 my_projname=sbndqm
 my_new=False
-my_redishost=icarus-db01.fnal.gov
+my_redishost=icarus-db02.fnal.gov
 my_dispatcherfcl=" -f dispatcher_sbndqm_v3.fcl "
 
 while [[ "$#" -gt 0 ]]; do case $1 in

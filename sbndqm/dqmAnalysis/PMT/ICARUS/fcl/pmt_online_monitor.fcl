@@ -1,34 +1,7 @@
-#include "simple_channel_info.fcl"
 #include "redis_connection.fcl"
-#include "opticaldetectormodules.fcl"
+#include "pmt_online_monitor_configuration.fcl"
 
-
-
-icarus_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
-icarus_opreco_pedestal_rmsslider.BeamGateSamples:   1
-icarus_opreco_pedestal_rmsslider.SampleSize:        30
-icarus_opreco_pedestal_rmsslider.Threshold:         4.0
-icarus_opreco_pedestal_rmsslider.Verbose:           false
-icarus_opreco_pedestal_rmsslider.NWaveformsToFile:  0
-icarus_opreco_pedestal_rmsslider.MaxSigma:          4.0
-icarus_opreco_pedestal_rmsslider.PedRangeMax:       16000
-icarus_opreco_pedestal_rmsslider.PedRangeMin:       13000
-icarus_opreco_pedestal_rmsslider.NumPreSample:      10
-icarus_opreco_pedestal_rmsslider.NumPostSample:     20
-
-icarus_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
-icarus_opreco_hit_slidingwindow.PositivePolarity:    false
-icarus_opreco_hit_slidingwindow.NumPreSample:        5
-icarus_opreco_hit_slidingwindow.NumPostSample:       10
-icarus_opreco_hit_slidingwindow.ADCThreshold:        10 # ADC threshold (absolute) above pedestal mean to fire a pulse
-icarus_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
-icarus_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
-icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
-icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
-icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
-icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
-icarus_opreco_hit_slidingwindow.Verbosity:           false
-
+process_name: ICARUSPMTANALYSIS
 
 physics: {
   
@@ -51,8 +24,8 @@ physics: {
       OpDetWaveformLabel: "daqPMT"
 
       reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
-      PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
+      HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
+      PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
 
 
       PMTMetricConfig: {
@@ -94,7 +67,7 @@ physics: {
   my_producer_modules: [ daqPMT ]
   trigger_paths: [ my_producer_modules ]
   
-  ana: [ pmtAnalysis ]
+  ana: [ pmtAnalysis ] 
   end_paths: [ ana ]
 
 }
@@ -124,6 +97,5 @@ source:
   module_type: RootInput
   fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
 }
-
 
 process_name: ICARUSPMTANALYSIS
