@@ -105,7 +105,7 @@ daq::DaqDecoderSBNDPMT::DaqDecoderSBNDPMT(Parameters const & params)
   , m_input_tags{ params().FragmentsLabels() }
 
 {
-  std::cout<<"  MessageFran: Initialized decoder\n";
+
   // Output data products
   produces<std::vector<raw::OpDetWaveform>>();
   produces<std::vector<pmtAnalysis::PMTDigitizerInfo>>();
@@ -250,7 +250,6 @@ void daq::DaqDecoderSBNDPMT::produce(art::Event & event)
 {
 
   // Make the list of the input fragments 
-  std::cout<<" MessageFran...in produce funcion in DaqDecoderSBNDPMT\n";
   try {
 
     auto fragmentHandles = readHandles( event );
