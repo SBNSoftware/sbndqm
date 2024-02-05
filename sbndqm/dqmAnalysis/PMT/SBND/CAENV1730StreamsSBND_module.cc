@@ -58,8 +58,8 @@ namespace sbndaq {
   
     private:
 
-      const unsigned int nChannelsPerBoard = 16;
-      const unsigned int nBoards = 24;
+      static constexpr unsigned int nChannelsPerBoard = 16;
+      static constexpr unsigned int nBoards = 24;
       unsigned int nTotalChannels = nBoards*nChannelsPerBoard;
         
         art::InputTag m_opdetwaveform_tag;
