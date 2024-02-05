@@ -1,0 +1,95 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+#include "pmt_stream_config_SBND.fcl"
+
+physics: {
+  
+  producers: {
+
+    daqPMT: {
+      module_type: DaqDecoderSBNDPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+
+  }
+
+  analyzers: {
+
+   pmtAnalysis: {
+
+      module_type: CAENV1730StreamsSBND
+      
+
+      OpDetWaveformLabel: "daqPMT"
+
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::sbnd_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::sbnd_opreco_pedestal_rmsslider 
+
+
+      PMTMetricConfig: {
+
+        hostname: "sbnd-db.fnal.gov"
+    
+        groups: {
+            PMT: [ [0, 380] ]
+        }
+
+        streams: ["30s"]
+        
+        metrics: {
+        
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [0., 50.]
+          }
+
+          pedestal: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [7000, 9000]
+          }
+          
+          rate: {
+            untis: Hz 
+            title: "%(group)s channel %(instance)s single PMT rate" 
+            display_range: [ 100000, 300000 ]
+          }
+
+        }   
+      }
+    }
+  }
+
+
+  my_producer_modules: [ daqPMT ]
+  trigger_paths: [ my_producer_modules ]
+  
+  ana: [ pmtAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+
+
+process_name: SBNDPMTANALYSIS
