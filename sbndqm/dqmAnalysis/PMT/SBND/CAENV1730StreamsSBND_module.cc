@@ -228,7 +228,7 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       // fill FFT
       for (size_t i = 0; i < NADC; i ++) {
 	double *input = _fft_manager.InputAt(i);
-        *input = (double) opdetwaveform.Waveform().at(i);
+        *input = (double) opdetwaveform.Waveform()[i];
       }
       _fft_manager.Execute();
 
