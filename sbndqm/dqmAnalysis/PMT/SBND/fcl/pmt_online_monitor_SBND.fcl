@@ -75,7 +75,6 @@ physics: {
 
 services: {
 
-  TFileService: { fileName: "waveformtest.root"}
 
   RedisConnection: @local::redis_connection
 
