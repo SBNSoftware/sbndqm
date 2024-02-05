@@ -15,11 +15,7 @@
 #include "cetlib_except/exception.h"
 #include "canvas/Utilities/InputTag.h"
 
-#include "fhiclcpp/ParameterSet.h"
-#include "fhiclcpp/types/TableAs.h"
 #include "fhiclcpp/types/Sequence.h"
-#include "fhiclcpp/types/OptionalAtom.h"
-#include "fhiclcpp/types/Atom.h"
 
 #include <memory>
 #include <vector>
