@@ -76,7 +76,7 @@ namespace sbndaq {
         pmtana::PMTPulseRecoBase* threshAlg;
         pmtana::PMTPedestalBase*  pedAlg;
 
-        FFTManager _fft_manager;
+        FFTManager fftManager;
 
  
         void clean();
@@ -114,7 +114,7 @@ sbndaq::CAENV1730StreamsSBND::CAENV1730StreamsSBND(fhicl::ParameterSet const & p
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
   , pulseRecoManager()
-  , _fft_manager(0)
+  , fftManager(0)
 {
 
   // Configure the redis metrics 
@@ -223,22 +223,21 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       size_t NADC = opdetwaveform.Waveform().size();
       double tickPeriodFFT = 1./tickPeriod; // [us], change this harcoding
       //std::cout<<"Waveform size: "<<NADC<<" tickPeriodFFT="<<tickPeriodFFT<<std::endl;
-      _fft_manager.Set(NADC);
+      fftManager.Set(NADC);
       
       // fill FFT
       for (size_t i = 0; i < NADC; i ++) {
-	double *input = _fft_manager.InputAt(i);
+	double *input = fftManager.InputAt(i);
         *input = (double) opdetwaveform.Waveform()[i];
       }
-      _fft_manager.Execute();
+      fftManager.Execute();
 
       std::vector<float> adcsFFT;
       double real=0, im=0;
-      for(size_t k=0; k<_fft_manager.OutputSize();k++){
-        real=_fft_manager.ReOutputAt(k);
-        im=_fft_manager.ImOutputAt(k);
+      for(size_t k=0; k<fftManager.OutputSize();k++){
+        real=fftManager.ReOutputAt(k);
+        im=fftManager.ImOutputAt(k);
         adcsFFT.push_back( std::hypot(real,im) );
-        //std::cout<<real<<":"<<im<<" FFT: "<<k<<" "<<adcsFFT.at(k).size()<<std::endl;
       }
 
       // send waveform FFT
