@@ -168,8 +168,8 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
 
 
   // Now we look at the waveforms 
-  art::Handle< std::vector<raw::OpDetWaveform> > opdetHandle;
-  evt.getByLabel( m_opdetwaveform_tag, opdetHandle );
+  art::Handle opdetHandle
+   = evt.getHandle<std::vector<raw::OpDetWaveform>>( m_opdetwaveform_tag);
 
   if( opdetHandle.isValid() && !opdetHandle->empty() ) {
 
