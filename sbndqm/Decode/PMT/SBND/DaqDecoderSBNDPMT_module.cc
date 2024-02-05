@@ -138,9 +138,8 @@ std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderSBNDPMT::readHandles(
 
   for( art::InputTag const& input_tag : m_input_tags ) {
 
-    art::Handle<artdaq::Fragments> thisHandle;
-
-    if( !event.getByLabel<std::vector<artdaq::Fragment>>(input_tag, thisHandle) ) continue;
+    art::Handle<artdaq::Fragments> thisHandle
+      = event.getHandle<std::vector<artdaq::Fragment>>(input_tag);
     if( !thisHandle.isValid() || thisHandle->empty() ) continue;
 
     handles.push_back( thisHandle );
