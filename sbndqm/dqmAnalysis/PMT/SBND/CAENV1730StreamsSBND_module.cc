@@ -237,7 +237,7 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       for(size_t k=0; k<_fft_manager.OutputSize();k++){
         real=_fft_manager.ReOutputAt(k);
         im=_fft_manager.ImOutputAt(k);
-        adcsFFT.push_back( std::sqrt(real*real+im*im) );
+        adcsFFT.push_back( std::hypot(real,im) );
         //std::cout<<real<<":"<<im<<" FFT: "<<k<<" "<<adcsFFT.at(k).size()<<std::endl;
       }
 
