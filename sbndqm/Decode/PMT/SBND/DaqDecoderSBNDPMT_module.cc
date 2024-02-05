@@ -70,7 +70,7 @@ namespace daq
 
       std::vector<art::Handle<artdaq::Fragments>> readHandles( art::Event const & event ) const;
 
-      artdaq::Fragments readFragments( std::vector<art::Handle<artdaq::Fragments>> handles );
+      artdaq::Fragments readFragments( std::vector<art::Handle<artdaq::Fragments>> const& handles ) const;
 
       void processFragment( const artdaq::Fragment &artdaqFragment );
 
@@ -151,7 +151,7 @@ std::vector<art::Handle<artdaq::Fragments>> daq::DaqDecoderSBNDPMT::readHandles(
 } 
 
 
-artdaq::Fragments daq::DaqDecoderSBNDPMT::readFragments( std::vector<art::Handle<artdaq::Fragments>> handles ) {
+artdaq::Fragments daq::DaqDecoderSBNDPMT::readFragments( std::vector<art::Handle<artdaq::Fragments>> const& handles ) const {
 
   // Hopefully-not-too-sloppy-code to create the fragment list out of the container  
   artdaq::Fragments fragments;
