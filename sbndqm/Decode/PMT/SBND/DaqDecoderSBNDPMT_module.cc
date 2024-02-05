@@ -180,7 +180,7 @@ artdaq::Fragments daq::DaqDecoderSBNDPMT::readFragments( std::vector<art::Handle
       
       if ( handle->front().type() != sbndaq::detail::FragmentType::CAENV1730  ) { break; }
 	
-      for( auto frag : *handle ) {
+      for( auto const& frag : *handle ) {
 	  
 	       fragments.emplace_back( frag );
       }
