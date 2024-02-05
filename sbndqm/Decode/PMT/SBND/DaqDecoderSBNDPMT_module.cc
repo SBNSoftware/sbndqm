@@ -22,6 +22,7 @@
 #include <array>
 #include <utility> // std::pair, std::move()
 #include <stdlib.h>
+#include <cassert>
 
 #include "art/Framework/Core/ModuleMacros.h"
 #include "artdaq-core/Data/Fragment.hh"
@@ -157,7 +158,9 @@ artdaq::Fragments daq::DaqDecoderSBNDPMT::readFragments( std::vector<art::Handle
   artdaq::Fragments fragments;
   
   for( const auto& handle : handles ) {
-    
+
+    assert(!handle->empty());
+
     if( handle->front().type() == artdaq::Fragment::ContainerFragmentType ) {
       
       for ( auto const& cont : *handle ) {
@@ -198,17 +201,17 @@ void daq::DaqDecoderSBNDPMT::processFragment( const artdaq::Fragment &artdaqFrag
   size_t const fragment_id = artdaqFragment.fragmentID();
   size_t const eff_fragment_id = fragment_id & 0x0fff;
 
-  sbndaq::CAENV1730Fragment fragment(artdaqFragment);
-  sbndaq::CAENV1730FragmentMetadata metafrag = *fragment.Metadata();
-  sbndaq::CAENV1730Event evt = *fragment.Event();
-  sbndaq::CAENV1730EventHeader header = evt.Header;
-  size_t nChannelsPerBoard = metafrag.nChannels;
+  sbndaq::CAENV1730Fragment const fragment(artdaqFragment);
+  sbndaq::CAENV1730FragmentMetadata const metafrag = *fragment.Metadata();
+  sbndaq::CAENV1730Event const evt = *fragment.Event();
+  sbndaq::CAENV1730EventHeader const header = evt.Header;
+  size_t const nChannelsPerBoard = metafrag.nChannels;
 
   
-  uint32_t ev_size_quad_bytes         = header.eventSize;
-  uint32_t evt_header_size_quad_bytes = sizeof(sbndaq::CAENV1730EventHeader)/sizeof(uint32_t);
-  uint32_t data_size_double_bytes     = 2*(ev_size_quad_bytes - evt_header_size_quad_bytes);
-  uint32_t nSamplesPerChannel         = data_size_double_bytes/nChannelsPerBoard;
+  uint32_t const ev_size_quad_bytes         = header.eventSize;
+  uint32_t const evt_header_size_quad_bytes = sizeof(sbndaq::CAENV1730EventHeader)/sizeof(uint32_t);
+  uint32_t const data_size_double_bytes     = 2*(ev_size_quad_bytes - evt_header_size_quad_bytes);
+  uint32_t const nSamplesPerChannel         = data_size_double_bytes/nChannelsPerBoard;
   uint16_t const enabledChannels      = header.ChannelMask();
 
   artdaq::Fragment::timestamp_t const fragmentTimestamp = artdaqFragment.timestamp(); 
