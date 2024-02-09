@@ -1,6 +1,7 @@
 #ifndef DAQANALYSIS_MODE_HH
 #define DAQANALYSIS_MODE_HH
 
+#include <cstdint>
 #include <vector>
 #include <array>
 
@@ -14,6 +15,8 @@
 // estimation of internet packet streams with limited space. In Rolf
 // M ̈ohring and Rajeev Raman, editors, Algorithms — ESA 2002, pages
 // 348–360, Berlin, Heidelberg, 2002. Springer Berlin Heidelberg.
+
+using std::size_t;
 
 int16_t Mode(const int16_t *data, size_t n_data, unsigned n_skip_samples=1);
 

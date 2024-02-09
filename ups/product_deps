@@ -36,7 +36,7 @@ fwdir   product_dir scripts
 
 product             version  
 sbndaq_online       v1_01_00
-sbncode             v09_81_02
+sbncode             v09_82_01
 fhiclpy             v4_02_00
 cetmodules          v3_21_01 - only_for_build
 end_product_list
