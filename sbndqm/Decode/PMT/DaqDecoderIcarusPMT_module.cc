@@ -83,6 +83,7 @@ namespace daq
       
       std::vector<art::InputTag> fFragmentLabels;
       std::map<std::size_t,std::vector<raw::OpDetWaveform>> fProtoWaveforms;
+      std::map<std::size_t,std::vector<unsigned int>> fTTTs;
       int fMaxSamplesPerChannel;
       double fOpticalTick;
 
@@ -229,13 +230,9 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
     // get the waveform
     std::copy_n(data_begin + ch_offset, nSamplesPerChannel, wvfm.begin());
 
-    if( fProtoWaveforms.find(pmtID) != fProtoWaveforms.end() ){
-      fProtoWaveforms[pmtID].emplace_back(fragmentTimestamp, pmtID, wvfm); //add to existing
-    } else {
-      std::vector<raw::OpDetWaveform> buffer; 
-      buffer.emplace_back(fragmentTimestamp, pmtID, wvfm);
-      fProtoWaveforms.insert(std::make_pair(pmtID,buffer));	
-    }
+    // saves all waveforms from this channel in the event + TTT for time stitching
+    fProtoWaveforms[pmtID].emplace_back(fragmentTimestamp, pmtID, wvfm);
+    fTTTs[pmtID].push_back(time_tag);
 
     temperatures.push_back( float( metafrag.chTemps[digitizerChannel] ));
 
@@ -308,6 +305,7 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
   for(auto it=fProtoWaveforms.begin(); it!=fProtoWaveforms.end(); it++){
   
     std::vector<raw::OpDetWaveform> this_wfs = it->second;
+    std::vector<unsigned int> this_TTTs = fTTTs[it->first];
     int nwfs = it->second.size();
     if( nwfs < 2.) continue;  //nothing to stitch
 
@@ -320,24 +318,27 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
       
       // place next waveform in a new group
       std::vector<int> current_group { iWave };
-      double current_end = this_wfs[iWave].TimeStamp();
+      double current_end = this_TTTs[iWave];      
 
       // scan waveforms that come next
       while(++iWave < nwfs){
         
         mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " iWave " << iWave << " / " << nwfs 
                   << " current size " << this_wfs[iWave].Waveform().size()
-                  << " difference [ns] " << this_wfs[iWave].TimeStamp()-this_wfs[iWave].Waveform().size()*fOpticalTick - current_end;
-	
+	          << " last TTT " << current_end << " current TTT " << this_TTTs[iWave] << " diff " 
+                  << this_TTTs[iWave]-current_end
+                  << " TTT difference [ns] " 
+                  << this_TTTs[iWave]*8-this_wfs[iWave].Waveform().size()*fOpticalTick-current_end*8;
+
         // if too apart, skip and start a new group
-        double next_start_time = this_wfs[iWave].TimeStamp() - this_wfs[iWave].Waveform().size()*fOpticalTick; 
-        if( next_start_time - current_end > 130*fOpticalTick ) break;
+        // note TTT counts every 8 ns!
+        double next_start_time = this_TTTs[iWave]*8 - this_wfs[iWave].Waveform().size()*fOpticalTick; 
+        if( next_start_time - current_end*8 > 16 ) break;
     	mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " MERGED!";
 
         // the next one is contiguos: assign it to the same group and look for the next one 
 	current_group.push_back(iWave);
-	current_end = this_wfs[iWave].TimeStamp();
-	
+	current_end = this_TTTs[iWave];
       }
       
       groups.push_back(current_group);  
@@ -358,8 +359,9 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
 void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 {
 
-  // clear proto-waveforms from previous event      
+  // clear proto-waveforms/TTTs from previous event      
   fProtoWaveforms.clear();
+  fTTTs.clear();
   
   // Make the list of the input fragments 
   try {
