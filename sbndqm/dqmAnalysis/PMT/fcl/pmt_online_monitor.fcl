@@ -26,14 +26,13 @@ physics: {
       reco_man:      @local::standard_preco_manager
       HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
       PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
-
+      
       PMTMetricConfig: {
 
         hostname: "icarus-db01.fnal.gov"
     
         groups: {
             PMT: [ [0, 384] ]
-            PMT_Temp: [ [0, 8] ]
         }
 
         streams: ["30s"]
@@ -64,6 +63,21 @@ physics: {
             display_range: [ 0., 75. ]
           }
           
+        }   
+      }
+   
+      PMTTempMetricConfig: {
+
+        hostname: "icarus-db01.fnal.gov"
+    
+        groups: {
+            PMTTemp: [ [0, 8] ]
+        }
+
+        streams: ["30s"]
+        
+        metrics: {
+        
           max_temperature: {
             units: C 
             title: "%(group)s board %(instance)s max temperature" 

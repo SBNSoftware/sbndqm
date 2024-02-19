@@ -72,6 +72,7 @@ namespace sbndaq {
       int m_redis_port;
       
       fhicl::ParameterSet m_metric_config;
+      fhicl::ParameterSet m_temp_metric_config;
 
       pmtana::PulseRecoManager pulseRecoManager;
       pmtana::PMTPulseRecoBase* threshAlg;
@@ -94,11 +95,14 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
+  , m_temp_metric_config{ pset.get<fhicl::ParameterSet>("PMTTempMetricConfig") }
   , pulseRecoManager()
+  , fftManager(0)
 {
 
   // Configure the redis metrics 
   sbndaq::GenerateMetricConfig( m_metric_config );
+  sbndaq::GenerateMetricConfig( m_temp_metric_config );
 
   // Configure the pedestal manager
   auto const ped_alg_pset = pset.get<fhicl::ParameterSet>("PedAlgoConfig");
@@ -114,7 +118,6 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
                     << pedAlgName << " algorithm.\n";
 
   pulseRecoManager.SetDefaultPedAlgo(pedAlg);
-
 
   // Configure the ophitfinder manager
   auto const hit_alg_pset = pset.get<fhicl::ParameterSet>("HitAlgoConfig");
@@ -141,7 +144,7 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
 
 std::string sbndaq::CAENV1730Streams::convertFragIdToDigitizerLabel(size_t eff_frag_id) {
 
-  size_t fragment_id = eff_frag_id | ~0x0fff;
+  size_t fragment_id = eff_frag_id | 0x2000;
   std::map<size_t, std::string>  fragment_map {
 	{ 0x2015, "eebot01" }, 
 	{ 0x2016, "eebot02" }, 
@@ -178,7 +181,7 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
 
   int level = 3; 
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
-  std::string groupName = "PMT_Temp";
+  std::string groupName = "PMTTemp";
   
   art::Handle digitizerHandle = evt.getHandle<std::vector<pmtAnalysis::PMTDigitizerInfo>>(m_pmtdigitizer_tag);
 
@@ -187,12 +190,20 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
       << "Data product '" << m_pmtdigitizer_tag.encode() << "' has no pmtAnalysis::PMTDigitizerInfo in it!\n";
     return;
   }
-  
+ 
+  // board information is repeated for each fragment in the event,
+  // but temperatures evolve slowly... use only first instance!
+  std::vector<size_t> board_counter;
+ 
   for ( auto const & digitizer : *digitizerHandle ) {
    
     size_t boardId = digitizer.getBoardId();
     std::string board = convertFragIdToDigitizerLabel(boardId);
  
+    // skip if this board was already seen once in this event
+    if( std::find( board_counter.begin(), board_counter.end(), boardId ) != board_counter.end() ) continue;
+    board_counter.push_back(boardId);
+
     float maxT = 0;
     for(size_t  ch = 0; ch < digitizer.getNChannels(); ch++){
       float T = digitizer.getTemperature(ch);
@@ -206,7 +217,8 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
     }
 
     // send board max temperature
-    sbndaq::sendMetric(groupName, board, "max_temperature", maxT, level, mode);
+    if( digitizer.getNChannels() > 1)
+    	sbndaq::sendMetric(groupName, board, "max_temperature", maxT, level, mode);
   }
 
 }
@@ -248,7 +260,8 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   // we pick the longest waveform, which should contain the global trigger
   // if they have the same length, we pick the first
 
-  std::map<unsigned int, raw::OpDetWaveform > unique_wfs; 
+  std::map<unsigned int, unsigned int> unique_wfs; 
+  unsigned int index = 0;
 
   for ( auto const & opdetwaveform : *opdetHandle ) {
 
@@ -256,13 +269,16 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
     std::size_t length = opdetwaveform.Waveform().size();
 
     if( unique_wfs.find(pmtId) == unique_wfs.end() ){
-      unique_wfs.insert(std::make_pair(pmtId,opdetwaveform));
+      unique_wfs.insert(std::make_pair(pmtId,index));
+      index++;
       continue;
     }
 
-    if( unique_wfs[pmtId].Waveform().size() < length )
-      unique_wfs[pmtId] = opdetwaveform;
-	 
+    unsigned int seen_index = unique_wfs[pmtId];
+    if( (*opdetHandle)[seen_index].Waveform().size() < length )
+      unique_wfs[pmtId] = index;
+
+    index++;
   }
   
   // Compute metrics for each channel from its waveform
@@ -271,10 +287,10 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
     std::string pmtId_s = std::to_string(it->first);
 
     // baseline computed as waveform median
-    int16_t baseline = Median( it->second );
+    int16_t baseline = Median( (*opdetHandle)[it->second] );
 	
     // baseline rms from nominal reco algorithm
-    pulseRecoManager.Reconstruct( it->second );
+    pulseRecoManager.Reconstruct( (*opdetHandle)[it->second] );
     std::vector<double>  pedestal_sigma = pedAlg->Sigma();
     double rms = Median( pedestal_sigma );
 
@@ -301,21 +317,21 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
         
     // Now we send a copy of the waveform itself
     double tickPeriod = 0.002; // [us] 
-    std::vector<std::vector<raw::ADC_Count_t>> adcs {it->second};
+    std::vector<std::vector<raw::ADC_Count_t>> adcs { (*opdetHandle)[it->second] };
     std::vector<int> start { 0 }; // We are considering each waveform independent for now 
 
     // send full waveform
     sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
 
     // Now we send a copy of the waveeform FFT
-    size_t NADC = it->second.Waveform().size();
+    size_t NADC = (*opdetHandle)[it->second].Waveform().size();
     double tickPeriodFFT = 1./tickPeriod; // [us], change this harcoding
-    fftManager.Set(NADC);
-      
+    if ( fftManager.InputSize() != NADC ) fftManager.Set(NADC);
+ 
     // fill FFT
     for (size_t i=0; i<NADC; i++) {
       double *input = fftManager.InputAt(i);
-      *input = (double) it->second.Waveform()[i];
+      *input = (double) (*opdetHandle)[it->second].Waveform()[i];
     }
     fftManager.Execute();
 
@@ -329,7 +345,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
     // send waveform FFT
     sbndaq::SendWaveform("snapshot:fft:PMT:" + pmtId_s, adcsFFT, tickPeriodFFT);
-    
+  
     // send event meta
     sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
 
@@ -339,6 +355,8 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
     mf::LogError("sbndaq::CAENV1730Streams::analyze") 
           << "Event has " << unique_wfs.size() << " channels, " << nTotalChannels << " expected.\n";
   }
+
+  unique_wfs.clear();
 
 }
 
