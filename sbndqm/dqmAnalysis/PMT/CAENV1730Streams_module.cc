@@ -57,7 +57,7 @@ namespace sbndaq {
   
       virtual void analyze(art::Event const & evt);
       void SendTemperatureMetrics(art::Event const & evt);  
-      std::string convertFragIdToDigitizerLabel(unsigned int frag_id);
+      std::string convertFragIdToDigitizerLabel(size_t eff_frag_id);
 
     private:
 
@@ -139,11 +139,46 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
 
 //------------------------------------------------------------------------------------------------------------------
 
+std::string sbndaq::CAENV1730Streams::convertFragIdToDigitizerLabel(size_t eff_frag_id) {
+
+  size_t fragment_id = eff_frag_id | ~0x0fff;
+  std::map<size_t, std::string>  fragment_map {
+	{ 0x2015, "eebot01" }, 
+	{ 0x2016, "eebot02" }, 
+	{ 0x2017, "eebot03" }, 
+	{ 0x2012, "eetop01" }, 
+	{ 0x2013, "eetop02" }, 
+	{ 0x2014, "eetop03" }, 
+	{ 0x200F, "ewbot01" }, 
+	{ 0x2010, "ewbot02" },
+	{ 0x2011, "ewbot03" }, 
+	{ 0x200C, "ewtop01" }, 
+	{ 0x200D, "ewtop02" }, 
+	{ 0x200E, "ewtop03" }, 
+	{ 0x2009, "webot01" }, 
+	{ 0x200A, "webot02" }, 
+	{ 0x200B, "webot03" }, 
+	{ 0x2006, "wetop01" }, 
+	{ 0x2007, "wetop02" }, 
+	{ 0x2008, "wetop03" }, 
+	{ 0x2003, "wwbot01" }, 
+	{ 0x2004, "wwbot02" }, 
+	{ 0x2005, "wwbot03" }, 
+	{ 0x2000, "wwtop01" }, 
+	{ 0x2001, "wwtop02" }, 
+	{ 0x2002, "wwtop03" } 
+  };
+  return fragment_map[fragment_id];
+}
+
+
+//------------------------------------------------------------------------------------------------------------------
+
 void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
 
-//  int level = 3; 
-//  artdaq::MetricMode mode = artdaq::MetricMode::Average;
-//  std::string groupName = "PMT_Temp";
+  int level = 3; 
+  artdaq::MetricMode mode = artdaq::MetricMode::Average;
+  std::string groupName = "PMT_Temp";
   
   art::Handle digitizerHandle = evt.getHandle<std::vector<pmtAnalysis::PMTDigitizerInfo>>(m_pmtdigitizer_tag);
 
@@ -155,11 +190,23 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
   
   for ( auto const & digitizer : *digitizerHandle ) {
    
-    unsigned int boardId = digitizer.getBoardId();
-    //std::vector<float> temps = digitizer.getTemperatures();
+    size_t boardId = digitizer.getBoardId();
+    std::string board = convertFragIdToDigitizerLabel(boardId);
+ 
+    float maxT = 0;
+    for(size_t  ch = 0; ch < digitizer.getNChannels(); ch++){
+      float T = digitizer.getTemperature(ch);
+      if( maxT < T ) maxT = T;
+ 
+      size_t pmtID = ch + nChannelsPerBoard*boardId;
+      std::string pmtID_s = std::to_string(pmtID);
+     
+      // send sigle-channel temperature
+      sbndaq::sendMetric("PMT", pmtID_s, "temperature", T, level, mode);
+    }
 
-    std::cout << boardId << std::endl;
-
+    // send board max temperature
+    sbndaq::sendMetric(groupName, board, "max_temperature", maxT, level, mode);
   }
 
 }

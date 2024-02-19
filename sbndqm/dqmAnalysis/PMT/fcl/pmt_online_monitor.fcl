@@ -1,17 +1,6 @@
 #include "redis_connection.fcl"
 #include "pmt_online_monitor_configuration.fcl"
 
-# Bits of config -- must be unique
-MONITOR_LABEL: "MatteosMonitor" # make up a name
-SHM_KEY: 0x40747423 # make up a HEX number
-
-# Other config
-
-# what port does the dispatcher run on? Must be on the server
-DISPATCHER_PORT: 6666 
-# where does Redis run?
-REDIS_HOST: "icarus-db01.fnal.gov"
-
 process_name: ICARUSPMTANALYSIS
 
 physics: {
@@ -31,7 +20,6 @@ physics: {
 
       module_type: CAENV1730Streams
       
-
       OpDetWaveformLabel: "daqPMT"
       PMTDigitizerLabel: "daqPMT"
 
@@ -39,13 +27,13 @@ physics: {
       HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
       PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
 
-
       PMTMetricConfig: {
 
         hostname: "icarus-db01.fnal.gov"
     
         groups: {
             PMT: [ [0, 384] ]
+            PMT_Temp: [ [0, 8] ]
         }
 
         streams: ["30s"]
@@ -65,11 +53,22 @@ physics: {
           }
           
           rate: {
-            untis: Hz 
+            units: Hz 
             title: "%(group)s channel %(instance)s single PMT rate" 
             display_range: [ 100000, 300000 ]
           }
-
+          
+          temperature: {
+            units: C 
+            title: "%(group)s channel %(instance)s temperature" 
+            display_range: [ 0., 75. ]
+          }
+          
+          temperature: {
+            units: C 
+            title: "%(group)s board %(instance)s max temperature" 
+            display_range: [ 0., 75. ]
+          }
         }   
       }
     }
