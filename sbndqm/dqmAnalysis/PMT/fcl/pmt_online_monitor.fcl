@@ -64,7 +64,7 @@ physics: {
             display_range: [ 0., 75. ]
           }
           
-          temperature: {
+          max_temperature: {
             units: C 
             title: "%(group)s board %(instance)s max temperature" 
             display_range: [ 0., 75. ]
