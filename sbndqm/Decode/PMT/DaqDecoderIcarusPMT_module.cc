@@ -3,7 +3,7 @@
 // Plugin Type: producer (art v2_09_06)
 // File:        DaqDecoderIcarusPMT.cxx
 // Author:      A. Scarpelli, with great help of G. Petrillo et al.
-//		partially reworked by M. Vicenzi (mvicenzi@bnl.gov)
+//		Partially reworked by M. Vicenzi (mvicenzi@bnl.gov)
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
@@ -84,8 +84,7 @@ namespace daq
       std::vector<art::InputTag> fFragmentLabels;
       std::map<std::size_t,std::vector<raw::OpDetWaveform>> fProtoWaveforms;
       std::map<std::size_t,std::vector<unsigned int>> fTTTs;
-      int fMaxSamplesPerChannel;
-      double fOpticalTick;
+      double fOpticalTickNS;
 
       using OpDetWaveformCollection    = std::vector<raw::OpDetWaveform>;
       using OpDetWaveformCollectionPtr = std::unique_ptr<OpDetWaveformCollection>;
@@ -104,8 +103,7 @@ namespace daq
 daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(Parameters const & params)
   : art::EDProducer(params)
   , fFragmentLabels{ params().FragmentsLabels() }
-  , fMaxSamplesPerChannel{ 5000 }
-  , fOpticalTick{ 2.0 }
+  , fOpticalTickNS{ 2.0 }
 {
   
   // Output data products
@@ -328,11 +326,11 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
 	          << " last TTT " << current_end << " current TTT " << this_TTTs[iWave] << " diff " 
                   << this_TTTs[iWave]-current_end
                   << " TTT difference [ns] " 
-                  << this_TTTs[iWave]*8-this_wfs[iWave].Waveform().size()*fOpticalTick-current_end*8;
+                  << this_TTTs[iWave]*8-this_wfs[iWave].Waveform().size()*fOpticalTickNS-current_end*8;
 
         // if too apart, skip and start a new group
         // note TTT counts every 8 ns!
-        double next_start_time = this_TTTs[iWave]*8 - this_wfs[iWave].Waveform().size()*fOpticalTick; 
+        double next_start_time = this_TTTs[iWave]*8 - this_wfs[iWave].Waveform().size()*fOpticalTickNS; 
         if( next_start_time - current_end*8 > 16 ) break;
     	mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " MERGED!";
 

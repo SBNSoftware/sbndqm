@@ -1,0 +1,80 @@
+#include "redis_connection.fcl"
+
+process_name: ICARUSBEAMTIMING
+
+physics: {
+  
+  producers: {
+
+    daqPMT: {
+      module_type: DaqDecoderIcarusPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+
+  }
+
+  analyzers: {
+
+   timingAnalysis: {
+
+      module_type: BeamTimingStreams
+     
+      OpDetWaveformLabel: "daqPMT"
+      TriggerLabel: "daqTrigger"
+
+      TimingMetricConfig: {
+
+        hostname: "icarus-db01.fnal.gov"
+    
+        groups: {
+            beam_timing: [ [0, 8] ]
+        }
+
+        streams: ["30s"]
+        
+        metrics: {
+        
+          bnb: {
+            units: us
+            title: "Board %(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+        }   
+      }
+    }
+  }
+
+  my_producer_modules: [ daqPMT ]
+  trigger_paths: [ my_producer_modules ]
+  
+  ana: [ timingAnalysis ] 
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+  TFileService: { fileName: "waveformtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+
+services.RedisConnection.host: "icarus-db01.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+}
+

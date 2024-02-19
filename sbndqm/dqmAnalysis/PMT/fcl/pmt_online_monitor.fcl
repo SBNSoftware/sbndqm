@@ -1,6 +1,17 @@
 #include "redis_connection.fcl"
 #include "pmt_online_monitor_configuration.fcl"
 
+# Bits of config -- must be unique
+MONITOR_LABEL: "MatteosMonitor" # make up a name
+SHM_KEY: 0x40747423 # make up a HEX number
+
+# Other config
+
+# what port does the dispatcher run on? Must be on the server
+DISPATCHER_PORT: 6666 
+# where does Redis run?
+REDIS_HOST: "icarus-db01.fnal.gov"
+
 process_name: ICARUSPMTANALYSIS
 
 physics: {
@@ -22,6 +33,7 @@ physics: {
       
 
       OpDetWaveformLabel: "daqPMT"
+      PMTDigitizerLabel: "daqPMT"
 
       reco_man:      @local::standard_preco_manager
       HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
@@ -33,7 +45,7 @@ physics: {
         hostname: "icarus-db01.fnal.gov"
     
         groups: {
-            PMT: [ [0, 380] ]
+            PMT: [ [0, 384] ]
         }
 
         streams: ["30s"]
