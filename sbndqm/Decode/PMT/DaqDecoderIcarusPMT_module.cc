@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
 // Class:       DaqDecoderIcarusPMT
 // Plugin Type: producer (art v2_09_06)
-// File:        DaqDecoderIcarusPMT.cxx
+// File:        DaqDecoderIcarusPMT_module.cc
 // Author:      A. Scarpelli, with great help of G. Petrillo et al.
 //		Partially reworked by M. Vicenzi (mvicenzi@bnl.gov)
 ////////////////////////////////////////////////////////////////////////
