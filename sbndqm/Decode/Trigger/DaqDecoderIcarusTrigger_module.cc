@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
+#include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "canvas/Utilities/InputTag.h"
@@ -17,20 +18,22 @@
 #include <vector>
 #include <array>
 #include <utility> // std::pair, std::move()
-#include <stdlib.h>
-#include <cassert>
+#include <cstdlib>
+#include <string_view>
 
-#include "art/Framework/Core/ModuleMacros.h"
 #include "artdaq-core/Data/Fragment.hh"
-//#include "lardataobj/RawData/ExternalTrigger.h"
-//#include "lardataobj/RawData/TriggerData.h" // raw::Trigger
-//#include "lardataobj/Simulation/BeamGateInfo.h"
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
 #include "sbndaq-artdaq-core/Overlays/ICARUS/ICARUSTriggerV3Fragment.hh"
+#include "sbndaq-artdaq-core/Overlays/ICARUS/ICARUSTriggerInfo.hh"
+#include "sbndqm/Decode/Trigger/detail/KeyedCSVparser.h"
+#include "lardataobj/RawData/ExternalTrigger.h"
+#include "lardataobj/RawData/TriggerData.h" // raw::Trigger
+#include "lardataobj/Simulation/BeamGateInfo.h"
 
 namespace daq 
 {
-
+  using namespace std::string_literals;
+  
   class DaqDecoderIcarusTrigger : public art::EDProducer 
   {
 
@@ -44,14 +47,35 @@ namespace daq
 
       // read & process fragments
       void processFragment( const artdaq::Fragment &artdaqFragment );
+      
+      // parsing trigger data
+      static std::string_view firstLine(std::string const& s, std::string const& endl = "\0\n\r"s);
+      icarus::details::KeyValuesData parseTriggerStringAsCSV(std::string const& data) const;
 
       void produce(art::Event & e) override;
 
     private:
-
+     
       art::InputTag fFragmentsLabel;
 
-      // define output structure?
+      // define output data products
+      using TriggerCollection = std::vector<raw::ExternalTrigger>;
+      using TriggerPtr = std::unique_ptr<TriggerCollection>;
+      TriggerPtr fTrigger;
+    
+      using RelativeTriggerCollection = std::vector<raw::Trigger>;
+      using RelativeTriggerPtr = std::unique_ptr<RelativeTriggerCollection>;
+      RelativeTriggerPtr fRelTrigger;
+    
+      double fTriggerTime; //us
+  };
+  
+  struct TriggerGateTypes {
+    static constexpr int BNB { 1 };
+    static constexpr int NuMI { 2 };
+    static constexpr int OffbeamBNB { 3 };
+    static constexpr int OffbeamNuMI { 4 };
+    static constexpr int Calib { 5 };
   };
 
 }
@@ -61,27 +85,73 @@ namespace daq
 daq::DaqDecoderIcarusTrigger::DaqDecoderIcarusTrigger(fhicl::ParameterSet const & pset)
   : art::EDProducer(pset)
   , fFragmentsLabel{ pset.get<art::InputTag>("FragmentsLabel", "daq:ICARUSTriggerV3")  }
+  , fTriggerTime{ 1500. }
 {
   
   // Output data products
-//  produces<std::vector<raw::OpDetWaveform>>();
-//  produces<std::vector<pmtAnalysis::PMTDigitizerInfo>>();
+  produces<TriggerCollection>();
+  produces<RelativeTriggerCollection>();
 
 }
+
+// ----------------------------------------------------------------------------------------
+
+std::string_view daq::DaqDecoderIcarusTrigger::firstLine(std::string const& s, std::string const& endl){
+    return { s.data(), std::min(s.find_first_of(endl), s.size()) };
+}
+
+// ----------------------------------------------------------------------------------------
+
+icarus::details::KeyValuesData daq::DaqDecoderIcarusTrigger::parseTriggerStringAsCSV(std::string const& data) const {
+ 
+  icarus::details::KeyedCSVparser parser;
+  parser.addPatterns({
+        { "Cryo. (EAST|WEST) Connector . and .", 1U }
+        , { "Trigger Type", 1U }
+  });
+  std::string_view const dataLine = firstLine(data);
+  try {
+    return parser(dataLine);
+  }
+  
+  catch(icarus::details::KeyedCSVparser::Error const& e) {
+    mf::LogError("DaqDecoderIcarusTrigger")
+      << "Error parsing " << dataLine.length()
+      << "-char long trigger string:\n==>|" << dataLine
+      << "|<==\nError message: " << e.what() << std::endl;
+    throw;
+  }
+} 
 
 // -----------------------------------------------------------------------------------------
 
 void daq::DaqDecoderIcarusTrigger::processFragment( const artdaq::Fragment &artdaqFragment ) {
 
-  size_t const fragment_id = artdaqFragment.fragmentID();
-  std::cout << fragment_id << std::endl;
+  //size_t const fragment_id = artdaqFragment.fragmentID(); 
+  uint64_t const artdaq_ts = artdaqFragment.timestamp();
 
-  icarus::ICARUSTriggerV3Fragment frag { fragment };
+  icarus::ICARUSTriggerV3Fragment frag { artdaqFragment };
+  static std::uint64_t raw_wr_ts =  frag.getWRSeconds() * 1000000000ULL + frag.getWRNanoSeconds();
   std::string data = frag.GetDataString();
+  icarus::ICARUSTriggerInfo datastream_info = icarus::parse_ICARUSTriggerV3String(data.data());
+  auto const parsedData = parseTriggerStringAsCSV(data); 
 
-  std::cout << data << std::endl;
-  static std::uint64_t ts =  frag.getWRSeconds() * 1000000000ULL + frag.getWRNanoSeconds();
-  std::cout << ts << std::endl; 
+  unsigned int const triggerID = datastream_info.wr_event_no;
+  int gate_type = datastream_info.gate_type;
+
+  //fill raw::ExternalTrigger collection
+  fTrigger->emplace_back(triggerID, artdaq_ts);
+
+  //fill raw::Trigger collection 
+  std::uint64_t beamgate_ts { artdaq_ts };
+  if (auto pBeamGateInfo = parsedData.findItem("Beam_TS")) {
+    uint64_t const raw_bg_ts = pBeamGateInfo->getNumber<unsigned int>(1U) * 1000000000ULL 
+                             + pBeamGateInfo->getNumber<unsigned int>(2U);
+    beamgate_ts += raw_bg_ts - raw_wr_ts; //assumes no veto
+  }
+  double gateStartFromTrigger = (long long int)beamgate_ts - (long long int)artdaq_ts; //ns
+  double relGateStart = fTriggerTime + gateStartFromTrigger/1000.; ///us
+  fRelTrigger->emplace_back(triggerID, fTriggerTime, relGateStart, gate_type);
 
 }
 
@@ -90,12 +160,13 @@ void daq::DaqDecoderIcarusTrigger::processFragment( const artdaq::Fragment &artd
 void daq::DaqDecoderIcarusTrigger::produce(art::Event & event) {
 
   try {
-    // initialize the data product 
-    //fOpDetWaveformCollection = std::make_unique<OpDetWaveformCollection>();
-    //fPMTDigitizerInfoCollection = std::make_unique<PMTDigitizerInfoCollection>();
 
     // get fragments
     auto const & fragments = event.getValidHandle<artdaq::Fragments>(fFragmentsLabel);
+    
+    // initialize data products
+    fTrigger = std::make_unique<TriggerCollection>();
+    fRelTrigger = std::make_unique<RelativeTriggerCollection>();
     
     if( fragments.isValid() && fragments->size() > 0) {
       for (auto const & rawFrag: *fragments) 
@@ -104,9 +175,9 @@ void daq::DaqDecoderIcarusTrigger::produce(art::Event & event) {
     else
        mf::LogError("DaqDecoderIcarusTrigger")  << "No valid trigger fragments found";
 
-    // Place the data product in the event stream
-    // event.put(std::move(fOpDetWaveformCollection));
-    // event.put(std::move(fPMTDigitizerInfoCollection));
+    // place data products in the event stream
+    event.put(std::move(fTrigger));
+    event.put(std::move(fRelTrigger));
 
   }
 
