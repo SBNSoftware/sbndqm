@@ -1,9 +1,8 @@
 ////////////////////////////////////////////////////////////////////////
-// 
-// TriggerStreams_module.cc 
-// 
-// Andrea Scarpelli ( ascarpell@bnl.gov )
-//
+// Class:       TriggerStreams
+// Plugin Type: analyzer
+// File:        TriggerStreams_module.cc
+// Author:      A. Scarpelli, reworked by M. Vicenzi (mvicenzi@bnl.gov)
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -13,7 +12,6 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "canvas/Utilities/Exception.h"
 
-#include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 #include "sbndqm/Decode/Mode/Mode.hh"
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
@@ -24,16 +22,14 @@
 #include "lardataobj/RawData/ExternalTrigger.h"
 #include "lardataobj/RawData/TriggerData.h"
 #include "lardataobj/Simulation/BeamGateInfo.h"
+#include "sbndqm/Decode/Trigger/detail/TriggerGateTypes.h"
 
-#include <algorithm>
 #include <cassert>
 #include <stdio.h>
-#include <cmath>
-#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <iostream>
-
+#include <string>
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -44,8 +40,10 @@ namespace sbndaq {
 
     public:
 
-        explicit TriggerStreams(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
-  
+        explicit TriggerStreams(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization 
+        
+        std::string bitsToName(int source);
+
         virtual void analyze(art::Event const & evt);
   
     private:
@@ -54,17 +52,17 @@ namespace sbndaq {
 
         std::string m_redis_hostname;
         int m_redis_port;
-        double stringTime = 0.0;
-
+        
         fhicl::ParameterSet m_metric_config;
 
         void clean();
-    
-        std::vector<std::string> bitsToName{ "Offbeam_BNB", "BNB", "Offbeam_NuMI", "NuMI" };
+   
         std::unordered_map<int, int> bitsCountsMap;
   };
 
 }
+
+//------------------------------------------------------------------------------------------------------------------
 
 sbndaq::TriggerStreams::TriggerStreams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
@@ -80,16 +78,34 @@ sbndaq::TriggerStreams::TriggerStreams(fhicl::ParameterSet const & pset)
 
 //------------------------------------------------------------------------------------------------------------------
 
-
 void sbndaq::TriggerStreams::clean() {
   
   bitsCountsMap.clear();
 
 }
 
-
 //------------------------------------------------------------------------------------------------------------------
 
+std::string sbndaq::TriggerStreams::bitsToName(int source){
+
+  switch(source){
+    case daq::TriggerGateTypes::BNB:
+      return "BNB";    
+    case daq::TriggerGateTypes::OffbeamBNB:
+      return "OffbeamBNB";    
+    case daq::TriggerGateTypes::NuMI:
+      return "NuMI";    
+    case daq::TriggerGateTypes::OffbeamNuMI:
+      return "OffbeamNuMI";    
+    case daq::TriggerGateTypes::Calib:
+      return "Unknown";    
+    default:
+      return "Unknown";
+  }
+
+}
+
+//------------------------------------------------------------------------------------------------------------------
 
 void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
 
@@ -99,8 +115,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   artdaq::MetricMode rate = artdaq::MetricMode::Rate;
 
   // Now we get the trigger information
-  art::Handle< std::vector<raw::Trigger> > triggerHandle;
-  evt.getByLabel( m_trigger_tag, triggerHandle );
+  art::Handle triggerHandle = evt.getHandle<std::vector<raw::Trigger>>(m_trigger_tag);
 
   if( triggerHandle.isValid() && !triggerHandle->empty() ) {
     for( auto const trigger : *triggerHandle ){
@@ -112,8 +127,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   }
 
   // Here we read the external trigger information
-  art::Handle< std::vector<raw::ExternalTrigger> > extTriggerHandle;
-  evt.getByLabel( m_trigger_tag, extTriggerHandle );
+  art::Handle extTriggerHandle = evt.getHandle<std::vector<raw::ExternalTrigger>>(m_trigger_tag);
 
   if( extTriggerHandle.isValid() && !extTriggerHandle->empty() ) {
     //std::cout << "OK" << std::endl;
@@ -123,8 +137,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   }
   
   // Here we read the beam information
-  art::Handle< std::vector<sim::BeamGateInfo> > gateHandle;
-  evt.getByLabel( m_trigger_tag, gateHandle );
+  art::Handle gateHandle = evt.getHandle<std::vector<sim::BeamGateInfo>>(m_trigger_tag);
 
   if( gateHandle.isValid() && !gateHandle->empty() ) {
     //std::cout << "OK" << std::endl;
@@ -133,24 +146,18 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product sim::GeteBeamInfo not found!\n";
   }
 
-  // Now we send the metrics. There is probably one trigger per event, but agnostically we created a map to count the different types, hence we send them separarately
+  // Now we send the metrics. There is probably one trigger per event
+  // but agnostically we created a map to count the different types, hence we send them separately
   for( const auto bits : bitsCountsMap ){
     
-    std::string triggerid_s;
-
-    if( (size_t)bits.first-1 < bitsToName.size() ){
-      triggerid_s = bitsToName[ bits.first-1 ];
-    }
-    else{ triggerid_s = "Unknown"; } 
-    
+    std::string triggerid_s = bitsToName( bits.first );
     triggerid_s+="_RATE";
-
+     
     //Send the trigger rate 
     sbndaq::sendMetric(groupName, triggerid_s, "trigger_rate", bits.second, level, rate);
-  
+    
   }
   
-
   // Sweep the dust away 
   clean();
 

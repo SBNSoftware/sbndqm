@@ -61,8 +61,8 @@ physics: {
   my_producer_modules: [ daqTrigger ]
   trigger_paths: [ my_producer_modules ]
   
-  #ana: [ triggerAnalysis ] 
-  #end_paths: [ ana ]
+  ana: [ triggerAnalysis ] 
+  end_paths: [ ana ]
 
 }
 

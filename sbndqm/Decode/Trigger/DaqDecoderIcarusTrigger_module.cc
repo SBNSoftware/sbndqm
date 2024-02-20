@@ -26,6 +26,7 @@
 #include "sbndaq-artdaq-core/Overlays/ICARUS/ICARUSTriggerV3Fragment.hh"
 #include "sbndaq-artdaq-core/Overlays/ICARUS/ICARUSTriggerInfo.hh"
 #include "sbndqm/Decode/Trigger/detail/KeyedCSVparser.h"
+#include "sbndqm/Decode/Trigger/detail/TriggerGateTypes.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 #include "lardataobj/RawData/TriggerData.h" // raw::Trigger
 #include "lardataobj/Simulation/BeamGateInfo.h"
@@ -33,14 +34,6 @@
 namespace daq 
 {
   using namespace std::string_literals;
-  
-  struct TriggerGateTypes {
-    static constexpr int BNB { 1 };
-    static constexpr int NuMI { 2 };
-    static constexpr int OffbeamBNB { 3 };
-    static constexpr int OffbeamNuMI { 4 };
-    static constexpr int Calib { 5 };
-  };
   
   class DaqDecoderIcarusTrigger : public art::EDProducer 
   {
