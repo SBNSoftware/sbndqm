@@ -321,18 +321,10 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
       // scan waveforms that come next
       while(++iWave < nwfs){
         
-        mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " iWave " << iWave << " / " << nwfs 
-                  << " current size " << this_wfs[iWave].Waveform().size()
-	          << " last TTT " << current_end << " current TTT " << this_TTTs[iWave] << " diff " 
-                  << this_TTTs[iWave]-current_end
-                  << " TTT difference [ns] " 
-                  << this_TTTs[iWave]*8-this_wfs[iWave].Waveform().size()*fOpticalTickNS-current_end*8;
-
         // if too apart, skip and start a new group
         // note TTT counts every 8 ns!
         double next_start_time = this_TTTs[iWave]*8 - this_wfs[iWave].Waveform().size()*fOpticalTickNS; 
         if( next_start_time - current_end*8 > 16 ) break;
-    	mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " MERGED!";
 
         // the next one is contiguos: assign it to the same group and look for the next one 
 	current_group.push_back(iWave);
@@ -342,8 +334,6 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
       groups.push_back(current_group);  
     } while ( iWave < nwfs );
 
-    mf::LogTrace("DaqDecoderIcarusPMT") << "PMT ID " << it->first << " has " << groups.size() << " total (merged) waveforms";
-  
     // Now, for each group, we merge them and add to the final collection
     for(auto const& group: groups){
       auto mergedWaveform = mergeWaveformGroup( this_wfs, group);

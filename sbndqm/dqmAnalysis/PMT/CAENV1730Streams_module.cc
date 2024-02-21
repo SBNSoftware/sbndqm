@@ -317,11 +317,12 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
         
     // Now we send a copy of the waveform itself
     double tickPeriod = 0.002; // [us] 
-    std::vector<std::vector<raw::ADC_Count_t>> adcs { (*opdetHandle)[it->second] };
-    std::vector<int> start { 0 }; // We are considering each waveform independent for now 
+    std::vector<raw::ADC_Count_t> adcs { (*opdetHandle)[it->second] };
 
     // send full waveform
-    sbndaq::SendSplitWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, start, tickPeriod);
+    sbndaq::SendWaveform("snapshot:waveform:PMT:" + pmtId_s, adcs, tickPeriod);
+    // send event meta
+    sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
 
     // Now we send a copy of the waveeform FFT
     size_t NADC = (*opdetHandle)[it->second].Waveform().size();
@@ -345,9 +346,8 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
     // send waveform FFT
     sbndaq::SendWaveform("snapshot:fft:PMT:" + pmtId_s, adcsFFT, tickPeriodFFT);
-  
     // send event meta
-    sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
+    sbndaq::SendEventMeta("snapshot:fft:PMT:" + pmtId_s, evt);
 
   }      
 
