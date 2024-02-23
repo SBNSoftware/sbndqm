@@ -36,16 +36,17 @@ fwdir   product_dir scripts
 
 product             version  
 sbndaq_online       v1_00_00
-sbncode             v09_43_00
-fhiclpy             v4_01_04
+sbncode             v09_75_03_02
+fhiclpy             v4_02_00
+sbndaq_artdaq_core  v1_09_01
 cetbuildtools       v8_18_05 - only_for_build
 end_product_list
 
 # We now define allowed qualifiers and the corresponding qualifiers for the dependencies.
 # Make the table by adding columns before "notes".
-qualifier         sbndaq_online   sbncode    fhiclpy notes
-e20:prof          e20:prof        e20:prof   e20:prof
-e20:debug         e20:debug       e20:debug  e20:debug
+qualifier         sbndaq_online   sbncode    fhiclpy	sbndaq_artdaq_core notes
+e20:prof          e20:prof        e20:prof   e20:prof	e20:prof:s120a
+e20:debug         e20:debug       e20:debug  e20:debug	e20:debug:s120a
 end_qualifier_list
 
 table_fragment_begin
