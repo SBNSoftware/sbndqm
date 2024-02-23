@@ -1,0 +1,176 @@
+#include "pmt_online_monitor_configuration.fcl"
+
+BEGIN_PROLOG
+
+  pmtAnalysis: {
+    module_type: CAENV1730Streams
+      
+    OpDetWaveformLabel: "daqPMT"
+    PMTDigitizerLabel: "daqPMT"
+
+    reco_man:      @local::standard_preco_manager
+    HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
+    PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
+      
+    PMTMetricConfig: {
+    
+      hostname: "icarus-db01.fnal.gov"
+    
+      groups: {
+        PMT: [ [0, 384] ]
+      }
+
+      streams: ["30s"]
+        
+      metrics: {
+        
+        rms: {
+          units: ADC
+          title: "PMT channel %(instance)s rms"
+          display_range: [0., 100.]
+        }
+
+        pedestal: {
+          units: ADC
+          title: "%(group)s channel %(instance)s Pedestal"
+          display_range: [-1000, 1000]
+        }
+          
+        rate: {
+          units: Hz 
+          title: "%(group)s channel %(instance)s single PMT rate" 
+          display_range: [ 100000, 300000 ]
+        }
+          
+        temperature: {
+          units: C 
+          title: "%(group)s channel %(instance)s temperature" 
+          display_range: [ 0., 75. ]
+        }   
+      }   
+    }
+   
+    PMTTempMetricConfig: {
+      
+      hostname: "icarus-db01.fnal.gov"
+    
+      groups: {
+        PMTTemp: [ [0, 8] ]
+      }
+
+      streams: ["30s"]
+        
+      metrics: {
+        
+        max_temperature: {
+          units: C 
+          title: "%(group)s board %(instance)s max temperature" 
+          display_range: [ 0., 75. ]
+        }
+      }   
+    }
+  }
+
+  timingAnalysis: {
+
+    module_type: BeamTimingStreams
+     
+    OpDetWaveformLabel: "daqPMT"
+    TriggerLabel: "daqTrigger"
+
+    TimingMetricConfig: {
+
+      hostname: "icarus-db01.fnal.gov"
+    
+      groups: {
+        BeamTiming: [ [0, 8] ]
+      }
+
+      streams: ["30s"]
+        
+      metrics: {
+        
+          BNB_eetop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_eebot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_ewtop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_ewbot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_wetop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_webot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_wwtop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          BNB_wwbot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          } 
+          NuMI_eetop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_eebot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_ewtop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_ewbot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_wetop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_webot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_wwtop: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          }
+          NuMI_wwbot: {
+            units: us
+            title: "%(instance)s RWM-EW"
+            display_range: [-10., 10.]
+          } 
+      }   
+    }
+
+END_PROLOG

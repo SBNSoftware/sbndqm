@@ -1,5 +1,5 @@
 #include "redis_connection.fcl"
-#include "pmt_online_monitor_configuration.fcl"
+#include "online_decoder_defs.fcl"
 
 process_name: ICARUSPMTANALYSIS
 
@@ -7,92 +7,20 @@ physics: {
   
   producers: {
 
-    daqPMT: {
-      module_type: DaqDecoderIcarusPMT
-      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
-    }
-
+    daqPMT: @local::decodePMTOnline
+  
   }
 
   analyzers: {
-
-   pmtAnalysis: {
-
-      module_type: CAENV1730Streams
-      
-      OpDetWaveformLabel: "daqPMT"
-      PMTDigitizerLabel: "daqPMT"
-
-      reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
-      PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
-      
-      PMTMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
     
-        groups: {
-            PMT: [ [0, 384] ]
-        }
-
-        streams: ["30s"]
-        
-        metrics: {
-        
-          rms: {
-            units: ADC
-            title: "PMT channel %(instance)s rms"
-            display_range: [0., 100.]
-          }
-
-          pedestal: {
-            units: ADC
-            title: "%(group)s channel %(instance)s Pedestal"
-            display_range: [-1000, 1000]
-          }
-          
-          rate: {
-            units: Hz 
-            title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ 100000, 300000 ]
-          }
-          
-          temperature: {
-            units: C 
-            title: "%(group)s channel %(instance)s temperature" 
-            display_range: [ 0., 75. ]
-          }
-          
-        }   
-      }
-   
-      PMTTempMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
+    pmtana: @local::pmtAnalysis
     
-        groups: {
-            PMTTemp: [ [0, 8] ]
-        }
-
-        streams: ["30s"]
-        
-        metrics: {
-        
-          max_temperature: {
-            units: C 
-            title: "%(group)s board %(instance)s max temperature" 
-            display_range: [ 0., 75. ]
-          }
-        }   
-      }
-    }
   }
-
 
   my_producer_modules: [ daqPMT ]
   trigger_paths: [ my_producer_modules ]
   
-  ana: [ pmtAnalysis ] 
+  ana: [ pmtanal ] 
   end_paths: [ ana ]
 
 }

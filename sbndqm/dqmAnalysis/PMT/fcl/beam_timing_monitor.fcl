@@ -1,4 +1,6 @@
 #include "redis_connection.fcl"
+#include "online_decoder_defs.fcl"
+#include "pmt_analysis_defs.fcl"
 
 process_name: ICARUSBEAMTIMING
 
@@ -6,131 +8,24 @@ physics: {
   
   producers: {
 
-    daqPMT: {
-      module_type: DaqDecoderIcarusPMT
-      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
-    }
-    daqTrigger: {
-      module_type: DaqDecoderIcarusTrigger
-      FragmentsLabel: "daq:ICARUSTriggerV3"
-    }
+    daqPMT: @local::decodePMTOnline
+    daqTrigger: @local::decodeTriggerOnline
 
   }
 
   analyzers: {
 
-   timingAnalysis: {
-
-      module_type: BeamTimingStreams
-     
-      OpDetWaveformLabel: "daqPMT"
-      TriggerLabel: "daqTrigger"
-
-      TimingMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
+   timingana: @local::timingAnalysis
     
-        groups: {
-            BeamTiming: [ [0, 8] ]
-        }
-
-        streams: ["30s"]
-        
-        metrics: {
-        
-          BNB_eetop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_eebot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_ewtop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_ewbot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_wetop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_webot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_wwtop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          BNB_wwbot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          } 
-          NuMI_eetop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_eebot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_ewtop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_ewbot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_wetop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_webot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_wwtop: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          }
-          NuMI_wwbot: {
-            units: us
-            title: "%(instance)s RWM-EW"
-            display_range: [-10., 10.]
-          } 
-	}   
-      }
-    }
   }
 
   my_producer_modules: [ daqTrigger, daqPMT ]
   trigger_paths: [ my_producer_modules ]
   
-  ana: [ timingAnalysis ] 
+  ana: [ timingana ] 
   end_paths: [ ana ]
 
 }
-
 
 services: {
 
