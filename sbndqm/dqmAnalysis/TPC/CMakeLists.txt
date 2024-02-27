@@ -23,9 +23,8 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io::tfile_support
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
+			art_root_io_tfile_support
+			art_root_io_TFileService_service
                         art_Persistency_Common
 			art_Persistency_Provenance
         	${ART_FRAMEWORK_IO_SOURCES}
@@ -53,7 +52,7 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 			${Boost_SYSTEM_LIBRARY}
 )
 
-cet_build_plugin( OfflineAnalysis art::module
+simple_plugin( OfflineAnalysis module
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -65,15 +64,13 @@ cet_build_plugin( OfflineAnalysis art::module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io::tfile_support
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
+			art_root_io_tfile_support
+			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
-		${ROOT_BASIC_LIB_LIST} 
 )
 
-cet_build_plugin( TPCWaveformCreator art::module
+simple_plugin( TPCWaveformCreator module
   sbndaq_online_hiredis
   tpcAnalysis_SBN
   ${LARDATAOBJ}
@@ -86,14 +83,13 @@ cet_build_plugin( TPCWaveformCreator art::module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io::tfile_support
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
+			art_root_io_tfile_support
+			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
 )
 
-cet_build_plugin( OnlineAnalysis art::module
+simple_plugin( OnlineAnalysis module
   sbndaq_online_storage
   sbndaq_online_redis_connection
   sbndaq_online_hiredis
@@ -108,15 +104,14 @@ cet_build_plugin( OnlineAnalysis art::module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io::tfile_support
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
+			art_root_io_tfile_support
+			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins
 )
 
-cet_build_plugin( TPCPurityDQMSender art::module
+simple_plugin( TPCPurityDQMSender module
   sbndaq_online_storage
   sbndaq_online_redis_connection
   sbndaq_online_hiredis
@@ -131,14 +126,13 @@ cet_build_plugin( TPCPurityDQMSender art::module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}#
-			art_root_io::tfile_support#
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
+			art_root_io_tfile_support#
+			art_root_io_TFileService_service
                         art_Persistency_Common
         	${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins
 )
-cet_build_plugin( TPCWaveformAndFftRedis art::module
+simple_plugin( TPCWaveformAndFftRedis module
   tpcAnalysis_SBN
   ${LARDATAOBJ}
   lardataobj_RawData
@@ -150,9 +144,8 @@ cet_build_plugin( TPCWaveformAndFftRedis art::module
                         ${ART_FRAMEWORK_PRINCIPAL}
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
-                        art_root_io::tfile_support
-                        art_root_io::TFileService_service
-			art_root_io::art_root_io
+                        art_root_io_tfile_support
+                        art_root_io_TFileService_service
                         art_Persistency_Common
                 ${ART_FRAMEWORK_IO_SOURCES}
   artdaq_utilities::artdaq-utilities_Plugins

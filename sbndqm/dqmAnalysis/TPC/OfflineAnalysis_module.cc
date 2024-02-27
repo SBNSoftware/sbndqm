@@ -1,5 +1,8 @@
 #include <vector>
 
+#include "TROOT.h"
+#include "TTree.h"
+
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
@@ -13,9 +16,6 @@
 #include "ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
 #include "Analysis.hh"
-
-#include "TROOT.h"
-#include "TTree.h"
 
 /*
  * Uses the Analysis class to print stuff to file
