@@ -27,22 +27,107 @@ physics: {
 
         streams: ["30s"]
 
+        groups: {
+            SPECTDC_Streams_Timing: [0]
+        } 
+
         metrics: {
-          redis_metric_fast: { // can be named anything
-          level: 3
-          metricPluginType: "redis" 
-          // period in seconds to send metric to database
-          reporting_interval: 2.0
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":fast" 
-        }
-        redis_metric_slow: { // can be named anything
-          level: 3
-          metricPluginType: "redis" 
-          reporting_interval: 10.0
-          // need to add postfix otherwise this metric sender and the other one will collide
-          redis_key_postfix: ":slow" 
-        }
+
+          oneETRIG: {
+            units: True_False 
+            title: "SPECTDC Streams Timing 1 ETRIG"
+            display_range: [0., 2.]
+          }
+
+          oneCRT: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 CRT T1 Reset"
+            display_range: [0., 2.]
+          }
+
+          manyFTRIG: {
+            units: True_False
+            title: "SPECTDC Streams Timing ~10 FTRIG"
+            display_range: [0., 2.]
+          }
+
+          oneBES: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 BES"
+            display_range: [0., 2.]
+          }
+
+          oneRWM: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 RWM"
+            display_range: [0., 2.]
+          }
+
+          RWM_BES_const: {
+            units: True_False
+            title: "RWM BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+
+          CRT_BES_const: {
+            units: True_False
+            title: "CRT T1 Reset BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+
+          ETRIG_BES_diff: {
+            units: ns
+            title: "ETRIG BES Timing Difference"
+            display_range: [-40., 40.]
+          }
+
+          ETRIG_RWM_diff: {
+            units: ns
+            title: "ETRIG RWM Timing Difference"
+            display_range: [-40., 40.]
+          }
+
+          ETRIG_FTRIG_diff: {
+            units: ns
+            title: "ETRIG FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          BES_FTRIG_diff: {
+            units: ns
+            title: "BES FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          ch0exists: {
+            units: True_False
+            title: "Channel 0 exists"
+            display_range: [0., 2.]
+          }
+
+          ch1exists: {
+            units: True_False
+            title: "Channel 1 exists"
+            display_range: [0., 2.]
+          }
+
+          ch2exists: {
+            units: True_False
+            title: "Channel 2 exists"
+            display_range: [0., 2.]
+          }
+
+          ch3exists: {
+            units: True_False
+            title: "Channel 3 exists"
+            display_range: [0., 2.]
+          }
+
+          ch4exists: {
+            units: True_False
+            title: "Channel 4 exists"
+            display_range: [0., 2.]
+          }
 
         }
       }

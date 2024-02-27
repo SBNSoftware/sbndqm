@@ -97,8 +97,10 @@ namespace sbndaq {
         //Group by channel 4  
         std::vector<uint64_t>    _tdc_timestamp4; 
         std::vector<std::string> _tdc_name4; 
-  }; 
+       
+    }; 
 } 
+
 
 sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset) 
   : EDAnalyzer(pset) 
@@ -107,7 +109,14 @@ sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
    , m_redis_port{ pset.get<int>("RedisPort", 6379) } 
    , m_metric_config{ pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig") } 
   , m_DAQTimestamp_label{ pset.get<std::string>("DAQTimestampLabel") } 
-{ 
+
+{
+  
+  if (pset.has_key("metrics")) {
+    sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
+  }
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig"));
+
 } 
  
 void sbndaq::SPECTDCStreams::analyze(art::Event const & e) { 
@@ -276,7 +285,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
     std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl;  
     std::cout << " difference is " << RWM_BES_diff << std::endl; 
-    RWM_BES_const = (GLOB_RWM_BES_diff == RWM_BES_diff); 
+    RWM_BES_const = (abs(GLOB_RWM_BES_diff -  RWM_BES_diff) < 3); 
   } 
   else { 
     RWM_BES_diff = _tdc_timestamp2.back() - _tdc_timestamp1.back(); 
@@ -287,7 +296,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
          << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << " RWM in it!\n"; 
     std::cout 
          << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << "RWM in it!\n"; 
-    RWM_BES_const = (GLOB_RWM_BES_diff == RWM_BES_diff); 
+    RWM_BES_const = (abs(GLOB_RWM_BES_diff - RWM_BES_diff) < 3); 
   } 
   GLOB_RWM_BES_diff = RWM_BES_diff; 
   std::cout << "RWM - BES constant? " << RWM_BES_const << std::endl;  
@@ -308,7 +317,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
     std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
     std::cout << " difference is " << CRT_BES_diff << std::endl; 
-    CRT_BES_const = (GLOB_CRT_BES_diff == CRT_BES_diff); 
+    CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
   } 
   else { 
     CRT_BES_diff = _tdc_timestamp0.back() - _tdc_timestamp1.back(); 
@@ -319,7 +328,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
          << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
     std::cout 
          << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
-    CRT_BES_const = (GLOB_CRT_BES_diff == CRT_BES_diff); 
+    CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
   } 
   GLOB_CRT_BES_diff = CRT_BES_diff; 
   std::cout << "CRT T1 reset - BES constant? " << CRT_BES_const << std::endl; 
@@ -535,25 +544,22 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   // TODO: Then send metrics 
   // Example: change metric_ID (i.e. channel ID), metric_name (i.e. channel name), metric_value (i.e. channel timestamp) 
   // sbndaq::sendMetric(groupName, metric_ID, "metric_name", metric_value , level, mode);  
-
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "oneETRIG", oneETRIG, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "oneCRT", oneCRT, 0, artdaq::MetricMode::LastPoint);   
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "manyFTRIG", manyFTRIG, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "oneBES", oneBES, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "oneRWM", oneRWM, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "RWM_BES_const", RWM_BES_const, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "CRT_BES_const", CRT_BES_const, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ETRIG_RWM_diff", ETRIG_RWM_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ETRIG_FTRIG_diff", ETRIG_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "BES_FTRIG_diff", BES_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
-//  sbndaq::sendMetric("Channel # = Channel name", "oneETRIG", "oneETRIG", oneETRIG, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ch0exists", ch0exists, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ch1exists", ch1exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ch2exists", ch2exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ch3exists", ch3exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "", "ch4exists", ch4exists, 0, artdaq::MetricMode::LastPoint);  
-
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneETRIG", oneETRIG, 0, artdaq::MetricMode::LastPoint); 
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneCRT", oneCRT, 0, artdaq::MetricMode::LastPoint);   
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "manyFTRIG", manyFTRIG, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneBES", oneBES, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneRWM", oneRWM, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_const", RWM_BES_const, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "CRT_BES_const", CRT_BES_const, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_RWM_diff", ETRIG_RWM_diff, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_FTRIG_diff", ETRIG_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_FTRIG_diff", BES_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch0exists", ch0exists, 0, artdaq::MetricMode::LastPoint);  
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch1exists", ch1exists, 0, artdaq::MetricMode::LastPoint); 
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch2exists", ch2exists, 0, artdaq::MetricMode::LastPoint); 
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch3exists", ch3exists, 0, artdaq::MetricMode::LastPoint); 
+  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch4exists", ch4exists, 0, artdaq::MetricMode::LastPoint);  
 
 
   std::cout << "--------------Finish event " << _event << std::endl << std::endl; 
