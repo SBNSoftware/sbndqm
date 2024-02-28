@@ -130,7 +130,7 @@ Sum = 0;
   redisGetReply(context,NULL);
   redisGetReply(context,NULL);
   // delete the buffer                                                                                                                        
-  delete buffer;
+  delete [] buffer;
   redisFFT.Stop();
    fSum = fSum + redisFFT.RealTime();
    if (rd.Channel() == 575) {

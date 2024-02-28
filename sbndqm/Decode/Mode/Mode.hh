@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <array>
+#include <cstdint>
+#include <cstddef>
 
 #include "Mode.hh"
 
