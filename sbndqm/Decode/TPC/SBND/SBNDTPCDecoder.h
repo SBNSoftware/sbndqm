@@ -1,9 +1,9 @@
-#ifndef SBNDTPCDecoder_h
-#define SBNDTPCDecoder_h
+#ifndef SBNDTPCDecoderDQM_h
+#define SBNDTPCDecoderDQM_h
 ////////////////////////////////////////////////////////////////////////
-// Class:       SBNDTPCDecoder
+// Class:       SBNDTPCDecoderDQM
 // Plugin Type: producer (art v2_09_06)
-// File:        SBNDTPCDecoder.h
+// File:        SBNDTPCDecoderDQM.h
 //
 // Generated at Thu Feb  8 16:41:18 2018 by Gray Putnam using cetskelgen
 // from cetlib version v3_01_03.
@@ -25,21 +25,21 @@
 */
 
 namespace daq {
-  class SBNDTPCDecoder;
+  class SBNDTPCDecoderDQM;
 }
 
 
-class daq::SBNDTPCDecoder : public art::EDProducer {
+class daq::SBNDTPCDecoderDQM : public art::EDProducer {
 public:
-  explicit SBNDTPCDecoder(fhicl::ParameterSet const & p);
+  explicit SBNDTPCDecoderDQM(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  SBNDTPCDecoder(SBNDTPCDecoder const &) = delete;
-  SBNDTPCDecoder(SBNDTPCDecoder &&) = delete;
-  SBNDTPCDecoder & operator = (SBNDTPCDecoder const &) = delete;
-  SBNDTPCDecoder & operator = (SBNDTPCDecoder &&) = delete;
+  SBNDTPCDecoderDQM(SBNDTPCDecoderDQM const &) = delete;
+  SBNDTPCDecoderDQM(SBNDTPCDecoderDQM &&) = delete;
+  SBNDTPCDecoderDQM & operator = (SBNDTPCDecoderDQM const &) = delete;
+  SBNDTPCDecoderDQM & operator = (SBNDTPCDecoderDQM &&) = delete;
 
   // Required functions.
   void produce(art::Event & e) override;
@@ -91,4 +91,4 @@ private:
   uint32_t _last_trig_frame_number;
 };
 
-#endif /* SBNDTPCDecoder_h */
+#endif /* SBNDTPCDecoderDQM_h */

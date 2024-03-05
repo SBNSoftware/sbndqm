@@ -1,5 +1,9 @@
 #include "simple_channel_info.fcl"
 #include "redis_connection.fcl"
+#include "TPCChannelMapService.fcl"
+#include "SBNDTPCDecoderDefaults.fcl"
+
+
 
 BEGIN_PROLOG
 analysis_config: {
@@ -55,6 +59,8 @@ outputs: {
 physics:
 {
   // now also have something produce the digits and headers
+
+
   producers:
   {
     daq: {
@@ -127,7 +133,7 @@ physics:
       metric_config: {
         streams: [archiving, 10s]
         groups: {
-	  tpc_channel:[[0,1024]] # 8 crates
+	  tpc_channel:[[0,11263]] # 8 crates
         }
         metrics: {
           rms: {
@@ -170,18 +176,19 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
+  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta]
 #  a: [Meta]
   out1 : [dumper]
-  end_paths: [a, out1]
+  end_paths: [a]
 }
+
 
 services:
 {
   RedisConnection: @local::redis_connection
   ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
   #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
-
+  TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
 }
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
@@ -198,13 +205,13 @@ source:
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
-  dispatcherPort: 6021
+  dispatcherPort: 6027
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitorTPC3"
+     unique_label: "OnlineMonitorTPC4"
       transferPluginType: Shmem
-      shm_key: 0x40471454
+      shm_key: 0x40471455
       max_fragment_size_words: 10e7
       first_event_builder_rank: 0
           source_rank: 5
@@ -212,7 +219,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "OnlineMonitorTPC3"
+    unique_label: "OnlineMonitorTPC4"
     path: [ out ]
     physics: {}
     outputs: {
@@ -220,10 +227,10 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "OnlineMonitorTPC3"
+           unique_label: "OnlineMonitorTPC4"
             transferPluginType: Shmem
 
-            shm_key: 0x40471454
+            shm_key: 0x40471455
 
             max_fragment_size_words: 10e7
               first_event_builder_rank: 0

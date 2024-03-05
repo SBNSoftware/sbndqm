@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       SBNDTPCDecoder
+// Class:       SBNDTPCDecoderDQM
 // Plugin Type: producer (art v2_09_06)
-// File:        SBNDTPCDecoder.cxx
+// File:        SBNDTPCDecoderDQM.cxx
 //
 // Generated at Thu Feb  8 16:41:18 2018 by Gray Putnam using cetskelgen
 // from cetlib version v3_01_03.
@@ -35,11 +35,11 @@
 #include "../HeaderData.hh"
 #include "../../Mode/Mode.hh"
 
-DEFINE_ART_MODULE(daq::SBNDTPCDecoder)
+DEFINE_ART_MODULE(daq::SBNDTPCDecoderDQM)
 
 // constructs a header data object from a nevis header
 // construct from a nevis header
-tpcAnalysis::HeaderData daq::SBNDTPCDecoder::Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag) {
+tpcAnalysis::HeaderData daq::SBNDTPCDecoderDQM::Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag) {
   sbndaq::NevisTPCFragment fragment(frag);
 
   const sbndaq::NevisTPCHeader *raw_header = fragment.header();
@@ -64,7 +64,7 @@ tpcAnalysis::HeaderData daq::SBNDTPCDecoder::Fragment2HeaderData(art::Event &eve
   return ret;
 }
 
-daq::SBNDTPCDecoder::SBNDTPCDecoder(fhicl::ParameterSet const & param): 
+daq::SBNDTPCDecoderDQM::SBNDTPCDecoderDQM(fhicl::ParameterSet const & param): 
   art::EDProducer{param},
   _tag(param.get<std::string>("raw_data_label", "daq"),param.get<std::string>("fragment_type_label", "NEVISTPC")),
   _config(param),
@@ -79,7 +79,7 @@ daq::SBNDTPCDecoder::SBNDTPCDecoder(fhicl::ParameterSet const & param):
   }
 }
 
-daq::SBNDTPCDecoder::Config::Config(fhicl::ParameterSet const & param) {
+daq::SBNDTPCDecoderDQM::Config::Config(fhicl::ParameterSet const & param) {
   // amount of time to wait in between processing events
   // useful for debugging redis
   double wait_time = param.get<double>("wait_time", -1 /* units of seconds */);
@@ -107,7 +107,7 @@ daq::SBNDTPCDecoder::Config::Config(fhicl::ParameterSet const & param) {
   min_slot_no = param.get<unsigned>("min_slot_no", 0);
 }
 
-void daq::SBNDTPCDecoder::produce(art::Event & event)
+void daq::SBNDTPCDecoderDQM::produce(art::Event & event)
 {
   if (_config.wait_sec >= 0) {
     std::this_thread::sleep_for(std::chrono::seconds(_config.wait_sec) + std::chrono::microseconds(_config.wait_usec));
@@ -131,17 +131,17 @@ void daq::SBNDTPCDecoder::produce(art::Event & event)
 
 }
 
-bool daq::SBNDTPCDecoder::is_mapped_channel(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
+bool daq::SBNDTPCDecoderDQM::is_mapped_channel(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
   // TODO: make better
   return true;
 }
 
-raw::ChannelID_t daq::SBNDTPCDecoder::get_wire_id(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
+raw::ChannelID_t daq::SBNDTPCDecoderDQM::get_wire_id(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id) {
   // TODO: make better
   return (header->getSlot() - _config.min_slot_no) * _config.channel_per_slot + nevis_channel_id;
 }
 
-void daq::SBNDTPCDecoder::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
+void daq::SBNDTPCDecoderDQM::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
   std::unique_ptr<std::vector<raw::RawDigit>> &product_collection,
   std::unique_ptr<std::vector<tpcAnalysis::HeaderData>> &header_collection) {
 
@@ -197,7 +197,7 @@ void daq::SBNDTPCDecoder::process_fragment(art::Event &event, const artdaq::Frag
 // Computes the checksum, given a nevis tpc header
 //
 // Also note that this only works for uncompressed data
-uint32_t daq::SBNDTPCDecoder::compute_checksum(sbndaq::NevisTPCFragment &fragment) {
+uint32_t daq::SBNDTPCDecoderDQM::compute_checksum(sbndaq::NevisTPCFragment &fragment) {
   uint32_t checksum = 0;
 
   const sbndaq::NevisTPC_ADC_t* data_ptr = fragment.data();

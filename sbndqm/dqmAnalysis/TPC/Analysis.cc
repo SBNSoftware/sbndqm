@@ -240,8 +240,8 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     if (auto hdrs = event.getHandle<std::vector<tpcAnalysis::HeaderData>>(tag1)) {
       for (auto const& hdr: *hdrs){
         ProcessHeader(hdr);
-     }
-
+      }
+    }
   }
   if (_config.timing) {
     _timing.EndTime(&_timing.copy_headers);

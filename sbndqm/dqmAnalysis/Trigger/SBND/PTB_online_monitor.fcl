@@ -132,12 +132,14 @@ services.InitMetricManager.connections.slow.send_zeros: false
 services.InitMetricManager.connections.archiving.send_zeros: false
 
 
+
 services.ArtdaqSharedMemoryServiceInterface:
 {
-  service_provider: "ArtdaqSharedMemoryService"
+  service_provider: "ArtdaqGlobalsService"
 }
 
 services.ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: "Artdaq" }
+
 
 source:
 {
@@ -169,7 +171,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "TriggerOnlyMonitor"
+           unique_label: "TriggerOnlineMonitor"
             transferPluginType: Shmem
 
             shm_key: 0x40471187
