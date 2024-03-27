@@ -20,6 +20,7 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "larcore/Geometry/Geometry.h"
 
 #include "ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
