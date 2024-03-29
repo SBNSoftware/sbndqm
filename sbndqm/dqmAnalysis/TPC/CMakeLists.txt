@@ -1,5 +1,5 @@
 include_directories(${FFTW_INCLUDE_DIR})
-cet_find_library(FFTW_LIBRARY NAMES fftw3 fftw3-3 PATHS ENV FFTW_LIBRARY )
+#cet_find_library(FFTW_LIBRARY NAMES fftw3 fftw3-3 PATHS ENV FFTW_LIBRARY )
 
 # filter modules for running online monitoring
 add_subdirectory(OnlineFilters)
