@@ -1,22 +1,23 @@
-simple_plugin( SPECTDCStreams "module"
+cet_build_plugin( SPECTDCStreams art::module
+  LIBRARIES
+  art::Utilities
+  canvas::canvas  
+  artdaq_core::artdaq-core_Data  
+  artdaq_core::artdaq-core_Utilities
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS 
+  lardataobj::RawData
+  fhiclcpp::fhiclcpp
+  art::Framework_Core
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  ROOT::Core
+  cetlib::cetlib
+  cetlib_except::cetlib_except
 
-  art_Utilities
-  canvas
-
-  art_Framework_Services_Registry
-
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${ART_FRAMEWORK_CORE}
-
-  ${ROOT_BASIC_LIB_LIST}
-
-  art_root_io_tfile_support
-  art_root_io_TFileService_service
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
 
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND 
@@ -25,9 +26,9 @@ simple_plugin( SPECTDCStreams "module"
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
 
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
+  sbndaq_online::storage
+  sbndaq_online::redis_connection
+  sbndaq_online::hiredis
 
 )
 
