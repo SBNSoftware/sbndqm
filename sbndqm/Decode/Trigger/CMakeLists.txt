@@ -10,25 +10,24 @@ art_make_library(LIBRARY_NAME TriggerParser
                 art::Framework_Services_Registry
 )
 
-simple_plugin( DaqDecoderIcarusTrigger "module"
-  
-  art_Utilities
-  canvas
-  
-  artdaq_core::artdaq-core_Data  
+cet_build_plugin( DaqDecoderIcarusTrigger art::module
+  LIBRARIES
+  lardataobj::RawData
+  art::Utilities
+  canvas::canvas  
+  art::Framework_Core
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  ROOT::Core
+  cetlib::cetlib
+  cetlib_except::cetlib_except
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS
   artdaq_core::artdaq-core_Utilities
-  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
-  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS 
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-
-  cetlib cetlib_except
+  artdaq_utilities::artdaq-utilities_Plugins
   TriggerParser
 )
 

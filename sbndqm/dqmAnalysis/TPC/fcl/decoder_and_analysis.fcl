@@ -6,7 +6,7 @@ physics:
   producers:
   {
     daq: {
-      module_type: DaqDecoder
+      module_type: SBNDTPCDecoder
       // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
       // make the header
@@ -17,7 +17,7 @@ physics:
       // produce timestamps in units of mus
       frame_to_dt: 0.5
       // parameters for header index
-      min_slot_no: 4
+      min_slot_no: 3
       channel_per_slot: 64
     }
   }
@@ -29,10 +29,15 @@ physics:
       module_type: OfflineAnalysis
       // producer of digits and header info
       raw_digit_producers: [daq]
-      header_producer: ""
+      header_producer: "daq"
 
       // channel info
-      channel_info: @local::SBND_simple_channel_info
+      channel_info: {
+      n_channels: 11264 # 16 crates
+      collection_channels: [[0,3327]] # no signal -- plane is arbitrary
+      induction_channels: [[3328,11263]]
+    }
+
 
       // standard analysis config
       threshold_calc: 3
@@ -60,8 +65,8 @@ physics:
       reduce_data: false
 
       // number of headers per event provided by input (will be ignored if value is negative)
-      // 10 for SBND 
-      n_headers: 10
+      // 16 for SBND 
+      n_headers: 16
     }
   }
 

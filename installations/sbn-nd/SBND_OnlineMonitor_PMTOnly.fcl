@@ -1,0 +1,203 @@
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+#include "pmt_stream_config_SBND.fcl" 
+
+#service overrides
+services.RedisConnection: @local::redis_connection
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.InitMetricManager: {
+  connections: {
+    archiving: {
+      level: 3
+      metricPluginType: "redis"
+      reporting_interval: 1 #60.0 # 60s
+      verbose: true
+      // need to add postfix otherwise this metric sender and the other one will collide
+      redis_key_postfix: ":archiving"
+      send_zeros: false
+    }
+  }
+}
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+services.NuRandomService: @erase
+services.MemoryTracker: @erase
+services.TimeTracker: @erase
+services.DetectorPropertiesService: @erase
+services.SignalShapingsbndService: @erase
+services.TFileService.fileName: "/dev/null"
+
+#replace the source
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 50000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "SBNDPMTOnlineMonitor"
+      transferPluginType: Shmem
+      shm_key: 0x40471454
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "SBNDPMTOnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "SBNDPMTOnlyMonitor"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471454
+
+            max_fragment_size_words: 100000000 #58543672 #33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+#decoder output
+outputs.decodedout:{
+  module_type: RootOutput
+  fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
+  dataTier:    "raw"
+  compressionLevel: 3
+  #SelectEvents: [pscale_OnMonFiles]
+
+  fileProperties: { 
+    #maxSubRuns: 1 
+    #maxRuns: 1 
+    maxEvents: 1
+  }
+}
+
+physics.producers.daqPMT:
+{
+  module_type: DaqDecoderSBNDPMT
+  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+}
+
+#declare a filters section
+physics.filters:
+{
+  prescale2:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 2
+    prescaleOffset: 0
+  }
+  prescale10:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 10
+    prescaleOffset: 0
+  }
+  prescale20:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 20
+    prescaleOffset: 0
+  }
+  prescale100:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 100
+    prescaleOffset: 0
+  }
+}
+
+##override the analyzers section
+physics.analyzers:
+{
+
+  MetaPMT: {
+    module_type: ReportMetadata
+    RedisKey: eventmetaPMT
+
+    SelectEvents: [pmt_only]
+  }
+
+   pmtAnalysis: {
+
+      module_type: CAENV1730StreamsSBND
+      
+
+      OpDetWaveformLabel: "daqPMT"
+
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::sbnd_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::sbnd_opreco_pedestal_rmsslider 
+
+
+      PMTMetricConfig: {
+
+       ## hostname: "sbnd-db.fnal.gov"
+       hostname: "sbnd-db01.fnal.gov"
+
+        groups: {
+            PMT: [ [160, 208] ]
+        }
+
+        #streams: ["archiving"]
+	#streams: ["fast"]        
+	streams: ["archiving"]
+        metrics: {
+        
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [1., 5.]
+          }
+
+          baseline: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+	    display_range: [14000., 16300.]
+          }
+          
+          rate: {
+            untis: Hz 
+            title: "%(group)s channel %(instance)s single PMT rate" 
+            display_range: [ 100000, 300000 ]
+          }
+
+        }   
+      }
+      SelectEvents: [pmt_only]
+    }
+
+}
+
+#physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
+
+physics.pmt_only: [ daqPMT ]
+physics.pmt_path: [ pmt_only ]
+physics.trigger_paths: [ @sequence::physics.pmt_path ]
+
+
+physics.anapmt: [ MetaPMT, pmtAnalysis ]
+physics.a: [ @sequence::physics.anapmt ]
+
+physics.decoded_stream: [ decodedout ]
+
+physics.end_paths: [ anapmt, decoded_stream ] 
+
+process_name: SBNDOnlineMonitor
+

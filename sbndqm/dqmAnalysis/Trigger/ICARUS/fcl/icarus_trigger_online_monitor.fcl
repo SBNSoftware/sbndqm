@@ -1,30 +1,28 @@
 #include "redis_connection.fcl"
-#include "online_decoder_defs.fcl"
+#include "icarus_online_decoder_defs.fcl"
+#include "icarus_trigger_analysis_defs.fcl"
 
-process_name: ICARUSPMTANALYSIS
+process_name: ICARUSTRIGGERANALYSIS
 
 physics: {
   
   producers: {
-
-    daqPMT: @local::decodePMTOnline
-  
+    daqTrigger: @local::decodeTriggerOnline
   }
 
   analyzers: {
-    
-    pmtana: @local::pmtAnalysis
-    
+   
+    triggerana: @local::triggerAnalysis
+   
   }
 
-  my_producer_modules: [ daqPMT ]
+  my_producer_modules: [ daqTrigger ]
   trigger_paths: [ my_producer_modules ]
   
-  ana: [ pmtanal ] 
+  ana: [ triggerana ] 
   end_paths: [ ana ]
 
 }
-
 
 services: {
 

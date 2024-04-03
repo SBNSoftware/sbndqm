@@ -9,10 +9,15 @@ physics:
       module_type: OfflineAnalysis
       // producer of digits and header info
       raw_digit_producers: [daq]
-      header_producer: ""
+      header_producer: "daq"
 
       // channel info
-      channel_info: @local::SBND_simple_channel_info
+      channel_info: {
+      n_channels: 11264 # 16 crates
+      collection_channels: [[0,3327]] # no signal -- plane is arbitrary
+      induction_channels: [[3328,11263]]
+    }
+
 
       // standard analysis config
       threshold_calc: 3
@@ -40,8 +45,8 @@ physics:
       reduce_data: false
 
       // number of headers per event provided by input (will be ignored if value is negative)
-      // 10 for SBND data
-      n_headers: 10
+      // 16 for SBND data
+      n_headers: 16
     }
   }
 

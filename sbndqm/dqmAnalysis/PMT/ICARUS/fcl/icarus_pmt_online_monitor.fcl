@@ -1,28 +1,30 @@
 #include "redis_connection.fcl"
-#include "online_decoder_defs.fcl"
-#include "trigger_analysis_defs.fcl"
+#include "icarus_online_decoder_defs.fcl"
 
-process_name: ICARUSTRIGGERANALYSIS
+process_name: ICARUSPMTANALYSIS
 
 physics: {
   
   producers: {
-    daqTrigger: @local::decodeTriggerOnline
+
+    daqPMT: @local::decodePMTOnline
+  
   }
 
   analyzers: {
-   
-    triggerana: @local::triggerAnalysis
-   
+    
+    pmtana: @local::pmtAnalysis
+    
   }
 
-  my_producer_modules: [ daqTrigger ]
+  my_producer_modules: [ daqPMT ]
   trigger_paths: [ my_producer_modules ]
   
-  ana: [ triggerana ] 
+  ana: [ pmtanal ] 
   end_paths: [ ana ]
 
 }
+
 
 services: {
 
@@ -49,3 +51,4 @@ source:
   fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
 }
 
+process_name: ICARUSPMTANALYSIS

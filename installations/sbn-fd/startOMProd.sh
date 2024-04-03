@@ -8,12 +8,9 @@ printf '\033]2;Online Monitoring\a'
 my_env="sbn-fd"
 my_devdir=$1
 my_redishost=icarus-db01.fnal.gov
-artdaq_version=v3_12_05
-artdaq_quals=e20:s120a:prof
-sbncode_quals=e20:prof
+sbncode_quals=e26:prof
 my_swdir=/daq/software
 
-my_swdir=/daq/software
 my_daqarea=${HOME}/DQM_DevAreas
 
 fcl_file=$my_daqarea/$my_devdir/srcs/sbndqm/installations/sbn-fd/$2
@@ -28,32 +25,21 @@ printf "\tdispatcherfcl=$fcl_file\n"
 printf "\tredishost=$my_redishost\n\n\n"
 
 source $my_swdir/products/setup
-
 cd $my_daqarea/$my_devdir
 setup mrb
 source $(ls -f $(pwd)/localProducts*/setup |head -1) > /dev/null
 mrbslp
 echo "sbndqm setup"
 
-
 setup icaruscode $SBNCODE_VERSION -q $sbncode_quals
 echo "icaruscode setup"
 
 ups active | grep -E "icaruscode"
-
-unsetup artdaq_core
-unsetup TRACE
-
-setup artdaq $artdaq_version -q $artdaq_quals
-
-echo "artdaq setup"
-
 ups active |grep -E "(sbndqm)"
 
 my_pythonbin=$(dirname $(which python))
 my_pythonpath=$PYTHONPATH
 unset PYTHONPATH
-
 if [[ ! -d $my_daqarea/$my_devdir/python_virtualenv ]]; then
   $my_pythonbin/pip install virtualenv
 	$my_pythonbin/virtualenv -p $my_pythonbin/python --system-site-packages python_virtualenv
