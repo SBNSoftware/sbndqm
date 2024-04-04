@@ -44,11 +44,9 @@ source:
 
   transfer_plugin: {
 
- #    unique_label: "OnlineMonitor"
-      unique_label: "MatteoOnlineMonitor"
+      unique_label: "OnlineMonitor"
       transferPluginType: Shmem
- #     shm_key: 0x40471454
-      shm_key: 0x407474211
+      shm_key: 0x40471454
       max_fragment_size_words: 100000000 #58543672 #33554432
       #max_event_size_bytes: 468349376
       first_event_builder_rank: 0

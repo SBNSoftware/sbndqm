@@ -1,4 +1,4 @@
-#include "pmt_online_monitor_configuration.fcl"
+#include "icarus_pmt_online_monitor_configuration.fcl"
 
 BEGIN_PROLOG
 
@@ -20,7 +20,7 @@ BEGIN_PROLOG
         PMT: [ [0, 384] ]
       }
 
-      streams: ["30s"]
+      streams: ["archiving"]
         
       metrics: {
         
@@ -58,7 +58,7 @@ BEGIN_PROLOG
         PMTTemp: [ [0, 8] ]
       }
 
-      streams: ["30s"]
+      streams: ["archiving"]
         
       metrics: {
         
@@ -86,7 +86,7 @@ BEGIN_PROLOG
         BeamTiming: [ [0, 8] ]
       }
 
-      streams: ["30s"]
+      streams: ["archiving"]
         
       metrics: {
         
@@ -172,5 +172,6 @@ BEGIN_PROLOG
           } 
       }   
     }
+  }
 
 END_PROLOG

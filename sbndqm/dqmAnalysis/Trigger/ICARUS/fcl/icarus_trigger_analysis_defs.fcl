@@ -9,8 +9,12 @@ BEGIN_PROLOG
       TriggerMetricConfig: {
 
         hostname: "icarus-db01.fnal.gov"
+      
+        groups: {
+          TriggerRates: [ [0, 5] ]
+        }
   
-        streams: ["30s"]
+        streams: ["archiving"]
         
         metrics: {
 	    Offbeam_BNB_RATE:{
@@ -20,22 +24,22 @@ BEGIN_PROLOG
 	    }
             BNB_RATE:{
                 units: Hz
-                title: "Offbeam BNB triggers rate"
+                title: "BNB triggers rate"
                 display_range:[0, 2]
             }
             Offbeam_NuMI_RATE:{
                 units: Hz
-                title: "Offbeam BNB triggers rate"
+                title: "Offbeam NuMI triggers rate"
                 display_range:[0, 2]
             }
             NuMI_RATE:{
                 units: Hz
-                title: "Offbeam BNB triggers rate"
+                title: "NuMI BNB triggers rate"
                 display_range:[0, 2]
             }
 	    Unknown_RATE:{
 		units: Hz
-                title: "Offbeam BNB triggers rate"
+                title: "UNKNOWN triggers rate"
                 display_range:[0, 2]
             }		 
 	 }   
