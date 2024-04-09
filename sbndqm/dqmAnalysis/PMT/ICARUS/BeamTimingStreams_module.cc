@@ -51,8 +51,7 @@ namespace sbndaq {
       template<typename T> static size_t getStartSample( std::vector<T> const& vv, T thres );
       
       std::string getGateName(int source);
-      bool isSpecialChannel (int channel, std::map<size_t,std::string> channel_map, std::string &crate);
-      void addWaveformToMap (std::string crate, double length, std::map<std::string,unsigned int> &map);      
+      bool isSpecialChannel (int channel, std::map<size_t,std::string> channel_map, int &crateID);
 
       virtual void analyze(art::Event const & evt);
   
@@ -189,15 +188,15 @@ std::string sbndaq::BeamTimingStreams::getGateName(int source){
 
 //------------------------------------------------------------------------------------------------------------------
 
-bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std::string> channel_map, std::string &crate){
+bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std::string> channel_map, int &crateID){
 
   int digitizer_last_channel = 15;
-  crate = "";
+  crateID = -1;
   for(auto it=channel_map.begin(); it!=channel_map.end(); it++){ 
     size_t eff_fragment_id = it->first & 0x0fff;
     int spare_channel = eff_fragment_id*nChannelsPerBoard + digitizer_last_channel;
     if( spare_channel == pmtID ){
-      crate = it->second.substr(0, it->second.size() - 2);
+      crateID = int(eff_fragment_id / 3);
       return true;
     }
   }
@@ -241,15 +240,15 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
       << "Data product '" << m_opdetwaveform_tag.encode() << "' has no raw::OpDetWaveform in it!";
   }
     
-  std::map<std::string, unsigned int> rwm_wfs; 
-  std::map<std::string, unsigned int> ew_wfs; 
+  std::map<int, unsigned int> rwm_wfs; 
+  std::map<int, unsigned int> ew_wfs; 
   unsigned int index = 0;
 
   for ( auto const & opdetwaveform : *opdetHandle ) {
 
     unsigned int const pmtId = opdetwaveform.ChannelNumber();
     std::size_t length = opdetwaveform.Waveform().size();
-    std::string crate = "";
+    int crate = -1;
 
     // RWM
     if( isSpecialChannel(pmtId, RWMboards, crate) ){
@@ -288,6 +287,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
   // For each crate, extract the EW and RWM time form the waveforms
   // Compute the RWM-EW difference and send it as metric
   // Send a copy of the EW/RW, waveforms as well for each crate
+
   for( auto it=rwm_wfs.begin(); it != rwm_wfs.end(); it++ ){
     
     double RWM_start = getStartSample( (*opdetHandle)[it->second].Waveform(), m_ADC_threshold );
@@ -295,18 +295,19 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
     double RWM_EW = (RWM_start-EW_start)*m_OpticalTick; //us
 
     // send RWM-EW metric
-    std::string instance = metric_prefix + "_" + it->first; 
-    sbndaq::sendMetric(groupName, instance, "RWM-EW", RWM_EW, level, mode);
+    std::string instance_s = std::to_string(it->first); // this it the crate number
+    std::string metric_name = metric_prefix + "_RMW_EW"; // either BNB or NuMI
+    sbndaq::sendMetric(groupName, instance_s, metric_name, RWM_EW, level, mode);
    
     // send RWM waveform
     std::vector<raw::ADC_Count_t> RWMadcs { (*opdetHandle)[it->second].Waveform() };
-    std::string rwm_wf_instance = "snapshot:" + metric_prefix + ":RWM:crate:" + it->first;
+    std::string rwm_wf_instance = "snapshot:" + metric_prefix + "_RWM:" + instance_s;
     sbndaq::SendWaveform(rwm_wf_instance, RWMadcs, m_OpticalTick);
     sbndaq::SendEventMeta(rwm_wf_instance, evt);
 
     // send EW waveform    
     std::vector<raw::ADC_Count_t> EWadcs { (*opdetHandle)[ew_wfs[it->first]].Waveform() };
-    std::string ew_wf_instance = "snapshot:" + metric_prefix + ":EW:crate:" + it->first;
+    std::string ew_wf_instance = "snapshot:" + metric_prefix + "_EW:" + instance_s;
     sbndaq::SendWaveform(ew_wf_instance, EWadcs, m_OpticalTick);
     sbndaq::SendEventMeta(ew_wf_instance, evt);
   }

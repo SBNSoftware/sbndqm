@@ -57,7 +57,6 @@ namespace sbndaq {
   
       virtual void analyze(art::Event const & evt);
       void SendTemperatureMetrics(art::Event const & evt);  
-      std::string convertFragIdToDigitizerLabel(size_t eff_frag_id);
 
     private:
 
@@ -72,7 +71,7 @@ namespace sbndaq {
       int m_redis_port;
       
       fhicl::ParameterSet m_metric_config;
-      fhicl::ParameterSet m_temp_metric_config;
+      fhicl::ParameterSet m_board_metric_config;
 
       pmtana::PulseRecoManager pulseRecoManager;
       pmtana::PMTPulseRecoBase* threshAlg;
@@ -95,14 +94,14 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
-  , m_temp_metric_config{ pset.get<fhicl::ParameterSet>("PMTTempMetricConfig") }
+  , m_board_metric_config{ pset.get<fhicl::ParameterSet>("PMTBoardMetricConfig") }
   , pulseRecoManager()
   , fftManager(0)
 {
 
   // Configure the redis metrics 
   sbndaq::GenerateMetricConfig( m_metric_config );
-  sbndaq::GenerateMetricConfig( m_temp_metric_config );
+  sbndaq::GenerateMetricConfig( m_board_metric_config );
 
   // Configure the pedestal manager
   auto const ped_alg_pset = pset.get<fhicl::ParameterSet>("PedAlgoConfig");
@@ -142,46 +141,10 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
 
 //------------------------------------------------------------------------------------------------------------------
 
-std::string sbndaq::CAENV1730Streams::convertFragIdToDigitizerLabel(size_t eff_frag_id) {
-
-  size_t fragment_id = eff_frag_id | 0x2000;
-  std::map<size_t, std::string>  fragment_map {
-	{ 0x2015, "eebot01" }, 
-	{ 0x2016, "eebot02" }, 
-	{ 0x2017, "eebot03" }, 
-	{ 0x2012, "eetop01" }, 
-	{ 0x2013, "eetop02" }, 
-	{ 0x2014, "eetop03" }, 
-	{ 0x200F, "ewbot01" }, 
-	{ 0x2010, "ewbot02" },
-	{ 0x2011, "ewbot03" }, 
-	{ 0x200C, "ewtop01" }, 
-	{ 0x200D, "ewtop02" }, 
-	{ 0x200E, "ewtop03" }, 
-	{ 0x2009, "webot01" }, 
-	{ 0x200A, "webot02" }, 
-	{ 0x200B, "webot03" }, 
-	{ 0x2006, "wetop01" }, 
-	{ 0x2007, "wetop02" }, 
-	{ 0x2008, "wetop03" }, 
-	{ 0x2003, "wwbot01" }, 
-	{ 0x2004, "wwbot02" }, 
-	{ 0x2005, "wwbot03" }, 
-	{ 0x2000, "wwtop01" }, 
-	{ 0x2001, "wwtop02" }, 
-	{ 0x2002, "wwtop03" } 
-  };
-  return fragment_map[fragment_id];
-}
-
-
-//------------------------------------------------------------------------------------------------------------------
-
 void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
 
   int level = 3; 
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
-  std::string groupName = "PMTTemp";
   
   art::Handle digitizerHandle = evt.getHandle<std::vector<pmtAnalysis::PMTDigitizerInfo>>(m_pmtdigitizer_tag);
 
@@ -197,9 +160,9 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
  
   for ( auto const & digitizer : *digitizerHandle ) {
    
-    size_t boardId = digitizer.getBoardId();
-    std::string board = convertFragIdToDigitizerLabel(boardId);
- 
+    size_t boardId = digitizer.getBoardId(); //this is the effective fragment_id
+    std::string boardId_s = std::to_string(boardId);
+
     // skip if this board was already seen once in this event
     if( std::find( board_counter.begin(), board_counter.end(), boardId ) != board_counter.end() ) continue;
     board_counter.push_back(boardId);
@@ -218,7 +181,7 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
 
     // send board max temperature
     if( digitizer.getNChannels() > 1)
-    	sbndaq::sendMetric(groupName, board, "max_temperature", maxT, level, mode);
+    	sbndaq::sendMetric("PMTBoard", boardId_s, "max_temperature", maxT, level, mode);
   }
 
 }

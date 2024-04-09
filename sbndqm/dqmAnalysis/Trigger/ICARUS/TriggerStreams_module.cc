@@ -111,7 +111,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
 
   //Redis stuff
   int level = 3; 
-  std::string groupName = "Trigger";
+  std::string groupName = "TriggerRates";
   artdaq::MetricMode rate = artdaq::MetricMode::Rate;
 
   // Now we get the trigger information
@@ -150,8 +150,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   // but agnostically we created a map to count the different types, hence we send them separately
   for( const auto bits : bitsCountsMap ){
     
-    std::string triggerid_s = bitsToName( bits.first );
-    triggerid_s+="_RATE";
+    std::string triggerid_s = std::to_string(bits.first);
      
     //Send the trigger rate 
     sbndaq::sendMetric(groupName, triggerid_s, "trigger_rate", bits.second, level, rate);
