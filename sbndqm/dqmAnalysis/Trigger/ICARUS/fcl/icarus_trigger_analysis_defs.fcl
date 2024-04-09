@@ -17,31 +17,12 @@ BEGIN_PROLOG
         streams: ["archiving"]
         
         metrics: {
-	    Offbeam_BNB_RATE:{
+
+	    trigger_rate: {
 		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
+		title: "Trigger source %(instance)s rate"
+		display_range:[0, 2.]
 	    }
-            BNB_RATE:{
-                units: Hz
-                title: "BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam NuMI triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "NuMI BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "UNKNOWN triggers rate"
-                display_range:[0, 2]
-            }		 
 	 }   
       }
     }
