@@ -1,4 +1,5 @@
 #include "redis_connection.fcl"
+#include "services_basic_icarus.fcl"
 #include "icarus_online_decoder_defs.fcl"
 #include "icarus_pmt_analysis_defs.fcl"
 #include "icarus_trigger_analysis_defs.fcl"
@@ -28,6 +29,7 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 services.TFileService.fileName: "/dev/null"
+services.message: @local::icarus_basic_services.message
 
 #replace the source
 source:

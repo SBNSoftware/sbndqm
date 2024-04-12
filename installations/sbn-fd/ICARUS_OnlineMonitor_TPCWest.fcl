@@ -1,38 +1,12 @@
 #include "redis_connection.fcl"
-#include "opticaldetectormodules.fcl"
+#include "services_basic_icarus.fcl"
+#include "stage0_icarus_defs.fcl"
+#include "icarus_online_decoder_defs.fcl"
+#include "icarus_pmt_analysis_defs.fcl"
+#include "icarus_trigger_analysis_defs.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
-
-icarus_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
-icarus_opreco_pedestal_rmsslider.BeamGateSamples:   1
-icarus_opreco_pedestal_rmsslider.SampleSize:        30
-icarus_opreco_pedestal_rmsslider.Threshold:         4.0
-icarus_opreco_pedestal_rmsslider.Verbose:           false
-icarus_opreco_pedestal_rmsslider.NWaveformsToFile:  0
-icarus_opreco_pedestal_rmsslider.MaxSigma:          4.0
-icarus_opreco_pedestal_rmsslider.PedRangeMax:       16000
-icarus_opreco_pedestal_rmsslider.PedRangeMin:       13000
-icarus_opreco_pedestal_rmsslider.NumPreSample:      10
-icarus_opreco_pedestal_rmsslider.NumPostSample:     20
-
-icarus_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
-icarus_opreco_hit_slidingwindow.PositivePolarity:    false
-icarus_opreco_hit_slidingwindow.NumPreSample:        5
-icarus_opreco_hit_slidingwindow.NumPostSample:       10
-icarus_opreco_hit_slidingwindow.ADCThreshold:        10 # ADC threshold (absolute) above pedestal mean to fire a pulse
-icarus_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
-icarus_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
-icarus_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
-icarus_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
-icarus_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
-icarus_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
-icarus_opreco_hit_slidingwindow.Verbosity:           false
-
-
-#tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
-#tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
-#tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW","daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
 
 tpclabels_daq: ["daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
 tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
@@ -80,12 +54,13 @@ analysis_config: {
   // Change tick period to be 0.4 for ICARUS
   tick_period: 0.4
 }
+
 END_PROLOG
 
 
 ###use icaruscode decoder.fcl as a base
-#include "decoder.fcl"
-
+###include "decoder.fcl"
+#include "stage0_icarus_driver_common.fcl"
 
 #service overrides
 services.RedisConnection: @local::redis_connection
@@ -111,8 +86,10 @@ services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
 services.DetectorPropertiesService: @erase
+services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
+services.message: @local::icarus_basic_services.message
 
 #replace the source
 source:
@@ -177,15 +154,14 @@ outputs.decodedout:{
   }
 }
 
+# TPC decoder
 physics.producers.daqTPC: @local::physics.producers.daqTPC
 physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
 physics.producers.daqTPC.OutputRawWaveform: true
 
-physics.producers.daqPMT:
-{
-  module_type: DaqDecoderIcarusPMT
-  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
-}
+# PMT + trigger decoder
+physics.producers.daqPMT: @local::decodePMTOnline
+physics.producers.daqTrigger: @local::decodeTriggerOnline
 
 #add online purity producers
 physics.producers.purityana0:
@@ -206,6 +182,11 @@ physics.producers.purityana1.CryostatFCL: 1
 #declare a filters section
 physics.filters:
 {
+  prescale1:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 1
+    prescaleOffset: 0
+  }
   prescale2:{ 
     module_type: "Prescaler"
     prescaleFactor: 2
@@ -214,6 +195,11 @@ physics.filters:
   prescale10:{ 
     module_type: "Prescaler"
     prescaleFactor: 10
+    prescaleOffset: 0
+  }
+  prescale5:{ 
+    module_type: "Prescaler"
+    prescaleFactor: 5
     prescaleOffset: 0
   }
   prescale20:{ 
@@ -231,6 +217,12 @@ physics.filters:
 ##override the analyzers section
 physics.analyzers:
 {
+
+  # get PMT/Trigger analysis from includes  
+  pmtana: @local::pmtAnalysis
+  timingana: @local::timingAnalysis
+  triggerana: @local::triggerAnalysis 
+
   Meta: {
     module_type: ReportMetadata
     RedisKey: eventmetaTPC
@@ -264,54 +256,7 @@ physics.analyzers:
 
     SelectEvents: [tpc_only]
   }
-
-   pmtAnalysis: {
-
-      module_type: CAENV1730Streams
-      
-
-      OpDetWaveformLabel: "daqPMT"
-
-      reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_opreco_hit_slidingwindow
-      PedAlgoConfig: @local::icarus_opreco_pedestal_rmsslider 
-
-
-      PMTMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-    
-        groups: {
-            PMT: [ [0, 380] ]
-        }
-
-        streams: ["archiving"]
-        
-        metrics: {
-        
-          rms: {
-            units: ADC
-            title: "PMT channel %(instance)s rms"
-            display_range: [0., 50.]
-          }
-
-          pedestal: {
-            units: ADC
-            title: "%(group)s channel %(instance)s Pedestal"
-            display_range: [13000, 16000]
-          }
-          
-          rate: {
-            untis: Hz 
-            title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ 100000, 300000 ]
-          }
-
-        }   
-      }
-      SelectEvents: [pmt_only]
-    }
-
+  
   PurityAnalysis:{
     module_type: TPCPurityDQMSender
     group_name: tpc_purity
@@ -404,22 +349,30 @@ physics.analyzers:
   }
 
   CRTAna:{
+    SelectEvents: [ crt_only ]
     module_type: BernCRTdqm
 
     metric_board_config: {
-      groups:
-      {
-        CRT_board:[[25,96]] //73 crt boards
-      }
+      groups:{
+        CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
+        CRT_board_top:[[1,123]]
+     }                  //missing 2, 12, 18, 20
       streams:[archiving]
+				
       metrics:{
         TS0:{}
-        TS1:{}
-        n_events:{}
-        MaxADCValue:{}
-        baseline:{}	
+	TS1:{}
+	n_events:{}
+	MaxADCValue:{}
+	baseline:{}
+
+	earlysynch:{alarmrange: [-100000,100000] }
+	latesynch:{ alarmrange: [-100000,100000] }
+
+	lastbighit:{ alarmrange: [0,100000000] }
       }
     }
+
     metric_channel_config: {
       groups:
       {
@@ -435,37 +388,92 @@ physics.analyzers:
     }
   }
 
+
+  fragana:{
+    SelectEvents: [ pmt_only, crt_only ]
+
+    module_type: FragmentDQMAna
+    
+    metric_config: {
+       groups: {
+           PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 
+	   		    8199, 8211, 8213, 8198, 8215, 8205, 8212, 8201, 8210, 
+ 			    8192, 8196, 8195, 8197, 8207, 8193]
+
+           CRT_cont_frag : [13038, 12978, 13043, 12892, 12857, 12890, 12941, 12936, 12950, 
+	   		    12891, 12872, 12987, 12983, 12960, 12984, 12961, 12888, 12863, 
+			    13051, 12980, 13041, 12937, 13040, 12897, 13034, 12976, 12870, 
+			    12882, 13031, 12974, 13047, 12585, 12560, 12592, 12552, 12550, 
+			    12986, 12866, 13053, 13033, 12881, 12972, 12925, 12981, 12883, 
+			    13042, 12919, 12914, 12916, 12924, 13054, 13045, 12964, 12998, 
+			    12887, 12952, 12966, 12900, 12904, 12865, 13049, 12864, 12885, 
+			    12915, 12802, 12922, 12954, 12982, 12867, 12938, 13044, 12989, 
+			    12955, 12907, 12988, 12970, 12917, 12861, 13004, 12990, 12858, 
+			    12609, 12977, 13052, 12926, 12880, 12901, 13048, 13003, 12898, 
+			    12962, 12943, 12895, 12973, 12942, 13035, 12600, 12586, 12933, 
+			    12947, 12905, 12968, 12629, 12569, 12599, 12561, 12637, 12636, 
+			    12913, 12630, 12593, 12610, 12628, 12581, 12622, 12979, 12555, 
+			    12570, 12554, 12638, 12605, 12611, 12587, 12563, 12639, 12576, 
+			    13037, 12616, 12806, 12969, 12912, 12939, 12920, 12934, 13032, 
+			    12985, 12944, 12929, 13002, 12930, 12860, 12631, 12859, 13050, 
+			    12862, 13046, 12965, 12902, 12945, 12894, 12935, 12551, 13039, 
+			    12553, 12948, 12910, 12589, 12620, 12641, 12579, 12573, 12588, 
+			    12633, 12567, 12574, 12613, 12634, 12580, 12619, 12607, 12624, 
+			    12604, 12568, 12548, 12545, 12635, 12614, 12623, 12618, 12590, 
+			    12608, 12583, 12584, 12617, 12615, 12591, 12612, 12601, 12575, 
+			    12594, 12595, 12627, 12571, 12557, 12565, 12577, 12596, 12602, 
+			    12640, 12621, 12626, 12932, 12632, 12558, 12572, 12566, 12597, 
+			    12603, 12606, 12549, 12547, 12625, 12582, 12578, 12559, 12598] 
+          }
+        
+  
+       streams: [archiving]
+       metrics: {
+         frag_count: {}
+         zero_rate: {}
+       }
+
+      }
+
+  }
+
 }
 
-physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
-physics.online_purity:   [prescale2,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale2, daqTPC ]
-physics.pmt_only: [ daqPMT ]
 
-# BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
+
+## SETTING UP TRIGGER-PATHS (PRODUCERS)
+## BH: comment pscale_OnMonFiles to turn off output file
+physics.analyzers.pmtana.SelectEvents: [ pmt_only ]
+physics.analyzers.timingana.SelectEvents: [ pmt_only ]
+physics.analyzers.triggerana.SelectEvents: [ trigger_only ]
+
+physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
+physics.online_purity:   [prescale5,  daqTPC, purityana0, purityana1]
+physics.tpc_only: [ prescale5, daqTPC ]
+physics.pmt_only: [ prescale1, daqPMT, daqTrigger ]
+physics.trigger_only: [ prescale1, daqTrigger ]
+physics.crt_only: [ prescale1 ]
+
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
+physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
+physics.crt_path: [ crt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path ]
+			 @sequence::physics.pmt_path,
+			 @sequence::physics.crt_path,
+			 @sequence::physics.trigger_path ]
 
-
+## SETTING UP PHYSICS-PATHS (ANALYZERS)
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
-physics.anapmt: [ MetaPMT, pmtAnalysis ]
-physics.anacrt: [ CRTAna ]
+physics.anatrigger: [ triggerana ]
+physics.anapmt: [ MetaPMT, pmtana , timingana, fragana ]
+physics.anacrt: [ CRTAna , fragana ]
 
-#physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt ]
+physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
 
 physics.decoded_stream: [ decodedout ]
 
 physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
-#physics.end_paths: [ anatpc, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
-#physics.end_paths: [ anapmt, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
-
-#PMT overrides for the online
-#physics.producers.daqPMT.DecoderTool.PMTconfigTag: @erase
-#physics.producers.daqPMT.DecoderTool.RequireKnownBoards: false
-#physics.producers.daqPMT.DecoderTool.RequireBoardConfig: false

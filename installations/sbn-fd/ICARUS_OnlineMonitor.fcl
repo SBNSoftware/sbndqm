@@ -1,6 +1,9 @@
 #include "redis_connection.fcl"
+#include "services_basic_icarus.fcl"
 #include "stage0_icarus_defs.fcl"
-#include "pmt_online_monitor_configuration.fcl"
+#include "icarus_online_decoder_defs.fcl"
+#include "icarus_pmt_analysis_defs.fcl"
+#include "icarus_trigger_analysis_defs.fcl"
 
 #analysis configuration pieces
 BEGIN_PROLOG
@@ -86,7 +89,7 @@ services.DetectorPropertiesService: @erase
 services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
-
+services.message: @local::icarus_basic_services.message
 
 #replace the source
 source:
@@ -151,17 +154,14 @@ outputs.decodedout:{
   }
 }
 
+# TPC decoder
 physics.producers.daqTPC: @local::physics.producers.daqTPC
 physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
 physics.producers.daqTPC.OutputRawWaveform: true
 
-physics.producers.daqPMT:
-{
-  module_type: DaqDecoderIcarusPMT
-  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
-}
-
-physics.producers.daqTrigger: @local::decodeTrigger
+# PMT + trigger decoder
+physics.producers.daqPMT: @local::decodePMTOnline
+physics.producers.daqTrigger: @local::decodeTriggerOnline
 
 #add online purity producers
 physics.producers.purityana0:
@@ -217,6 +217,12 @@ physics.filters:
 ##override the analyzers section
 physics.analyzers:
 {
+
+  # get PMT/Trigger analysis from includes  
+  pmtana: @local::pmtAnalysis
+  timingana: @local::timingAnalysis
+  triggerana: @local::triggerAnalysis 
+
   Meta: {
     module_type: ReportMetadata
     RedisKey: eventmetaTPC
@@ -251,96 +257,6 @@ physics.analyzers:
     SelectEvents: [tpc_only]
   }
   
-     triggerAnalysis: {
-      SelectEvents: [trigger_only]
-
-      module_type: TriggerStreams
-      
-      TriggerLabel: "daqTrigger"      
-      
-      TriggerMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-  
-        streams: ["30s"]
-        
-        metrics: {
-	    Offbeam_BNB_RATE:{
-		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
-	    }
-            BNB_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }		 
-	}   
-      }
-   }
-
-   pmtAnalysis: {
-
-      module_type: CAENV1730Streams
-      
-
-      OpDetWaveformLabel: "daqPMT"
-
-      reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
-      PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo 
-
-
-      PMTMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-    
-        groups: {
-            PMT: [ [0, 384] ]
-        }
-
-        streams: ["archiving"]
-        
-        metrics: {
-        
-          rms: {
-            units: ADC
-            title: "PMT channel %(instance)s rms"
-            display_range: [0., 20.]
-          }
-
-          baseline: {
-            units: ADC
-            title: "%(group)s channel %(instance)s Pedestal"
-            display_range: [13000, 16000]
-          }
-          
-          rate: {
-            untis: Hz 
-            title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ 100000, 300000 ]
-          }
-
-        }   
-      }
-      SelectEvents: [pmt_only]
-    }
-
   PurityAnalysis:{
     module_type: TPCPurityDQMSender
     group_name: tpc_purity
@@ -523,41 +439,41 @@ physics.analyzers:
 
 }
 
+
+
+## SETTING UP TRIGGER-PATHS (PRODUCERS)
+## BH: comment pscale_OnMonFiles to turn off output file
+physics.analyzers.pmtana.SelectEvents: [ pmt_only ]
+physics.analyzers.timingana.SelectEvents: [ pmt_only ]
+physics.analyzers.triggerana.SelectEvents: [ trigger_only ]
+
 physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
 physics.online_purity:   [prescale5,  daqTPC, purityana0, purityana1]
 physics.tpc_only: [ prescale5, daqTPC ]
-physics.pmt_only: [ prescale1, daqPMT ]
+physics.pmt_only: [ prescale1, daqPMT, daqTrigger ]
 physics.trigger_only: [ prescale1, daqTrigger ]
 physics.crt_only: [ prescale1 ]
 
-# BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
 physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
 physics.trigger_path: [trigger_only]
 physics.pmt_path: [ pmt_only ]
 physics.crt_path: [ crt_only ]
 
 physics.trigger_paths: [ @sequence::physics.tpc_path,
-		         @sequence::physics.pmt_path,
-			 @sequence::physics.crt_path]
-#			 @sequence::physics.trigger_path]
+			 @sequence::physics.pmt_path,
+			 @sequence::physics.crt_path,
+			 @sequence::physics.trigger_path ]
 
-
+## SETTING UP PHYSICS-PATHS (ANALYZERS)
 physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
-physics.anatrigger: [ triggerAnalysis ]
-
-physics.anapmt: [ MetaPMT, pmtAnalysis , fragana ]
+physics.anatrigger: [ triggerana ]
+physics.anapmt: [ MetaPMT, pmtana , timingana, fragana ]
 physics.anacrt: [ CRTAna , fragana ]
 
-#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
 
 physics.decoded_stream: [ decodedout ]
 
 physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
 
 process_name: ICARUSOnlineMonitor
-
-#PMT overrides for the online
-#physics.producers.daqPMT.DecoderTool.PMTconfigTag: @erase
-#physics.producers.daqPMT.DecoderTool.RequireKnownBoards: false
-#physics.producers.daqPMT.DecoderTool.RequireBoardConfig: false
