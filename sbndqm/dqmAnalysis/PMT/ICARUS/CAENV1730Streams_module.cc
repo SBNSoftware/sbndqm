@@ -202,6 +202,8 @@ template<typename T>
 
 void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
 
+  mf::LogInfo("CAENV1730Streams") << "Computing PMT metrics..."; 
+
   // send PMT temperatures 
   SendTemperatureMetrics(evt);
 
@@ -320,6 +322,7 @@ void sbndaq::CAENV1730Streams::analyze(art::Event const & evt) {
   }
 
   unique_wfs.clear();
+  mf::LogInfo("CAENV1730Streams") << "PMT metrics sent!"; 
 
 }
 

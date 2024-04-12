@@ -179,7 +179,7 @@ std::string sbndaq::BeamTimingStreams::getGateName(int source){
     case daq::TriggerGateTypes::BNB:
       return "BNB";
     case daq::TriggerGateTypes::NuMI:
-      return "NuMI";
+      return "NUMI";
     default:
       return "Offbeam";
   }
@@ -207,6 +207,8 @@ bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std:
 
 void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
 
+  mf::LogInfo("BeamTimingStreams") << "Computing BeamTiming metrics...";
+
   int level = 3; 
   //artdaq::MetricMode mode = artdaq::MetricMode::Average;
   artdaq::MetricMode mode = artdaq::MetricMode::LastPoint;
@@ -218,6 +220,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
   if( !triggerHandle.isValid() || triggerHandle->empty() ) {
     mf::LogError("sbndaq::BeamTimingStreams::analyze") 
       << "Data product '" << m_trigger_tag.encode() << "' has no raw::Trigger in it!";
+    return;
   }
   
   if( (*triggerHandle).size()>1 )
@@ -226,7 +229,8 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
   auto trigger_source = (*triggerHandle).at(0).TriggerBits();
   std::string metric_prefix = getGateName(trigger_source);
 
-  if( metric_prefix != "BNB" && metric_prefix != "NuMI" ){
+  if( metric_prefix != "BNB" && metric_prefix != "NUMI" ){
+    mf::LogInfo("BeamTimingStreams") << "Skipping because trigger is " << metric_prefix << "...";  
     return;
   } 
 
@@ -238,6 +242,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
   if( !opdetHandle.isValid() || opdetHandle->empty() ) {
     mf::LogError("sbndaq::BeamTimingStreams::analyze") 
       << "Data product '" << m_opdetwaveform_tag.encode() << "' has no raw::OpDetWaveform in it!";
+    return;
   }
     
   std::map<int, unsigned int> rwm_wfs; 
@@ -296,7 +301,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
 
     // send RWM-EW metric
     std::string instance_s = std::to_string(it->first); // this it the crate number
-    std::string metric_name = metric_prefix + "_RMW_EW"; // either BNB or NuMI
+    std::string metric_name = metric_prefix + "_RWM_EW"; // either BNB or NuMI
     sbndaq::sendMetric(groupName, instance_s, metric_name, RWM_EW, level, mode);
    
     // send RWM waveform
@@ -311,6 +316,8 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
     sbndaq::SendWaveform(ew_wf_instance, EWadcs, m_OpticalTick);
     sbndaq::SendEventMeta(ew_wf_instance, evt);
   }
+
+  mf::LogInfo("BeamTimingStreams") << "BeamTiming metrics sent!";
 
 }
 

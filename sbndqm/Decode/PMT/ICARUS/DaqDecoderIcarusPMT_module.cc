@@ -347,6 +347,8 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
 void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 {
 
+  mf::LogInfo("DaqDecoderIcarusPMT") << "Decoding PMT fragments...";
+
   // clear proto-waveforms/TTTs from previous event      
   fProtoWaveforms.clear();
   fTTTs.clear();
@@ -370,7 +372,7 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
     }
     
     else {
-       mf::LogError("DaqDecoderIcarus") 
+       mf::LogError("DaqDecoderIcarusPMT") 
 	 << "No fragments found\n" << '\n';
     }
     
@@ -384,6 +386,8 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
     mf::LogError("DaqDecoderIcarus") 
       << "Error while attempting to decode PMT data:\n" << e.what() << '\n';
   }
+  
+  mf::LogInfo("DaqDecoderIcarusPMT") << "PMT fragments decoded!";
 
 }
 

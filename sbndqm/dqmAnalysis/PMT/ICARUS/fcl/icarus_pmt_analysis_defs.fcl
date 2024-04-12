@@ -4,6 +4,7 @@ BEGIN_PROLOG
 
   pmtAnalysis: {
     module_type: CAENV1730Streams
+    SelectEvents: [] 
       
     OpDetWaveformLabel: "daqPMT"
     PMTDigitizerLabel: "daqPMT"
@@ -27,19 +28,19 @@ BEGIN_PROLOG
         rms: {
           units: ADC
           title: "PMT channel %(instance)s rms"
-          display_range: [-6., 6.]
+          display_range: [-1., 6.]
         }
 
         baseline: {
           units: ADC
           title: "%(group)s channel %(instance)s baseline"
-          display_range: [0, 16000]
+          display_range: [13000, 16000]
         }
           
         rate: {
           units: Hz 
           title: "%(group)s channel %(instance)s single PMT rate" 
-          display_range: [ 0, 10 ]
+          display_range: [ 0, 2. ]
         }
           
         temperature: {
@@ -74,7 +75,8 @@ BEGIN_PROLOG
   timingAnalysis: {
 
     module_type: BeamTimingStreams
-     
+    SelectEvents: [] 
+    
     OpDetWaveformLabel: "daqPMT"
     TriggerLabel: "daqTrigger"
 
@@ -90,15 +92,15 @@ BEGIN_PROLOG
         
       metrics: {
         
-          BNB_RMW_EW: {
+          BNB_RWM_EW: {
             units: us
             title: "Crate %(instance)s RWM-EW"
-            display_range: [-10., 10.]
+            display_range: [-12., 12.]
           }
-          NuMI_RWM_EW: {
+          NUMI_RWM_EW: {
             units: us
             title: "Crate %(instance)s RWM-EW"
-            display_range: [-10., 10.]
+            display_range: [-12., 12.]
           }
       }   
     }

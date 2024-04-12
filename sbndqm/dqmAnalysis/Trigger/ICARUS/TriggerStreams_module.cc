@@ -109,6 +109,8 @@ std::string sbndaq::TriggerStreams::bitsToName(int source){
 
 void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
 
+  mf::LogInfo("TriggerStreams") << "Computing Trigger metrics...";
+  
   //Redis stuff
   int level = 3; 
   std::string groupName = "TriggerRates";
@@ -124,6 +126,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   }   
   else {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product raw::Trigger not found!\n";
+    return;
   }
 
   // Here we read the external trigger information
@@ -134,6 +137,7 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   }
   else {
     mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product raw::ExternalTrigger not found!\n";
+    return;
   }
   
   // Here we read the beam information
@@ -143,7 +147,8 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
     //std::cout << "OK" << std::endl;
   }
   else {
-    mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product sim::GeteBeamInfo not found!\n";
+    mf::LogError("sbndaq::TriggerStreams::analyze") << "Data product sim::GateBeamInfo not found!\n";
+    return;
   }
 
   // Now we send the metrics. There is probably one trigger per event
@@ -159,6 +164,8 @@ void sbndaq::TriggerStreams::analyze(art::Event const & evt) {
   
   // Sweep the dust away 
   clean();
+  
+  mf::LogInfo("TriggerStreams") << "Trigger metrics sent!";
 
 }
 
