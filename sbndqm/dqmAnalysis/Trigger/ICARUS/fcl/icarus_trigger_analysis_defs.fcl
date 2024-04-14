@@ -12,7 +12,7 @@ BEGIN_PROLOG
         hostname: "icarus-db01.fnal.gov"
       
         groups: {
-          TriggerRates: [ [0, 5] ]
+          TriggerRates: [ [0, 6] ]
         }
   
         streams: ["archiving"]

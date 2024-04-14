@@ -36,6 +36,17 @@
 namespace daq 
 {
 
+  // support structure for the decoding
+  // storing  raw::OpDetWaveforms AND the TTT
+  struct ProtoWaveform 
+  {
+    raw::OpDetWaveform wf;
+    unsigned int TTT;
+    ProtoWaveform(const raw::OpDetWaveform waveform, unsigned int ttt):
+      wf(waveform), TTT(ttt) {};
+  };
+
+
   class DaqDecoderIcarusPMT : public art::EDProducer 
   {
 
@@ -70,8 +81,8 @@ namespace daq
 
       // stitch contiguous waveforms
       void stitchWaveforms();
-      void sortWaveformsByTime(std::vector<raw::OpDetWaveform> &wfs) const;
-      raw::OpDetWaveform mergeWaveformGroup(std::vector<raw::OpDetWaveform> &all_wfs, std::vector<int> const& group);
+      void sortWaveformsByTime(std::vector<ProtoWaveform> &wfs) const;
+      raw::OpDetWaveform mergeWaveformGroup(std::vector<ProtoWaveform> &all_wfs, std::vector<int> const& group);
 
       void produce(art::Event & e) override;
 
@@ -82,8 +93,7 @@ namespace daq
       template <typename T> std::vector<T>& appendTo( std::vector<T>& dest, std::vector<T>&& src);
       
       std::vector<art::InputTag> fFragmentLabels;
-      std::map<std::size_t,std::vector<raw::OpDetWaveform>> fProtoWaveforms;
-      std::map<std::size_t,std::vector<unsigned int>> fTTTs;
+      std::map<std::size_t,std::vector<ProtoWaveform>> fProtoWaveforms;
       double fOpticalTickNS;
 
       using OpDetWaveformCollection    = std::vector<raw::OpDetWaveform>;
@@ -218,7 +228,7 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
   for( size_t digitizerChannel=0; digitizerChannel<nChannelsPerBoard; digitizerChannel++ ) {
 
     // We don't have access to the offline DB: this is a different channel mapping
-    // But offline DB also doesn't have deal with special channels (16th) 
+    // Also offline DB doesn't deal with special channels (16th) 
     std::size_t const pmtID = digitizerChannel+nChannelsPerBoard*eff_fragment_id;
 
     std::size_t const channelPosInData = chDataMap[digitizerChannel];
@@ -229,8 +239,8 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
     std::copy_n(data_begin + ch_offset, nSamplesPerChannel, wvfm.begin());
 
     // saves all waveforms from this channel in the event + TTT for time stitching
-    fProtoWaveforms[pmtID].emplace_back(fragmentTimestamp, pmtID, wvfm);
-    fTTTs[pmtID].push_back(time_tag);
+    auto this_wf =  raw::OpDetWaveform(fragmentTimestamp, pmtID, wvfm);
+    fProtoWaveforms[pmtID].emplace_back(this_wf, time_tag);
 
     temperatures.push_back( float( metafrag.chTemps[digitizerChannel] ));
 
@@ -242,10 +252,10 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
 
 // -----------------------------------------------------------------------------------------
 
-void daq::DaqDecoderIcarusPMT::sortWaveformsByTime(std::vector<raw::OpDetWaveform> &wfs) const {
+void daq::DaqDecoderIcarusPMT::sortWaveformsByTime(std::vector<ProtoWaveform> &wfs) const {
   
-  auto time_sorting = [](raw::OpDetWaveform const& left, raw::OpDetWaveform const& right){
-    return left.TimeStamp() < right.TimeStamp();
+  auto time_sorting = [](ProtoWaveform const& left, ProtoWaveform const& right){
+    return left.wf.TimeStamp() < right.wf.TimeStamp();
   };
 
   std::sort( wfs.begin(), wfs.end(), time_sorting);
@@ -268,25 +278,41 @@ template <typename T> std::vector<T>& daq::DaqDecoderIcarusPMT::appendTo(std::ve
 
 // -----------------------------------------------------------------------------------------
 
-raw::OpDetWaveform daq::DaqDecoderIcarusPMT::mergeWaveformGroup(std::vector<raw::OpDetWaveform> &all_wfs, std::vector<int> const& group){
+raw::OpDetWaveform daq::DaqDecoderIcarusPMT::mergeWaveformGroup(std::vector<ProtoWaveform> &all_wfs, std::vector<int> const& group){
 
   auto it = group.begin();
   auto itEnd = group.end();
 
   // put inside the first waveform of the group
-  raw::OpDetWaveform  mergedWaveform{ std::move(all_wfs.at(*it)) }; 
+  raw::OpDetWaveform  mergedWaveform{ std::move(all_wfs.at(*it).wf) }; 
+
+  mf::LogTrace("DaqDecoderIcarusPMT") << "NEW merged group for " << mergedWaveform.ChannelNumber() << "\n" 
+  				      << "wf timestamp " << mergedWaveform.TimeStamp() 
+                                      << " TTT " << all_wfs.at(*it).TTT 
+				      << " size " << mergedWaveform.Waveform().size()
+      				      << " TTT*8ns-size*2ns " << all_wfs.at(*it).TTT*8 - mergedWaveform.Waveform().size()*2;
+  unsigned int last_end = all_wfs.at(*it).TTT*8;
 
   // append all the others (if any)
   while( ++it != itEnd ){
     
-    raw::OpDetWaveform &wf = all_wfs.at(*it);
+    raw::OpDetWaveform &wf = all_wfs.at(*it).wf;
     unsigned int expected_size = mergedWaveform.Waveform().size() + wf.Waveform().size();
-
+  
+    mf::LogTrace("DaqDecoderIcarusPMT") << "wf timestamp " << wf.TimeStamp() 
+					<< " TTT " << all_wfs.at(*it).TTT 
+					<< " size " << wf.Waveform().size()
+    					<< " TTT*8ns-size*2ns " << all_wfs.at(*it).TTT*8 - wf.Waveform().size()*2
+    					<< " TTT*8ns-size*2ns - last_end " << all_wfs.at(*it).TTT*8 - wf.Waveform().size()*2 - last_end << std::endl;
+    last_end = all_wfs.at(*it).TTT*8;
+    
     appendTo( mergedWaveform.Waveform() , std::move(wf.Waveform()));
 
     if( mergedWaveform.Waveform().size() != expected_size )
-	 mf::LogError("DaqDecoderIcarus") << "Error in waveform size after merge!";
+	 mf::LogError("DaqDecoderIcarusPMT") << "Error in waveform size after merge!";
   }
+
+  mf::LogTrace("DaqDecoderIcarusPMT") << "SIZE " << mergedWaveform.Waveform().size();
 
   return mergedWaveform;
 }
@@ -302,8 +328,7 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
   // for each channel
   for(auto it=fProtoWaveforms.begin(); it!=fProtoWaveforms.end(); it++){
   
-    std::vector<raw::OpDetWaveform> this_wfs = it->second;
-    std::vector<unsigned int> this_TTTs = fTTTs[it->first];
+    std::vector<ProtoWaveform> this_wfs = it->second;
     int nwfs = it->second.size();
     if( nwfs < 2.) continue;  //nothing to stitch
 
@@ -316,19 +341,19 @@ void daq::DaqDecoderIcarusPMT::stitchWaveforms(){
       
       // place next waveform in a new group
       std::vector<int> current_group { iWave };
-      double current_end = this_TTTs[iWave];      
+      double current_end = this_wfs[iWave].TTT;      
 
       // scan waveforms that come next
       while(++iWave < nwfs){
         
         // if too apart, skip and start a new group
         // note TTT counts every 8 ns!
-        double next_start_time = this_TTTs[iWave]*8 - this_wfs[iWave].Waveform().size()*fOpticalTickNS; 
+        double next_start_time = this_wfs[iWave].TTT*8 - this_wfs[iWave].wf.Waveform().size()*fOpticalTickNS; 
         if( next_start_time - current_end*8 > 16 ) break;
 
         // the next one is contiguos: assign it to the same group and look for the next one 
 	current_group.push_back(iWave);
-	current_end = this_TTTs[iWave];
+	current_end = this_wfs[iWave].TTT;
       }
       
       groups.push_back(current_group);  
@@ -351,7 +376,6 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
 
   // clear proto-waveforms/TTTs from previous event      
   fProtoWaveforms.clear();
-  fTTTs.clear();
   
   // Make the list of the input fragments 
   try {
@@ -385,6 +409,12 @@ void daq::DaqDecoderIcarusPMT::produce(art::Event & event)
   catch( cet::exception const& e ){
     mf::LogError("DaqDecoderIcarus") 
       << "Error while attempting to decode PMT data:\n" << e.what() << '\n';
+    
+    // fill empty products
+    fOpDetWaveformCollection = std::make_unique<OpDetWaveformCollection>();
+    fPMTDigitizerInfoCollection = std::make_unique<PMTDigitizerInfoCollection>();
+    event.put(std::move(fOpDetWaveformCollection));
+    event.put(std::move(fPMTDigitizerInfoCollection));
   }
   
   mf::LogInfo("DaqDecoderIcarusPMT") << "PMT fragments decoded!";

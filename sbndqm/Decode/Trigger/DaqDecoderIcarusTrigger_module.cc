@@ -217,6 +217,14 @@ void daq::DaqDecoderIcarusTrigger::produce(art::Event & event) {
 
   catch( cet::exception const& e ){
     mf::LogError("DaqDecoderIcarusTrigger") << "Error while attempting to decode trigger data:\n" << e.what();
+    
+    // fill empty products
+    fTrigger = std::make_unique<TriggerCollection>();
+    fRelTrigger = std::make_unique<RelativeTriggerCollection>();
+    fBeamGateInfo = std::make_unique<BeamGateInfoCollection>();
+    event.put(std::move(fTrigger));
+    event.put(std::move(fRelTrigger));
+    event.put(std::move(fBeamGateInfo));
   }
 
 }
