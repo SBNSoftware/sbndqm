@@ -90,6 +90,8 @@ services.DetectorClocksService: @local::icarus_detectorclocks
 services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
 services.message: @local::icarus_basic_services.message
+services.message.destinations.LogErrorFile: @erase
+services.message.destinations.LogSeeds: @erase
 
 #replace the source
 source:
