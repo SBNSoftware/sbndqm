@@ -28,6 +28,7 @@ cet_build_plugin( DaqDecoderIcarusTrigger art::module
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
+  sbnobj::Common_Trigger
   TriggerParser
 )
 
