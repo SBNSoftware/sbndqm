@@ -1,0 +1,164 @@
+BEGIN_PROLOG
+
+# metrics group standard configurations:
+# each group also defines a binning that multiple metrics histograms may use
+
+BNBgateGroup: {
+  groupName:   "TriggerBNBspill"
+  units:       "us"
+  lower:       -0.2 # us
+  upper:       +2.6 # us
+  bins:       175   # 16 ns bins
+  level:        3
+}
+
+NuMIgateGroup: {
+  groupName:   "TriggerNuMIspill"
+  units:       "us"
+  lower:       -0.6 # us
+  upper:      +11.4 # us
+  bins:       250   # 48 ns bins
+  level:        3
+}
+
+EnableGateGroup: {
+  groupName:   "TriggerPMTenable"
+  units:       "us"
+  lower:      500 # us
+  upper:     1500 # us
+  bins:       100   # 10 us bins
+  level:        3
+}
+
+LVDSbitsGroup: {
+  groupName:   "TriggerLVDSbits"
+  lower:        0
+  upper:       64
+  bins:        64
+  level:        3
+}
+
+
+ NEWtriggerAnalysis: {
+
+      module_type: TriggerMonitorWithDecoder
+      
+      TriggerLabel: "daqTrigger"
+      
+      MetricsHistograms: {
+        database: {
+          hostname: "icarus-db01.fnal.gov"
+          #streams: [ "slow", "fast", "archive", "archiving" ]
+          streams: [ "archiving" ]
+        }
+        histograms: [
+          # =========== trigger times ==========================================
+          # --- BNB ------------------------------------------------------------
+          {
+            histName:    "BNBspillTime"
+            metricsName: "BNBspillTime"
+                          @table::BNBgateGroup
+            title:       "BNB trigger time minus beam gate opening time"
+          },
+          
+          {
+            histName:    "BNBenableTime"
+            metricsName: "BNBenableTime"
+                          @table::EnableGateGroup
+            title:       "BNB trigger time minus PMT enable gate opening time"
+          },
+          
+          # --- Off-beam BNB ---------------------------------------------------
+          {
+            histName:    "OffbeamBNBspillTime"
+            metricsName: "OffbeamBNBspillTime"
+                          @table::BNBgateGroup
+            title:       "BNB off-beam trigger time minus beam gate opening time"
+          },
+          {
+            histName:    "OffbeamBNBenableTime"
+            metricsName: "OffbeamBNBenableTime"
+                          @table::EnableGateGroup
+            title:       "BNB off-beam trigger time minus PMT enable gate opening time"
+          },
+          
+          # --- NuMI -----------------------------------------------------------
+          {
+            histName:    "NuMIspillTime"
+            metricsName: "NuMIspillTime"
+                          @table::NuMIgateGroup
+            title:       "NuMI trigger time minus beam gate opening time"
+          },
+          
+          {
+            histName:    "NuMIenableTime"
+            metricsName: "NuMIenableTime"
+                          @table::EnableGateGroup
+            title:       "NuMI trigger time minus PMT enable gate opening time"
+          },
+          
+          # --- Off-beam NuMI --------------------------------------------------
+          {
+            histName:    "OffbeamNuMIspillTime"
+            metricsName: "OffbeamNuMIspillTime"
+                          @table::NuMIgateGroup
+            title:       "NuMI off-beam trigger time minus beam gate opening time"
+          },
+          {
+            histName:    "OffbeamNuMIenableTime"
+            metricsName: "OffbeamNuMIenableTime"
+                          @table::EnableGateGroup
+            title:       "NuMI off-beam trigger time minus PMT enable gate opening time"
+          },
+          
+          # --- Calibration ----------------------------------------------------
+          {
+            histName:    "CalibspillTime"
+            metricsName: "CalibspillTime"
+                          @table::BNBgateGroup
+            title:       "Calibration run trigger time minus beam gate opening time"
+          },
+          
+          {
+            histName:    "CalibenableTime"
+            metricsName: "CalibenableTime"
+                          @table::EnableGateGroup
+            title:       "Calibration run trigger time minus PMT enable gate opening time"
+          },
+          
+          # =========== trigger bits ===========================================
+          {
+            histName:    "LVDSbitsEE"
+            metricsName: "LVDSbitsEE"
+                          @table::LVDSbitsGroup
+            title:       "PMT pair and adder discriminated bits: east cryostat, east TPC"
+          },
+          
+          {
+            histName:    "LVDSbitsEW"
+            metricsName: "LVDSbitsEW"
+                          @table::LVDSbitsGroup
+            title:       "PMT pair and adder discriminated bits: east cryostat, west TPC"
+          },
+          
+          {
+            histName:    "LVDSbitsWE"
+            metricsName: "LVDSbitsWE"
+                          @table::LVDSbitsGroup
+            title:       "PMT pair and adder discriminated bits: west cryostat, east TPC"
+          },
+          
+          {
+            histName:    "LVDSbitsWW"
+            metricsName: "LVDSbitsWW"
+                          @table::LVDSbitsGroup
+            title:       "PMT pair and adder discriminated bits: west cryostat, west TPC"
+          }
+          
+          # ====================================================================
+          
+        ] # Histograms
+      }
+    }
+
+END_PROLOG

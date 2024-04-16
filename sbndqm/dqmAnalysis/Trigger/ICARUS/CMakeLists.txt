@@ -1,4 +1,4 @@
-cet_build_plugin( TriggerStreams art::module
+cet_build_plugin( TriggerMonitorWithDecoder art::module
   LIBRARIES
   art::Utilities
   canvas::canvas
@@ -19,6 +19,9 @@ cet_build_plugin( TriggerStreams art::module
   sbndaq_online::redis_connection
   sbndaq_online::hiredis
   sbndqm_Decode_PMT_PMTDecodeData
+  sbnobj::Common_Trigger
+  sbndqm::dqmAnalysis_Utilities
+  larcorealg::headers
 )
 
 add_subdirectory(fcl)
