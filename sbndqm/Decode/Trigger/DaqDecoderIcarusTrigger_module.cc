@@ -156,7 +156,7 @@ void daq::DaqDecoderIcarusTrigger::processFragment( const artdaq::Fragment &artd
   uint64_t const artdaq_ts = artdaqFragment.timestamp();
   icarus::ICARUSTriggerV3Fragment frag { artdaqFragment };
   
-  static std::uint64_t raw_wr_ts =  makeTimestamp(frag.getWRSeconds(),frag.getWRNanoSeconds());
+  std::uint64_t raw_wr_ts =  makeTimestamp(frag.getWRSeconds(),frag.getWRNanoSeconds());
   std::string data = frag.GetDataString();
   icarus::ICARUSTriggerInfo datastream_info = icarus::parse_ICARUSTriggerV3String(data.data());
   auto const parsedData = parseTriggerStringAsCSV(data); 
