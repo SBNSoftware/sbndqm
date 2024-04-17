@@ -113,7 +113,8 @@ namespace daq
       double fTriggerTime; //us
       double fBNBgateDuration;
       double fNuMIgateDuration;
-     
+      double fVetoNS; // ns     
+
       /// Returns the `nBits` bits of `value` from `startBit` on.
       template <unsigned int startBit, unsigned int nBits, typename T>
         static constexpr T bits(T value);
@@ -130,6 +131,7 @@ daq::DaqDecoderIcarusTrigger::DaqDecoderIcarusTrigger(fhicl::ParameterSet const 
   , fTriggerTime{ 1500. }
   , fBNBgateDuration{ 1.6 }
   , fNuMIgateDuration{ 9.5 }
+  , fVetoNS{ 4000. }
 {
   
   // Output data products
@@ -306,14 +308,15 @@ void daq::DaqDecoderIcarusTrigger::processFragment( const artdaq::Fragment &artd
   //std::cout << parsedData << std::endl;
 
   // TIMESTAMP BUSINESS
-  static std::uint64_t raw_wr_ts =  makeTimestamp(frag.getWRSeconds(),frag.getWRNanoSeconds());
+  std::uint64_t raw_wr_ts =  makeTimestamp(frag.getWRSeconds(),frag.getWRNanoSeconds());
 
   // beam gate timestamp  
   std::uint64_t beamgate_ts { artdaq_ts };
   if (auto pBeamGateInfo = parsedData.findItem("Beam_TS")) {
     uint64_t const raw_bg_ts = makeTimestamp(pBeamGateInfo->getNumber<unsigned int>(1U),
-                                             pBeamGateInfo->getNumber<unsigned int>(2U));
-    beamgate_ts += raw_bg_ts - raw_wr_ts; //assumes no veto 
+                                             pBeamGateInfo->getNumber<unsigned int>(2U))
+				+ fVetoNS;
+    beamgate_ts += raw_bg_ts - raw_wr_ts; 
   }
   
   // enable gate timestamp
