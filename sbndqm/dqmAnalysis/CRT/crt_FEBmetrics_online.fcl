@@ -25,13 +25,13 @@ services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC40
 
 services.ArtdaqSharedMemoryServiceInterface:
 {
-  service_provider: "ArtdaqSharedMemoryService"
+  service_provider: ArtdaqGlobalsService
 }
 
 
 source: {
-   commanderPluginType: "xmlrpc"
-   dispatcherHost: "localhost"
+   commanderPluginType: xmlrpc
+   dispatcherHost: localhost
    dispatcherPort: 6022
    dispatcher_config: {
       outputs: {
@@ -41,7 +41,7 @@ source: {
                destination_rank: 6
                first_event_builder_rank: 0
                max_fragment_size_words: 1e8
-               shm_key: 1.078400084e9
+               shm_key: 1078400086
                transferPluginType: "Shmem"
                unique_label: "OnlineMonitor"
             }
@@ -60,7 +60,7 @@ source: {
       destination_rank: 6
       first_event_builder_rank: 0
       max_fragment_size_words: 1e8
-      shm_key: 1.078400084e9
+      shm_key: 1078400086
       source_rank: 5
       transferPluginType: "Shmem"
       unique_label: "OnlineMonitor"
@@ -91,7 +91,7 @@ physics:
     metric_board_config: {
 	groups:{
 		#CRT_board:[193,85,87,88,89,79,80,81,0]
-		CRT_board:[88, 152, 156, 153, 159, 134, 135, 238, 155, 151, 150, 136, 157, 158, 182, 149, 73, 181]
+		CRT_board:[44,147,146,131,79,206,204,200,18,160,222,220,81,85,143,162,133,132,83,84,104,103,102,101,93,94,95,87,97,98,77,78,82,86,90,91,99,100,151,150,136,157,158,182,149,73,181,88,152,156,153,159,134,135,238,155]
 		}                
 	streams:[archiving]
 		
@@ -99,7 +99,7 @@ physics:
 		TS0:{}
 		TS1:{}
 		T0clockdrift:{}
-		T1clockdrift:{}
+		#T1clockdrift:{}
 		
 		MaxADCValue:{}
 		MaxADCChannel:{}
