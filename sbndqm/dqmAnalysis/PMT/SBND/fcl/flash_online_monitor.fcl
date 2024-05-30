@@ -1,0 +1,92 @@
+#include "redis_connection.fcl"
+
+process_name: SBNDPMTFlashMetrics
+
+services: {
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+} 
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+
+physics: {
+    producers: {}
+    filters: {}
+    analyzers:{
+        flashmetrics: {
+            module_type: CAENV1730FlashMetricsSBND
+            FlashMetricLabel: "pmtmetricproducer"
+
+            metric_flashes: {
+                hostname: "sbnd-db01.fnal.gov"
+                streams: ["slow","fast","archiving","30s"]
+
+                metrics: {
+                  flash_ts: {
+                    units: microseconds
+                    title: "Flash Peak Timestamp"
+                  }
+                  flash_pe: {
+                    units: pe
+                    title: "Flash Peak PE"
+                  }
+                }
+            }
+        }
+    }
+    trigger_paths: []
+    ana: [flashmetrics]
+    end_paths: [ana]
+}
+
+source:
+{
+  module_type: TransferInput
+  commanderPluginType: "xmlrpc"
+  dispatcherHost: "localhost"
+  dispatcherPort: 6024 # just chose a random number!
+
+  transfer_plugin: {
+    unique_label: "FlashOnlineMonitor"
+    transferPluginType: "Shmem"
+    shm_key: 0x40470830 
+    max_fragment_size_words: 100000000 
+    first_event_builder_rank: 0
+    source_rank: 5
+    destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "FlashOnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "FlashOnlineMonitor"
+          transferPluginType: "Shmem"
+
+          shm_key: 0x40470830
+
+          max_fragment_size_words: 100000000 
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}  
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876" 
