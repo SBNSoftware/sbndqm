@@ -55,7 +55,9 @@ CAENV1730FlashMetricsSBND::CAENV1730FlashMetricsSBND(fhicl::ParameterSet const& 
   : EDAnalyzer{p}  // ,
   , m_flashmetric_tag{ p.get<art::InputTag>("FlashMetricLabel") }
 {
-  sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
+  if (p.has_key("metrics")) {
+    sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
+  }
   sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_flashes"));
 }
 
@@ -68,7 +70,7 @@ void CAENV1730FlashMetricsSBND::analyze(art::Event const& e)
     for (auto const & pmtmetric : *pmtmetricHandle) {
       auto ts = pmtmetric.peaktime;
       auto pe = pmtmetric.peakPE;
-
+      std::cout << "Flash ts: " << ts << " PE: " << pe << std::endl;
       sbndaq::sendMetric("flash_ts", ts, level, artdaq::MetricMode::LastPoint);
       sbndaq::sendMetric("flash_pe", pe, level, artdaq::MetricMode::LastPoint);
     }

@@ -76,9 +76,7 @@ source:
         transfer_plugin: {
           unique_label: "FlashOnlineMonitor"
           transferPluginType: "Shmem"
-
           shm_key: 0x40470830
-
           max_fragment_size_words: 100000000 
           first_event_builder_rank: 0
           destination_rank: 6
