@@ -6,7 +6,7 @@
 
 #service overrides
 services.RedisConnection: @local::redis_connection
-services.RedisConnection.host: "icarus-db01.fnal.gov"
+services.RedisConnection.host: "icarus-db02.fnal.gov"
 services.InitMetricManager: {
   connections: {
     archiving: {
