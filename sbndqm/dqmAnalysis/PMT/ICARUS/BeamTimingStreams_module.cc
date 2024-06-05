@@ -299,6 +299,17 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
     double EW_start = getStartSample( (*opdetHandle)[ew_wfs[it->first]].Waveform(), m_ADC_threshold );
     double RWM_EW = (RWM_start-EW_start)*m_OpticalTick; //us
 
+    // sometimes an extremely negative difference is found: -3.6 x 10^6
+    // this is clearly unphysical, so catch these occurances
+    // since they mess up the plot autoscale, replace with 0 (=missing signals)
+    if( RWM_EW < -100. || RWM_EW > 100. ){
+      mf::LogError("sbndaq::BeamTimingStreams::analyze") 
+        << "Event " << evt.id().event() << ", Crate " << it->first << " with unphysical " << metric_prefix << " RWM-EW :" << RWM_EW << " us!"
+        << " EW: wf_index " << ew_wfs[it->first] << " wf_size " << (*opdetHandle)[ew_wfs[it->first]].Waveform().size() << " ew_start " << EW_start
+        << " RWM: wf_index " << it->second << " wf_size " << (*opdetHandle)[it->second].Waveform().size() << " rwm_start " << RWM_start;
+      RWM_EW = 0.;
+    }
+
     // send RWM-EW metric
     std::string instance_s = std::to_string(it->first); // this it the crate number
     std::string metric_name = metric_prefix + "_RWM_EW"; // either BNB or NuMI
