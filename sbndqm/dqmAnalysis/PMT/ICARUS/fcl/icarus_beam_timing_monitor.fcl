@@ -49,6 +49,6 @@ services.RedisConnection.host: "icarus-db02.fnal.gov"
 source:
 {
   module_type: RootInput
-  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+  fileNames: @nil
 }
 
