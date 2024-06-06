@@ -27,7 +27,7 @@ namespace pmtAnalysis
     
     unsigned int getBoardId() const { return m_eff_fragment_id; };
     
-    std::vector<float> getTemperatures() const { return m_digitizer_temperatures; };
+    std::vector<float> const& getTemperatures() const { return m_digitizer_temperatures; };
     
     size_t getNChannels() const { return m_nchannels; };
 
