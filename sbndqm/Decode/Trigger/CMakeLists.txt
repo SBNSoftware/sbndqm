@@ -21,9 +21,6 @@ cet_build_plugin( DaqDecoderIcarusTrigger art::module
   ROOT::Core
   cetlib::cetlib
   cetlib_except::cetlib_except
-  art::Framework_Services_Registry
-  art_root_io::tfile_support
-  art_root_io::TFileService_service
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS
   artdaq_core::artdaq-core_Utilities
