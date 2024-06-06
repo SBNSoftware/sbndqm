@@ -21,7 +21,6 @@ namespace pmtAnalysis
       : m_eff_fragment_id( eff_fragment_id )
       , m_time_tag( time_tag )
       , m_fragmentTimestamp( fragmentTimestamp )
-      , m_nchannels( temperatures.size() )
       , m_digitizer_temperatures( std::move(temperatures) )
     {};
     
@@ -29,7 +28,7 @@ namespace pmtAnalysis
     
     std::vector<float> const& getTemperatures() const { return m_digitizer_temperatures; };
     
-    size_t getNChannels() const { return m_nchannels; };
+    size_t getNChannels() const { return m_digitizer_temperatures.size(); };
 
     float getTemperature(int ch) const { return m_digitizer_temperatures[ch]; };
 
@@ -45,8 +44,6 @@ namespace pmtAnalysis
     unsigned int m_time_tag;
     
     uint64_t m_fragmentTimestamp;
-    
-    size_t m_nchannels;
     
     std::vector<float> m_digitizer_temperatures;
     
