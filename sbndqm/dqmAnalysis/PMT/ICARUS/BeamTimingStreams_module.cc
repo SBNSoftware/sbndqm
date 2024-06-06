@@ -259,7 +259,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
     if( isSpecialChannel(pmtId, RWMboards, crate) ){
 
       if( rwm_wfs.find(crate) == rwm_wfs.end() ){
-        rwm_wfs.insert(std::make_pair(crate,index));
+        rwm_wfs[crate] = index;
         index++;
         continue;
       }
