@@ -22,7 +22,7 @@ namespace pmtAnalysis
       , m_time_tag( time_tag )
       , m_fragmentTimestamp( fragmentTimestamp )
       , m_nchannels( temperatures.size() )
-      , m_digitizer_temperatures( temperatures )
+      , m_digitizer_temperatures( std::move(temperatures) )
     {};
     
     unsigned int getBoardId() const { return m_eff_fragment_id; };
