@@ -89,7 +89,7 @@ private:
 
    uint64_t lastbighit[32];
 
-  bool debug = false;
+  bool const debug = false;
 
   //sample histogram
   TH1F* fSampleHist;
