@@ -188,7 +188,7 @@ std::string sbndaq::BeamTimingStreams::getGateName(int source){
 
 //------------------------------------------------------------------------------------------------------------------
 
-bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std::string> channel_map, int &crateID){
+bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std::string> const& channel_map, int &crateID){
 
   int digitizer_last_channel = 15;
   crateID = -1;
