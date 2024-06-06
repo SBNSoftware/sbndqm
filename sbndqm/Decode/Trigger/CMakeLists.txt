@@ -1,6 +1,4 @@
-art_make_library(LIBRARY_NAME TriggerParser
-        SUBDIRS detail
-)
+art_make_library(SUBDIRS detail)
 
 cet_build_plugin( DaqDecoderIcarusTrigger art::module
   LIBRARIES
@@ -17,7 +15,7 @@ cet_build_plugin( DaqDecoderIcarusTrigger art::module
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_ICARUS
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
-  TriggerParser
+  sbndqm_Decode_Trigger
 )
 
 install_headers()
