@@ -91,7 +91,7 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
   , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
   , m_pmtdigitizer_tag{ pset.get<art::InputTag>("PMTDigitizerLabel") }
-  , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
+  , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db02") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("PMTMetricConfig") }
   , m_board_metric_config{ pset.get<fhicl::ParameterSet>("PMTBoardMetricConfig") }

@@ -9,7 +9,7 @@ BEGIN_PROLOG
       
       TriggerMetricConfig: {
 
-        hostname: "icarus-db01.fnal.gov"
+        hostname: "icarus-db02.fnal.gov"
       
         groups: {
           TriggerRates: [ [0, 6] ]

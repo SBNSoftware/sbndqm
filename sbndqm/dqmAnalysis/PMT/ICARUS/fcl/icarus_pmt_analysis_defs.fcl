@@ -15,7 +15,7 @@ BEGIN_PROLOG
       
     PMTMetricConfig: {
     
-      hostname: "icarus-db01.fnal.gov"
+      hostname: "icarus-db02.fnal.gov"
     
       groups: {
         PMT: [ [0, 384] ]
@@ -53,7 +53,7 @@ BEGIN_PROLOG
    
     PMTBoardMetricConfig: {
       
-      hostname: "icarus-db01.fnal.gov"
+      hostname: "icarus-db02.fnal.gov"
     
       groups: {
         PMTBoard: [ [0, 24] ]
@@ -82,7 +82,7 @@ BEGIN_PROLOG
 
     TimingMetricConfig: {
 
-      hostname: "icarus-db01.fnal.gov"
+      hostname: "icarus-db02.fnal.gov"
     
       groups: {
         BeamTiming: [ [0, 8] ]

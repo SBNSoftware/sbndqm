@@ -200,7 +200,7 @@ tpcAnalysis::TPCWaveformAndFftRedis::TPCWaveformAndFftRedis(fhicl::ParameterSet 
   art::EDAnalyzer::EDAnalyzer(p), 
   _analysis(p),
 
-  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db01")),
+  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02")),
   fRedisPort(p.get<int>("RedisPort",6379))
 {
   first.Start();

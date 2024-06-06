@@ -9,7 +9,7 @@ SHM_KEY: 0x40471454 # make up a HEX number
 # what port does the dispatcher run on? Must be on the server
 DISPATCHER_PORT: 6666 
 # where does Redis run?
-REDIS_HOST: "icarus-db01.fnal.gov"
+REDIS_HOST: "icarus-db02.fnal.gov"
 
 physics: {
   analyzers:

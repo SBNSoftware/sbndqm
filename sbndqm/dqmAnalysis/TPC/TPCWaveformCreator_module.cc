@@ -130,7 +130,7 @@ double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd){
 
 tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
-  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db01.fnal.gov")),
+  fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02.fnal.gov")),
   fRedisPort(p.get<int>("RedisPort",6379))
 {  
   context =  sbndaq::Connect2Redis(fRedisHostname,fRedisPort);//to make the configure options w/ password??  later 

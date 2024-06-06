@@ -44,7 +44,7 @@ services: {
 } 
 
 
-services.RedisConnection.host: "icarus-db01.fnal.gov"
+services.RedisConnection.host: "icarus-db02.fnal.gov"
 
 source:
 {

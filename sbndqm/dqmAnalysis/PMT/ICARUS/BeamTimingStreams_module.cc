@@ -99,7 +99,7 @@ sbndaq::BeamTimingStreams::BeamTimingStreams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
   , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
   , m_trigger_tag{ pset.get<art::InputTag>("TriggerLabel") }
-  , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db01") }
+  , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db02") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("TimingMetricConfig") }
   , m_ADC_threshold{ pset.get<short int>("ADCthreshold", 200)}
