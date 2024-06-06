@@ -1,13 +1,5 @@
 art_make_library(LIBRARY_NAME TriggerParser
         SUBDIRS detail
-        LIBRARIES
-                messagefacility::MF_MessageLogger
-                fhiclcpp::fhiclcpp
-                cetlib_except::cetlib_except
-                cetlib::cetlib
-                ROOT::RIO
-                ROOT::Core
-                art::Framework_Services_Registry
 )
 
 cet_build_plugin( DaqDecoderIcarusTrigger art::module
