@@ -51,7 +51,7 @@ namespace sbndaq {
       template<typename T> static size_t getStartSample( std::vector<T> const& vv, T thres );
       
       std::string getGateName(int source);
-      bool isSpecialChannel (int channel, std::map<size_t,std::string> channel_map, int &crateID);
+      bool isSpecialChannel (int channel, std::map<size_t,std::string> const& channel_map, int &crateID);
 
       virtual void analyze(art::Event const & evt);
   
