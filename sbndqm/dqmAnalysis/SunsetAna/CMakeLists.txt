@@ -1,4 +1,4 @@
-cet_build_plugin( PMTAnalyzer art::module
+cet_build_plugin( PMTSunsetAnalyzer art::module
   LIBRARIES
   sbndaq_online::storage
   sbndaq_online::redis_connection
@@ -7,13 +7,24 @@ cet_build_plugin( PMTAnalyzer art::module
   sbndqm::Decode_PMT_PMTDecodeData
 )
 
-cet_build_plugin( TPCAnalyzer art::module
+cet_build_plugin( TPCSunsetAnalyzer art::module
   LIBRARIES
   lardataobj::RawData
   sbndaq_online::storage
   sbndaq_online::redis_connection
   sbndaq_online::hiredis
   tpcAnalysis_SBN
+  art::Utilities
+  fhiclcpp::fhiclcpp
+  art::Framework_Core
+  ROOT::Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  art_root_io::art_root_io
+  art::Persistency_Common
+  art::Framework_IO_Sources
 )
 
 install_headers()

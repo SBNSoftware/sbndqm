@@ -1,0 +1,38 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+#include "pmt_stream_config_SBND.fcl"
+
+physics: {
+  
+  producers: {
+
+    pmtdecoder: {
+      module_type: DaqDecoderSBNDPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+
+  }
+  analyzers: {
+    pmtanalyzer: {
+      module_type: PMTSunsetAnalyzer
+    }
+  }
+
+  my_producer_modules: [ pmtdecoder ]
+  my_analysis_modules: [ pmtanalyzer ]
+  trigger_paths: [ my_producer_modules ]
+  end_paths: [ my_analysis_modules ]
+}
+
+services:
+{
+  TFileService: { fileName: "out.root"}
+} 
+
+source:
+{
+  module_type: RootInput
+}
+
+process_name: PMTSunsetAna

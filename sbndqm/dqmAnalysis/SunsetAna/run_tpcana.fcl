@@ -1,0 +1,60 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "SBNDTPCDecoderDefaults.fcl"
+#include "TPCChannelMapService.fcl"
+
+physics:
+{
+  # now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      # need to have sbndcode set up
+      module_type: SBNDTPCDecoder
+      # for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      # make the header
+      produce_header: true
+      baseline_calc: false
+      # parameters for timestamps
+      timesize: 2559
+      # produce timestamps in units of musd
+      frame_to_dt: 0.5
+      # parameters for header index
+      min_slot_no: 3
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers: {    
+    tpcanalyzer: {
+      module_type: TPCSunsetAnalyzer
+    }
+  }
+
+  my_producers: [daq]
+  my_analyzers: [tpcanalyzer]
+  trigger_paths: [ my_producers ]
+  end_paths: [my_analyzers]
+}
+
+source: {}
+
+services:
+{
+  # RedisConnection: @local::redis_connection
+  # ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
+  TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+}
+
+
+# outputs: {
+#   rootout: {
+#     module_type: "RootOutput"
+#     fileName: "digits.root"
+#   }
+# }
+
+
+process_name: TPCSunsetAna
