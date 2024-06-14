@@ -16,6 +16,9 @@ physics: {
   analyzers: {
     pmtanalyzer: {
       module_type: PMTSunsetAnalyzer
+
+      rms_threshold: 20 # threshold to determine whether or not the rms is above "normal" rms
+      use_local_baseline: false
     }
   }
 
