@@ -48,6 +48,8 @@ private:
   std::unordered_set<raw::ChannelID_t> fDNChannels;   // set of channels with digital noise on them on this event
   std::vector<float> fBaselines; // storage for baselines, needed to reference during sunset events
 
+  bool fuseMedian; // if False, use mode
+
   int fdefaultIndBaseline;
   int fdefaultColBaseline;
 
@@ -62,6 +64,7 @@ private:
   bool   isSunsetEvent(const std::vector<raw::RawDigit>& rawdigits);
   void   getBaselines(const std::vector<raw::RawDigit>& rawdigits, std::vector<float>& baselines);
   size_t getDigiNoiseChannels(const std::vector<raw::RawDigit>& rawdigits);
+  short  Median(std::vector<short> wvfm);
 };
 
 
@@ -69,6 +72,7 @@ sunsetAna::TPCSunsetAnalyzer::TPCSunsetAnalyzer(fhicl::ParameterSet const& p)
   : EDAnalyzer{p}  // ,
   // More initializers here.
 {
+  fuseMedian = p.get<bool>("useMedian",true);
   fdefaultIndBaseline = p.get<int>("defaultIndBaseline",2048);
   fdefaultColBaseline = p.get<int>("defaultColBaseline",460);
   // Call appropriate consumes<>() for any products to be retrieved by this module.
@@ -99,6 +103,11 @@ void sunsetAna::TPCSunsetAnalyzer::analyze(art::Event const& e)
     bool isSunset = isSunsetEvent(*digit_handle);
     if (isSunset==false){
       getBaselines(*digit_handle, fBaselines);
+    }
+    else{
+      // is sunset... time to extract metrics!
+    //   // get the number of channels with shelfs that exceed the readout window
+    
     }
   }
   else{
@@ -160,7 +169,9 @@ size_t sunsetAna::TPCSunsetAnalyzer::getDigiNoiseChannels(const std::vector<raw:
         // ** this will make any sunset channels digital noise channels **
 	      // if (std::abs(adc - fBaselines.at(chnum)) > fDistFromPedestalRawDigit){
 		      // ++naway;
-        // }
+        // }ss
+
+        // calculates the difference between neighboring channels 
         if (i < rd.Samples()-1){
           const short adc_next = rawadc.at(i+1);
           if (i < 500)     pre_neighbor_diff += std::abs(adc - adc_next);
@@ -183,8 +194,17 @@ void sunsetAna::TPCSunsetAnalyzer::getBaselines(const std::vector<raw::RawDigit>
     std::vector<short> rawadc;
     rawadc.resize(rd.Samples());
     raw::Uncompress(rd.ADCs(), rawadc, rd.GetPedestal(), rd.Compression());
-    baselines.at(chnum) = Mode(rawadc, 10);
+    if (fuseMedian) baselines.at(chnum) = Median(rawadc);
+    else baselines.at(chnum) = Mode(rawadc, 10);
+
   }
+}
+
+short sunsetAna::TPCSunsetAnalyzer::Median(std::vector<short> wvfm){
+  const auto median_it = wvfm.begin() + wvfm.size() / 2;
+  std::nth_element(wvfm.begin(), median_it , wvfm.end());
+  auto median = *median_it;
+  return median;
 }
 
 DEFINE_ART_MODULE(sunsetAna::TPCSunsetAnalyzer)
