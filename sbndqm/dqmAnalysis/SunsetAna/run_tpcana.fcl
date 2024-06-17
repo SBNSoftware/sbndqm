@@ -29,6 +29,20 @@ physics:
   analyzers: {    
     tpcanalyzer: {
       module_type: TPCSunsetAnalyzer
+
+      metric_sunsets: {
+        hostname: "sbnd-db01.fnal.gov"
+        streams: ["slow","fast","archiving","30s"]
+
+        metrics: {
+          ndigi: {
+            title: "# of Digital Noise Ch"
+          }
+          nspikes: {
+            title: "# of a Spiked Ch"
+          }
+        }
+      }
     }
   }
 
@@ -42,7 +56,14 @@ source: {}
 
 services:
 {
-  # RedisConnection: @local::redis_connection
+  RedisConnection: @local::redis_connection
+  # InitMetricManager: {
+  #   connections: {
+  #     fast: @local::redis_metric_fast
+  #     slow: @local::redis_metric_slow
+  #     archive: @local::redis_metric_archive
+  #   }
+  # }
   # ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
   #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
   TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
