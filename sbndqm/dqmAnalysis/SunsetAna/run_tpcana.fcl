@@ -67,6 +67,7 @@ services:
   # ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
   #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
   TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+  TFileService: { fileName: "tpc_out.root"}
 }
 
 

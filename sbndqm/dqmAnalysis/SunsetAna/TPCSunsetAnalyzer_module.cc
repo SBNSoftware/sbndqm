@@ -16,6 +16,7 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art_root_io/TFileService.h"
 
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/raw.h"
@@ -25,6 +26,10 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 #include "sbndaq-online/helpers/Utilities.h"
 #include "sbndaq-online/helpers/EventMeta.h"
+
+#include "TFile.h"
+#include "TTree.h"
+
 #include <unordered_set>
 
 namespace sunsetAna {
@@ -50,16 +55,19 @@ public:
 private:
   std::unordered_set<raw::ChannelID_t> fDNChannels;   // set of channels with digital noise on them on this event
   std::vector<float> fBaselines; // storage for baselines, needed to reference during sunset events
-  std::vector<int>   fSpikeChannels;
-  std::vector<int>   fSpikeEndTicks; 
+  std::vector<int>   fSpikeChannels; // set of channels that are spiked
+  std::vector<int>   fSpikeEndTicks;  // the tick value for when a spike ends
 
+  std::string fRawDigitLabel;
+
+  bool foffline = false;
   bool fuseMedian; // if False, use mode
 
   int fdefaultIndBaseline;
   int fdefaultColBaseline;
 
-  float fsunset_tick;  // the tick value where we expect the sunset to start! needs to be more or less correct 
-  float fblob_ADCsum_thresh; 
+  float fsunset_tick;  // the tick value where we expect the sunset to start! needs to be correct within ~10 ticks
+  float fblob_ADCsum_thresh; // the metric for which we identify whether an event is a sunset or not
 
   std::vector<float> fspike_tick_vals; // the tick value to look for spikes, AFTER the tick value where the sunset happens
   std::vector<float> fspike_adc_thresh; // the threshold to determine if a spike is present
@@ -67,7 +75,6 @@ private:
   float fRMSCutWire;
   float fRMSCutRawDigit;
   int fNBADCutRawDigit;
-  std::string fRawDigitLabel;
 
   int fNAwayFromPedestalRawDigit;
   int fDistFromPedestalRawDigit;
@@ -77,6 +84,11 @@ private:
   size_t getDigiNoiseChannels(const std::vector<raw::RawDigit>& rawdigits);
   void   getSpikes(const std::vector<raw::RawDigit>& rawdigits);
   short  Median(std::vector<short> wvfm);
+
+  TTree *_tree;
+  int _run, _subrun, _event;
+  bool _isSunset;
+  int _nspikes, _nspikes_long;
 };
 
 
@@ -84,6 +96,9 @@ sunsetAna::TPCSunsetAnalyzer::TPCSunsetAnalyzer(fhicl::ParameterSet const& p)
   : EDAnalyzer{p}  // ,
   // More initializers here.
 {
+  fRawDigitLabel = p.get<std::string>("RawDigitLabel","daq");
+  foffline = p.get<bool>("offline",false);
+
   fuseMedian = p.get<bool>("useMedian",true);
   fdefaultIndBaseline = p.get<int>("defaultIndBaseline",2048);
   fdefaultColBaseline = p.get<int>("defaultColBaseline",460);
@@ -96,9 +111,19 @@ sunsetAna::TPCSunsetAnalyzer::TPCSunsetAnalyzer(fhicl::ParameterSet const& p)
   fRMSCutWire = p.get<float>("RMSCutWire",100.0);
   fRMSCutRawDigit = p.get<float>("RMSCutRawDigit",100.0);
   fNBADCutRawDigit = p.get<float>("NBADCutRawDigit",5);
-  fRawDigitLabel = p.get<std::string>("RawDigitLabel","daq");
   fNAwayFromPedestalRawDigit = p.get<int>("NAwayFromPedestalRawDigit",100);
   fDistFromPedestalRawDigit = p.get<int>("DistFromPedestalRawDigit",100);
+
+  art::ServiceHandle<art::TFileService> fs;
+  if (foffline){
+    _tree = fs->make<TTree>("sunset_tpc_tree","");
+    _tree->Branch("run", &_run, "run/I");
+    _tree->Branch("subrun", &_subrun, "subrun/I");
+    _tree->Branch("event", &_event, "event/I");
+    _tree->Branch("isSunset", &_isSunset, "isSunset/O");
+    _tree->Branch("nspikes", &_nspikes, "nspikes/I");
+    _tree->Branch("nspikes_long", &_nspikes_long, "nspikes_long/I");
+  }
 
   if (p.has_key("metrics"))
     sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
@@ -120,7 +145,7 @@ void sunsetAna::TPCSunsetAnalyzer::analyze(art::Event const& e)
     std::fill(fBaselines.begin()+9000, fBaselines.end(), fdefaultColBaseline);
   }
 
-  art::Handle digit_handle = e.getHandle<std::vector<raw::RawDigit>>("daq");
+  art::Handle digit_handle = e.getHandle<std::vector<raw::RawDigit>>(fRawDigitLabel);
   if (digit_handle.isValid() && !digit_handle->empty()) {
     std::cout << "Found " << digit_handle->size() << " RawDigits." << std::endl;
     auto ndigi_noise = getDigiNoiseChannels(*digit_handle);
@@ -128,19 +153,20 @@ void sunsetAna::TPCSunsetAnalyzer::analyze(art::Event const& e)
     sbndaq::sendMetric("ndigi", ndigi_noise, level, artdaq::MetricMode::LastPoint);
 
     bool isSunset = isSunsetEvent(*digit_handle);
+    int nspikes = 0;
+    int nspikes_long = 0;
     if (isSunset==false){
       getBaselines(*digit_handle, fBaselines);
     }
     else{
       // is sunset... time to extract metrics!
       getSpikes(*digit_handle);
-      auto nspikes = fSpikeChannels.size();
-      int nspikes_long = 0;
-      for (size_t i=0; i < nspikes; i++){
+      nspikes = fSpikeChannels.size();
+      for (size_t i=0; i < size_t(nspikes); i++){
         // std::cout << fSpikeEndTicks.at(i) << std::endl;
         int readout_length = digit_handle->at(0).Samples();
         // std::cout << "readout length" << readout_length << std::endl;
-        if (fSpikeEndTicks.at(i) == readout_length-2){
+        if (fSpikeEndTicks.at(i) == readout_length){
           nspikes_long++;
         }
       }
@@ -148,6 +174,15 @@ void sunsetAna::TPCSunsetAnalyzer::analyze(art::Event const& e)
       std::cout << "Found " << nspikes_long << " channels with spikes that exceed the readout window." << std::endl;
       sbndaq::sendMetric("nspikes", nspikes, level, artdaq::MetricMode::LastPoint);
 
+    }
+    if (foffline){
+      _run = e.run();
+      _subrun = e.subRun();
+      _event = e.event();
+      _isSunset = isSunset;
+      _nspikes = nspikes;
+      _nspikes_long = nspikes_long;
+      _tree->Fill();
     }
   }
   else{
@@ -275,7 +310,7 @@ void sunsetAna::TPCSunsetAnalyzer::getSpikes(const std::vector<raw::RawDigit>& r
         }
         else if (i==rd.Samples()-2){
           // if you reach the end and shelf hasn't ended...
-          fSpikeEndTicks.push_back(i);
+          fSpikeEndTicks.push_back(rd.Samples());
         }
       }
     }
