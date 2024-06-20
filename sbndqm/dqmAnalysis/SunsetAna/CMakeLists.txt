@@ -5,6 +5,13 @@ cet_build_plugin( PMTSunsetAnalyzer art::module
   sbndaq_online::hiredis
   lardataobj::RawData
   sbndqm::Decode_PMT_PMTDecodeData
+
+  ROOT::Core
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  art_root_io::art_root_io
+  art::Persistency_Common
+  art::Framework_IO_Sources
 )
 
 cet_build_plugin( TPCSunsetAnalyzer art::module

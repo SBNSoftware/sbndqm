@@ -11,12 +11,13 @@ physics: {
       module_type: DaqDecoderSBNDPMT
       FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
     }
-
   }
+
   analyzers: {
     pmtanalyzer: {
       module_type: PMTSunsetAnalyzer
 
+      OpDetWaveformHandle: "pmtdecoder" # NEEDS to match the decoder producer name
       rms_threshold: 20 # threshold to determine whether or not the rms is above "normal" rms
       use_local_baseline: false
     }
@@ -30,7 +31,7 @@ physics: {
 
 services:
 {
-  TFileService: { fileName: "out.root"}
+  TFileService: { fileName: "pmt_out.root"}
 } 
 
 source:
