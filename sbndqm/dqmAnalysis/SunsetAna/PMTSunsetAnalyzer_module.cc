@@ -21,6 +21,11 @@
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
 
+#include "sbndaq-online/helpers/SBNMetricManager.h"
+#include "sbndaq-online/helpers/MetricConfig.h"
+#include "sbndaq-online/helpers/Utilities.h"
+#include "sbndaq-online/helpers/EventMeta.h"
+
 #include "TFile.h"
 #include "TTree.h"
 
@@ -82,11 +87,16 @@ sunsetAna::PMTSunsetAnalyzer::PMTSunsetAnalyzer(fhicl::ParameterSet const& p)
     _tree->Branch("rms_avg", &_rms_avg, "rms_avg/F");
   }
 
+  if (p.has_key("metrics"))
+    sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
+  sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_sunsets"));
+
 }
 
 void sunsetAna::PMTSunsetAnalyzer::analyze(art::Event const& e)
 {
   art::Handle opdetHandle = e.getHandle<std::vector<raw::OpDetWaveform>>(fOpDetWaveformHandle);
+  auto level = 3;
   if( opdetHandle.isValid() && !opdetHandle->empty() ){
     std::vector<float> rms_v;
     for ( auto const & wvfm : *opdetHandle ) {
@@ -105,7 +115,7 @@ void sunsetAna::PMTSunsetAnalyzer::analyze(art::Event const& e)
       // get the baseline
       short baseline = estimateBaseline(wvfm);
       size_t rms_window = 10;
-      float rms_maximum; 
+      float rms_maximum = 0 ; 
       for (size_t i=0; i< wvfm.size() - rms_window; i++){
         float this_baseline = 0;
         if (fuse_local_baseline){
@@ -131,7 +141,8 @@ void sunsetAna::PMTSunsetAnalyzer::analyze(art::Event const& e)
         rms_avg += rms;
       rms_avg /= rms_v.size();
       std::cout << "average maximum rms: " << rms_avg << std::endl;
-    }
+      sbndaq::sendMetric("pmt_noise_metric", rms_avg, level, artdaq::MetricMode::LastPoint);
+    }    
 
     if (foffline){
       _run = e.run();

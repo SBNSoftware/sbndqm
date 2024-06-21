@@ -20,6 +20,17 @@ physics: {
       OpDetWaveformHandle: "pmtdecoder" # NEEDS to match the decoder producer name
       rms_threshold: 20 # threshold to determine whether or not the rms is above "normal" rms
       use_local_baseline: false
+
+      metric_sunsets: {
+        hostname: "sbnd-db01.fnal.gov"
+        streams: ["slow","fast","archiving","30s"]
+        
+        metrics: {
+          pmt_noise_metric: {
+            title: "PMT Sunset Noise Metric"
+          }
+        }
+      }
     }
   }
 
@@ -31,6 +42,7 @@ physics: {
 
 services:
 {
+  RedisConnection: @local::redis_connection
   TFileService: { fileName: "pmt_out.root"}
 } 
 
