@@ -19,7 +19,9 @@
 #include "art/Framework/Principal/SubRun.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/RDTimeStamp.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "larcore/Geometry/Geometry.h"
 
 #include "ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
@@ -149,11 +151,14 @@ public:
   // output containers of analysis code. Only use after calling ReadyToProcess()
   std::vector<tpcAnalysis::ChannelData> _per_channel_data;
   std::vector<tpcAnalysis::ReducedChannelData> _per_channel_data_reduced;
+  long ts_std;
+  int npeak;
   std::vector<tpcAnalysis::NoiseSample> _noise_samples;
   std::vector<tpcAnalysis::HeaderData> _header_data;
   std::vector<RunningThreshold> _thresholds;
   // raw digits container for each event
   std::vector<art::Ptr<raw::RawDigit>> _raw_digits_handle;
+  std::vector<art::Ptr<raw::RDTimeStamp>> _raw_timestamps_handle;
   FFTManager _fft_manager;
 
 private:

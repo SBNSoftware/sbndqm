@@ -68,6 +68,7 @@ private:
   bool _send_occupancy;
   int _n_evt_fft_avg;
   bool _send_metrics;
+  double broken_th;
   int _wait_period;
   int _last_time;
   bool _send_sbnd_metrics;
@@ -104,6 +105,9 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   if (p.has_key("metric_config")) {
     sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config"));
   }
+  if (p.has_key("metric_config_broken")) {
+    sbndaq::GenerateMetricConfig(p.get<fhicl::ParameterSet>("metric_config_broken"));
+  }
   _tick_period = p.get<double>("tick_period", 0.4 /* us */);
   _send_sparse_waveforms = p.get<bool>("send_sparse_waveforms", false);
   _send_waveforms = p.get<bool>("send_waveforms", false);
@@ -112,6 +116,7 @@ tpcAnalysis::OnlineAnalysis::OnlineAnalysis(fhicl::ParameterSet const & p):
   _n_evt_fft_avg = p.get<unsigned>("n_evt_fft_avg", 1);
   assert(_n_evt_fft_avg > 0);
   _send_metrics = p.get<bool>("send_metrics", true);
+  broken_th = p.get<double>("broken_th", 1);
   _wait_period = p.get<int>("wait_period", -1);
   _last_time = -1;
   _n_evt_send_rawdata = p.get<unsigned>("n_evt_send_rawdata", 1);
@@ -170,45 +175,64 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   // Save metrics
   if (_send_metrics) {
     int level = 0;
+    bool broken;
     artdaq::MetricMode mode = artdaq::MetricMode::Average;
     // send the metrics
+    std::cout << "broken_th " << broken_th << std::endl;
+    if (_analysis.npeak > broken_th) {
+      broken = 1;
+    }
+    else {
+      broken = 0;
+    }
+    sbndaq::sendMetric("tpc", "0", "broken" , broken, level, mode);
+    std::cout << "sbndaq::sendMetric(" << "tpc" << "," << "0" << "," << "broken" << "," << broken  << "," << level << "," <<")" << std::endl;
+
     for (auto const &channel_data: _analysis._per_channel_data) {
       float value;
       std::string instance = std::to_string(channel_data.channel_no);
 
       // don't send empty metrics
-      if (channel_data.empty) continue;
+      //if (channel_data.empty) continue;
       
       value = channel_data.rms;
       if (_send_rms)
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "rms", value, level, mode);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "rms" << "," << value << "," << level << "," <<")" << std::endl;
 
       value = channel_data.baseline;
       if (_send_baseline)
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline", value, level, mode);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "baseline" << "," << value << "," << level << "," <<")" << std::endl;
 
       value = channel_data.next_channel_dnoise;
       if (_send_dnoise)
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "next_channel_dnoise", value, level, mode);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "next_channel_dnoise" << "," << value << "," << level << "," <<")" << std::endl;
 
       value = channel_data.mean_peak_height;
       if (_send_peakheight)
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "mean_peak_height", value, level, mode);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "mean_peak_height" << "," << value << "," << level << "," <<")" << std::endl;
 
       value = channel_data.occupancy;
       if (_send_occupancy)
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "occupancy", value, level, mode);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "occupancy" << "," << value << "," << level << "," <<")" << std::endl;
 
       if (_send_sbnd_metrics) {
 	// compute the encoded femb/asic/channel #'s from the baseline
 	int femb = (channel_data.baseline >> 8) & 0xF;
 	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_femb", femb, level, artdaq::MetricMode::LastPoint);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "baseline_femb" << "," << value << "," << level << "," <<")" << std::endl;
 	
 	int asic = (channel_data.baseline >> 4) & 0xF;
 	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_asic", asic, level, artdaq::MetricMode::LastPoint);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "baseline_asic" << "," << value << "," << level << "," <<")" << std::endl;
 	
 	int chan = channel_data.baseline & 0xF;
 	sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_chan", chan, level, artdaq::MetricMode::LastPoint);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "baseline_chan" << "," << value << "," << level << "," <<")" << std::endl;
         
         int ch_offset = 0;
         if (chan <= 7) ch_offset = 7 - chan;
@@ -216,6 +240,7 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
         int channel_number = 128*femb + 16*asic + ch_offset; 
 
         sbndaq::sendMetric(fGroupName, instance, fMetricPrefix + "baseline_channel_no", channel_number, level, artdaq::MetricMode::LastPoint);
+//        std::cout << "sbndaq::sendMetric(" << fGroupName << "," << instance << "," << fMetricPrefix + "baseline_channel_no" << "," << channel_number << "," << level << "," <<")" << std::endl;
 
       }
 

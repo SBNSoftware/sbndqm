@@ -49,6 +49,7 @@ std::string tpcAnalysis::ChannelData::Print() {
   std::stringstream buffer;
   buffer << "baseline: " << baseline << std::endl;
   buffer << "rms: " << rms << std::endl;
+  buffer << "timestamp: " << timestamp << std::endl;
   buffer << "channel_no: " << channel_no << std::endl;
   buffer << "empty: " << empty << std::endl;
   buffer << "threshold: " << threshold << std::endl; 
