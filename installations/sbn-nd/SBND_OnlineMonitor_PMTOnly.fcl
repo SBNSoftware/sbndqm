@@ -5,6 +5,7 @@
 #service overrides
 services.RedisConnection: @local::redis_connection
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
 services.InitMetricManager: {
   connections: {
     archiving: {
@@ -20,7 +21,7 @@ services.InitMetricManager: {
 }
 services.ArtdaqSharedMemoryServiceInterface:
 {
-  service_provider: "ArtdaqSharedMemoryService"
+service_provider: ArtdaqGlobalsService
 }
 services.NuRandomService: @erase
 services.MemoryTracker: @erase
@@ -40,13 +41,13 @@ source:
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
-  dispatcherPort: 6020
+  dispatcherPort: 6021
 
   transfer_plugin: {
 
      unique_label: "SBNDPMTOnlineMonitor"
       transferPluginType: Shmem
-      shm_key: 0x40471454
+      shm_key: 0x40471458
       max_fragment_size_words: 100000000 #58543672 #33554432
       #max_event_size_bytes: 468349376
       first_event_builder_rank: 0
@@ -66,7 +67,7 @@ source:
            unique_label: "SBNDPMTOnlyMonitor"
             transferPluginType: Shmem
 
-            shm_key: 0x40471454
+            shm_key: 0x40471458
 
             max_fragment_size_words: 100000000 #58543672 #33554432
               first_event_builder_rank: 0
@@ -123,6 +124,15 @@ physics.filters:
   }
 }
 
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+
+
 ##override the analyzers section
 physics.analyzers:
 {
@@ -152,7 +162,7 @@ physics.analyzers:
        hostname: "sbnd-db01.fnal.gov"
 
         groups: {
-            PMT: [ [160, 208] ]
+            PMT: [ [0, 143] ]
         }
 
         #streams: ["archiving"]
@@ -175,7 +185,7 @@ physics.analyzers:
           rate: {
             untis: Hz 
             title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ 100000, 300000 ]
+            display_range: [ -50, 250 ]
           }
 
         }   
@@ -197,7 +207,9 @@ physics.a: [ @sequence::physics.anapmt ]
 
 physics.decoded_stream: [ decodedout ]
 
-physics.end_paths: [ anapmt, decoded_stream ] 
+#physics.end_paths: [ anapmt, decoded_stream ] 
+
+physics.end_paths: [anapmt ]
 
 process_name: SBNDOnlineMonitor
 
