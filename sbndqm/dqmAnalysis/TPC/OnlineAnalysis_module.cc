@@ -175,9 +175,9 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
   // Save metrics
   if (_send_metrics) {
     int level = 0;
-    bool broken;
     artdaq::MetricMode mode = artdaq::MetricMode::Average;
-    // send the metrics
+
+    bool broken;
     std::cout << "broken_th " << broken_th << std::endl;
     if (_analysis.npeak > broken_th) {
       broken = 1;
@@ -186,7 +186,6 @@ void tpcAnalysis::OnlineAnalysis::analyze(art::Event const & e) {
       broken = 0;
     }
     sbndaq::sendMetric("tpc", "0", "broken" , broken, level, mode);
-    std::cout << "sbndaq::sendMetric(" << "tpc" << "," << "0" << "," << "broken" << "," << broken  << "," << level << "," <<")" << std::endl;
 
     for (auto const &channel_data: _analysis._per_channel_data) {
       float value;

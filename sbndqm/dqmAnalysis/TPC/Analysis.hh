@@ -151,7 +151,6 @@ public:
   // output containers of analysis code. Only use after calling ReadyToProcess()
   std::vector<tpcAnalysis::ChannelData> _per_channel_data;
   std::vector<tpcAnalysis::ReducedChannelData> _per_channel_data_reduced;
-  long ts_std;
   int npeak;
   std::vector<tpcAnalysis::NoiseSample> _noise_samples;
   std::vector<tpcAnalysis::HeaderData> _header_data;
