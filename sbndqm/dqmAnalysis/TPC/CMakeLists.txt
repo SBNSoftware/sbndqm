@@ -126,6 +126,16 @@ cet_build_plugin( OnlineEvd art::module
         sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
+cet_build_plugin( OfflineEvd art::module
+	ROOT::Core
+	larcore::Geometry_Geometry_service
+	artdaq_utilities::artdaq-utilities_Plugins
+	sbndaq_online_storage
+	sbndaq_online_redis_connection
+	sbndaq_online_hiredis
+        sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
+)
+
 cet_build_plugin( TPCPurityDQMSender art::module
   sbndaq_online_storage
   sbndaq_online_redis_connection
@@ -169,29 +179,6 @@ cet_build_plugin( TPCWaveformAndFftRedis art::module
   sbndaq_online_storage
   sbndaq_online_hiredis
   sbndaq_online_redis_connection
-)
-
-cet_build_plugin( FragmentErrAna art::module
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io::tfile_support
-			art_root_io::TFileService_service
-			art_root_io::art_root_io
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq_utilities::artdaq-utilities_Plugins
 )
 
 install_headers()
