@@ -19,32 +19,32 @@ def add_connection_args(argparser):
     return argparser
 
 def type_to_struct_type(name):
-    if name == "int8_t": return "b"
-    if name == "int16_t": return "h"
-    if name == "int32_t": return "i"
-    if name == "int64_t": return "q"
+    if name == b'int8_t': return "b"
+    if name == b'int16_t': return "h"
+    if name == b'int32_t': return "i"
+    if name == b'int64_t': return "q"
 
-    if name == "uint8_t": return "B"
-    if name == "uint16_t": return "H"
-    if name == "uint32_t": return "I"
-    if name == "uint64_t": return "Q"
+    if name == b'uint8_t': return "B"
+    if name == b'uint16_t': return "H"
+    if name == b'uint32_t': return "I"
+    if name == b'uint64_t': return "Q"
 
-    if name == "float": return "f"
-    if name == "double": return "d"
+    if name == b'float': return "f"
+    if name == b'double': return "d"
 
 def type_to_size(name):
-    if name == "int8_t": return 1
-    if name == "int16_t": return 2
-    if name == "int32_t": return 4
-    if name == "int64_t": return 8
+    if name == b'int8_t': return 1
+    if name == b'int16_t': return 2
+    if name == b'int32_t': return 4
+    if name == b'int64_t': return 8
 
-    if name == "uint8_t": return 1
-    if name == "uint16_t": return 2
-    if name == "uint32_t": return 4
-    if name == "uint64_t": return 8
+    if name == b'uint8_t': return 1
+    if name == b'uint16_t': return 2
+    if name == b'uint32_t': return 4
+    if name == b'uint64_t': return 8
 
-    if name == "float": return 4
-    if name == "double": return 8
+    if name == b'float': return 4
+    if name == b'double': return 8
 
 def parse_binary(binary, typename):
     size = type_to_size(typename)
