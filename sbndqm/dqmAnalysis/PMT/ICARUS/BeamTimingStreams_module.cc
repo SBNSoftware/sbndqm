@@ -317,13 +317,13 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
    
     // send RWM waveform
     std::vector<raw::ADC_Count_t> RWMadcs { (*opdetHandle)[it->second].Waveform() };
-    std::string rwm_wf_instance = "snapshot:" + metric_prefix + "_RWM:" + instance_s;
+    std::string rwm_wf_instance = "snapshot:waveform:" + metric_prefix + "_RWM:" + instance_s;
     sbndaq::SendWaveform(rwm_wf_instance, RWMadcs, m_OpticalTick);
     sbndaq::SendEventMeta(rwm_wf_instance, evt);
 
     // send EW waveform    
     std::vector<raw::ADC_Count_t> EWadcs { (*opdetHandle)[ew_wfs[it->first]].Waveform() };
-    std::string ew_wf_instance = "snapshot:" + metric_prefix + "_EW:" + instance_s;
+    std::string ew_wf_instance = "snapshot:waveform:" + metric_prefix + "_EW:" + instance_s;
     sbndaq::SendWaveform(ew_wf_instance, EWadcs, m_OpticalTick);
     sbndaq::SendEventMeta(ew_wf_instance, evt);
   }
