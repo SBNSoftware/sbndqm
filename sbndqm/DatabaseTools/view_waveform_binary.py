@@ -22,8 +22,9 @@ def main(args):
         data = redis.hget(key, "Data")
         sizes = redis.hget(key, "Sizes")
         offsets = redis.hget(key, "Offsets")
-    except:
+    except Exception as e:
          print("ERROR: key (%s) is misformed" % (args.key))
+         print(e)
          return
 
     data = util.parse_binary(data, data_type)
