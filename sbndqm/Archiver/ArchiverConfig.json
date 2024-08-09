@@ -1,20 +1,20 @@
 {
     "postgresql": {
-        "database": "sbnteststand", 
-        "hostname": "cdpgsdev", 
-        "port": 5488, 
-        "user": "mueller",
-	"metric_config": "example_monitor_map"
+        "database": "icarus_online_prd", 
+        "hostname": "icarus-db02.fnal.gov", 
+        "port": 5434, 
+        "user": "runcon_writer",
+	"passfile": "runcon_writer.txt",
+	"metric_config": "runcon_prd.monitor_map"
     }, 
     "redis": {
-        "hostname": "sbnd-daq33", 
+        "hostname": "icarus-db02.fnal.gov", 
         "monitor_time": 3, 
-        "port": 6379, 
-        "timeout": 30
+        "port": 6379,         "timeout": 30
     },
     "logging": {
-	"directory": "/home/nfs/mueller/Archiver/srcs/sbndqm/sbndqm/Archiver",
+	"directory": "/daq/log/archiver/",
 	"name": "archiver.log",
-	"overwrite": true
+	"overwrite": false
     }
 }

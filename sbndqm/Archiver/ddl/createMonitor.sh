@@ -12,10 +12,7 @@ if [ $# -ne 5 ]; then
   exit
 fi
 
-#
-# Modify the following psql parameters to suit your own datbase
-#
-psql -U runcon_admin -h icarus-db01 -p 5434 -d icarus_online_prd \
+psql -U badgett -h cdpgsdev -p 5488 -d sbnteststand \
    --set=GROUP_NAME=\'$1\' --set=METRIC=\'$2\' --set=MONITOR_TYPE=$3 \
    --set=CH1=$4 --set=CHN=$5 -c "\i channelMonitor.sql"
 

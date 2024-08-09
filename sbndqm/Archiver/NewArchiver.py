@@ -1,5 +1,5 @@
 import argparse
-import redis
+import redis as rd
 import json
 import time
 import signal
@@ -10,6 +10,15 @@ import psycopg2
 import logging
 from multiprocessing import Process
 import math
+
+def connect_redis(cfg, args):
+    redis = rd.Redis(host=cfg['redis']['hostname'],
+                     port=cfg['redis']['port'],
+                     password=args.password)
+    try:
+        redis.ping()
+    except:
+        logging.info('ERROR: trouble connecting to the Redis database on server (%s) port (%i)' % (cfg['redis']['hostname']))
 
 def ConnectRedis(Config, args):
     r = redis.Redis(host=Config['redis']['hostname'], port=Config['redis']['port'], password=args.password)
@@ -26,7 +35,6 @@ def ConnectPostgreSQL(Config):
     with open(Config['postgresql']['passfile'], 'r') as passfile:
         pwd = passfile.read().replace('\n', '')
     p = psycopg2.connect(host=Config['postgresql']['hostname'], database=Config['postgresql']['database'], user=Config['postgresql']['user'], port=Config['postgresql']['port'], password=pwd)
-        #host=Config['postgresql']['hostname'], database=Config['postgresql']['database'], user='mueller', port=Config['postgresql']['port'])
         
     try:
         cur = p.cursor()
@@ -81,8 +89,9 @@ def main(args):
         #    print(key[:-16], 'Reseting')
         #CurrentTime = int(GetLatest(r,key[:-16]).split('-')[0])
         #print('Current time', CurrentTime)
-        #SetLatest(r,key[:-16], '1666210000000')
-        #SetLatest(r,key[:-16], '1713834881000')
+        #SetLatest(r,key[:-16], '1596208000000')
+        #SetLatest(r,key[:-16], '1608237252732')
+        #SetLatest(r,key[:-16], '1648073157000')
 
     #Now we split the job into multiple processes that each handle some portion of the streams.
     try:
@@ -106,21 +115,18 @@ def main(args):
 
 def ProcessStreams(r, p, cur, StreamDict, Config, args):
 
-    MetricDict = { x : [] for x in StreamDict.keys()}
+    MetricDict = {x : [] for x in StreamDict.keys()}
 
-    logging.info('Archiver in ProcessStreams.')
-    logging.info('LatestCompleted for ' + StreamDict.keys()[0] + ': ' + StreamDict[StreamDict.keys()[0]])
+    logging.info('Archiver is ready to process Redis streams..')
+    logging.info('Latest completed for ' + StreamDict.keys()[0] + ': ' + StreamDict[StreamDict.keys()[0]])
 
-    #We now begin to continuously query these streams for new metrics, archiving them when possible.
     while True:
         TotalSetTime = 0
         TotalSetN = 0
-        #ReadStream is a list of stream object which have new entries that have yet to be archived.
         try:
             st = time.time()
             ReadStream = r.xread(StreamDict, block=0)
             logging.info('XREAD time: {}'.format(time.time()-st))
-            #logging.info('Redis READ completed.')
         except redis.RedisError as err:
             logging.error('Error while reading streams: {}'.format(err))
             logging.error(type(err))
@@ -210,7 +216,7 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
                         TotalSetTime += SetLatest(r, StreamObject[0], NewLatest)
                         TotalSetN += 1
         logging.info('Total set time: {}'.format(TotalSetTime))
-        logging.info('Average set time: {}'.format(float(TotalSetTime)/float(TotalSetN) if TotalSetN else 0))
+        logging.info('Average set time: {}'.format(float(TotalSetTime)/float(TotalSetN)))
 
 def ProcessData(Metrics, Datum, Config, StreamName):
     Value = float(ReadDatum(Datum[1]))
