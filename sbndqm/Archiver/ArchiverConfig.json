@@ -10,7 +10,8 @@
     "redis": {
         "hostname": "icarus-db02.fnal.gov", 
         "monitor_time": 3, 
-        "port": 6379,         "timeout": 30
+        "port": 6379,
+	"timeout": 30
     },
     "logging": {
 	"directory": "/daq/log/archiver/",
