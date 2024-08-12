@@ -193,10 +193,10 @@ bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std:
   int digitizer_last_channel = 15;
   crateID = -1;
   for(auto it=channel_map.begin(); it!=channel_map.end(); it++){ 
-    size_t eff_fragment_id = it->first & 0x0fff;
+    size_t eff_fragment_id = it->first & 0x0fff; // boards from 0 to 23
     int spare_channel = eff_fragment_id*nChannelsPerBoard + digitizer_last_channel;
     if( spare_channel == pmtID ){
-      crateID = int(eff_fragment_id / 3);
+      crateID = int( eff_fragment_id / 3); // crates from 0 to 7
       return true;
     }
   }
@@ -224,7 +224,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
   }
   
   if( (*triggerHandle).size()>1 )
-    mf::LogWarning("sbndaq::BeamTimingStreams::analyze") << "More than one trigger in the event!";
+    mf::LogError("sbndaq::BeamTimingStreams::analyze") << "More than one trigger in the event!";
 
   auto trigger_source = (*triggerHandle).at(0).TriggerBits();
   std::string metric_prefix = getGateName(trigger_source);
@@ -300,7 +300,7 @@ void sbndaq::BeamTimingStreams::analyze(art::Event const & evt) {
     double RWM_EW = (RWM_start-EW_start)*m_OpticalTick; //us
 
     // sometimes an extremely negative difference is found: -3.6 x 10^6
-    // this is clearly unphysical, so catch these occurances
+    // this is clearly unphysical, so catch these occurances to investigate
     // since they mess up the plot autoscale, replace with 0 (=missing signals)
     if( RWM_EW < -100. || RWM_EW > 100. ){
       mf::LogError("sbndaq::BeamTimingStreams::analyze") 

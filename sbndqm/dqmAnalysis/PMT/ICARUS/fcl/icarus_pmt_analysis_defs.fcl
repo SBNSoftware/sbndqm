@@ -85,7 +85,7 @@ BEGIN_PROLOG
       hostname: "icarus-db02.fnal.gov"
     
       groups: {
-        BeamTiming: [ [0, 8] ]
+        BeamTiming: [ [0, 7] ]
       }
 
       streams: ["archiving"]
