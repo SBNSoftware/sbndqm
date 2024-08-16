@@ -1,0 +1,77 @@
+services: { 
+ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+#ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
+}
+
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+physics: {
+  analyzers: {  }
+
+  filters:{ }
+  out1 : [dumper] 
+  end_paths: [ out1 ]
+}
+
+
+source:
+{
+  module_type: TransferInput
+
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+
+  dispatcherPort: 6020
+
+  transfer_plugin: {
+
+     unique_label: "ExampleOnlineMonitor1"
+      transferPluginType: Shmem
+      shm_key: 0x40471453
+      max_fragment_size_words: 10e7
+      first_event_builder_rank: 0
+          source_rank: 5555
+          destination_rank: 6666
+  }
+
+  dispatcher_config: {
+    unique_label: "ExampleOnlineMonitor1"
+    filter_paths: [ {name: pmod path: [ prescale ]}  ]
+    path: [ out ]
+    physics: {
+      filters: {
+        prescale: {
+          module_type: Prescaler
+          prescaleFactor: 10
+          prescaleOffset: 0
+        }
+      }
+    }
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "ExampleOnlineMonitor1"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471453
+
+            max_fragment_size_words: 10e7
+              first_event_builder_rank: 0
+              destination_rank: 6666
+        }
+      }
+    }
+  }
+}
+
+process_name: TPCANALYSIS
+

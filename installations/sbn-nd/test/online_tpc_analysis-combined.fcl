@@ -65,16 +65,16 @@ physics:
   {
     daq: {
       module_type: SBNDTPCDecoder
-      # for debugging -- time (in s) to wait in between analyzing events
+      // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
-      # make the header
+      // make the header
       produce_header: true
       baseline_calc: true
-      # parameters for timestamps
+      // parameters for timestamps
       timesize: 2519
-      # produce timestamps in units of mus
+      // produce timestamps in units of mus
       frame_to_dt: 0.5
-      # parameters for header index
+      // parameters for header index
       min_slot_no: 3
       channel_per_slot: 64
     }
@@ -86,30 +86,12 @@ physics:
       module_type: ReportMetadata
     }
 
-    OnlineEvd: {
-      module_type: OnlineEvd
-      raw_digit_producers: [daq]
-      verbose: false
-      timing: false
-    }
-
-    OnlineSunset: {
-      module_type: TPCSunsetAnalyzer
-      sunset_tick: 375
-      metric_sunsets: {
-        streams: [archiving, 10s]
-        groups: {
-          Sunset: [0]
-        }
-        metrics:{
-          ndigi: {
-      #      title: "# of Digital Noise Ch"
-          }
-          nspikes: {
-      #      title: "# of a Spiked Ch"
-          }
-        }
-      }
+    OnlineEvd:
+    {
+    module_type: OnlineEvd
+    raw_digit_producers: [daq]
+    verbose: false
+    timing: false
     }
  
     OnlineAnalysisRawData: {
@@ -125,19 +107,19 @@ physics:
       send_time_avg_ffts: false
       n_evt_fft_avg: 50
       n_evt_send_rawdata: 1
-      broken_th: 1
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
     }
 
-    OnlineAnalysis: {
+    OnlineAnalysis:
+     {
       module_type: OnlineAnalysis
       group_name: tpc_channel
       send_sbnd_metrics: false
-      broken_th: 1
       @table::analysis_config
       metrics: {
+
         redis_metric_10s: {    
           level: 3
           metricPluginType: "redis"
@@ -154,24 +136,12 @@ physics:
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":archiving"
         }
+
       }
-      metric_config_broken: {
-        streams: [archiving, 10s]
-        groups: {
-          tpc: [0]
-        }
-        metrics: {
-          broken: {
-            units: Broken
-            title: "Broken Events"
-            display_range: [-1, 2]
-          }
-       }
-     }
       metric_config: {
         streams: [archiving, 10s]
         groups: {
-          tpc_channel:[[0,11263]] # 8 crates
+	  tpc_channel:[[0,11263]] # 8 crates
         }
         metrics: {
           rms: {
@@ -223,8 +193,8 @@ physics:
     }
   }
 
-   my_producer_modules: ["!f1", daq]
-  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta, OnlineEvd, OnlineSunset]
+  my_producer_modules: ["!f1", daq]
+  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta, OnlineEvd]
   out1 : [dumper]
   end_paths: [a]
 }
@@ -261,17 +231,17 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitorTPCwEVDwSunset"
+     unique_label: "OnlineMonitorTPCwEVD"
       transferPluginType: Shmem
-      shm_key: 0x40470926
-      max_fragment_size_words: 20e7
+      shm_key: 0x40470925
+      max_fragment_size_words: 10e7
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
   }
 
   dispatcher_config: {
-    unique_label: "OnlineMonitorTPCwEVDwSunset"
+    unique_label: "OnlineMonitorTPCwEVD"
     path: [ out ]
     physics: {}
     outputs: {
@@ -279,12 +249,12 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "OnlineMonitorTPCwEVDwSunset"
+           unique_label: "OnlineMonitorTPCwEVD"
             transferPluginType: Shmem
 
-            shm_key: 0x40470926
+            shm_key: 0x40470925
 
-            max_fragment_size_words: 20e7
+            max_fragment_size_words: 10e7
               first_event_builder_rank: 0
               destination_rank: 6
         }

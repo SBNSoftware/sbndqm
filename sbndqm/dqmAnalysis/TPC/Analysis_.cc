@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <numeric>
-#include <cmath>
 #include <getopt.h>
 #include <chrono>
 #include <float.h>
@@ -141,15 +140,8 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
 
 void Analysis::AnalyzeEvent(art::Event const & event) {
   _raw_digits_handle.clear();
-  _raw_timestamps_handle.clear();
 
   _event_ind ++;
-
-   std::vector<long> ts_vec;
-   ts_vec.clear();
-   std::vector<long> ts_hist_vec;
-   ts_hist_vec.clear();
-   npeak = 0;
 
   // clear out containers from last iter
   for (unsigned i = 0; i < _channel_info.NChannels(); i++) {
@@ -179,64 +171,6 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     art::fill_ptr_vector(_raw_digits_handle, digit_handle);
   }
 
-  // get the timestamps
-  for (const std::string &prod: _config.producers) {
-    art::Handle<std::vector<raw::RDTimeStamp>> timestamp_handle;
-    if (_config.instance.size()) {
-      event.getByLabel(prod, _config.instance, timestamp_handle);
-    }
-    else {
-      event.getByLabel(prod, timestamp_handle);
-    }
-
-    // exit if the data isn't present
-    if (!timestamp_handle.isValid()) {
-      std::cerr << "Error: missing timestamps with producer (" << prod << ")" << std::endl;
-      return;
-    }
-    art::fill_ptr_vector(_raw_timestamps_handle, timestamp_handle);
-  }
-
-  // analyze timestamp distributions
-  // collect timestamps
-  unsigned timeindex = 0;
-  for (auto const& timestamps: _raw_timestamps_handle) {
-    long this_ts = timestamps->GetTimeStamp();
-    ts_vec.push_back(this_ts);
-    timeindex++;
-  }
-  // make binned hist
-  long ts_min = ts_vec[0];
-  long ts_max = ts_vec[0];
-  for (long ts : ts_vec) {
-    if (ts < ts_min) {
-      ts_min = ts;
-    }
-    if (ts > ts_max) {
-      ts_max = ts;
-    }
-  }
-  float nbin = 100.;
-  float bin_width = (ts_max - ts_min)/nbin;
-  for (int i = 0; i < 100; ++i) {
-    float bin_low = ts_min + i*bin_width;
-    float bin_high = ts_min + (i+1)*bin_width;
-    int bin_count = 0;
-    for (long ts : ts_vec) {
-      if ((bin_low < ts) & (ts <= bin_high)) {
-        bin_count += 1;
-      }
-    }
-    ts_hist_vec.push_back(bin_count);
-  }
-  // find peak bins
-  for (int bc : ts_hist_vec) {
-    //TODO: make threshold fcl parameter
-    if (bc > 1000) {
-      npeak += 1;
-    }
-  }
-
   unsigned index = 0;
   // calculate per channel stuff 
   for (auto const& digits: _raw_digits_handle) {
@@ -246,7 +180,6 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
     ProcessChannel(*digits);
     index++;
   }
-
 
   if (_config.timing) {
     _timing.StartTime();

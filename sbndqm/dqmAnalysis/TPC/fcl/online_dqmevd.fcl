@@ -1,0 +1,178 @@
+#include "simple_channel_info.fcl"
+#include "services_sbnd.fcl"
+#include "simulationservices_sbnd.fcl"
+#include "redis_connection.fcl"
+#include "TPCChannelMapService.fcl"
+#include "SBNDTPCDecoderDefaults.fcl"
+
+BEGIN_PROLOG
+analysis_config: {
+  // producer of digits and header info
+  raw_digit_producers: [daq]
+  header_producer: "daq"
+  
+  // channel info
+  channel_info: {
+    n_channels: 11264 # 16 crates
+    collection_channels: [[0,3327]] # no signal -- plane is arbitrary
+    induction_channels: [[3328,11263]]
+  }
+  
+  // standard analysis config
+  threshold_calc: 3
+  threshold_sigma: 5
+  noise_range_sampling: 1
+  n_smoothing_samples: 1
+  baseline_calc: 2
+  n_mode_skip: 3
+  use_planes: false
+  // n_max_noise_samples: 100
+  refine_baseline: false
+  find_signal: false
+  
+  // turn on for analysis information printed out on stdin
+  verbose: false
+  // turn on for timing information printed out on stdin
+  timing: false
+  
+  // turn on to save waveform in output ChannelData
+  fill_waveforms: false
+  
+  // turn on to output ReducedChannelData objects instead of
+  // ChannelData (will throw out waveform and FFT info)
+  reduce_data: false
+  
+  // number of headers per event provided by input (will be ignored if value is negative)
+  // 10 for SBND
+  n_headers: 16
+}
+END_PROLOG
+
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+
+physics:
+{
+  // now also have something produce the digits and headers
+
+
+  producers:
+  {
+    daq: {
+      module_type: SBNDTPCDecoder
+      // for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      // make the header
+      produce_header: true
+      baseline_calc: true
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
+      frame_to_dt: 0.5
+      // parameters for header index
+      min_slot_no: 3
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers:
+  {
+    OnlineEvd:
+    {
+    module_type: OnlineEvd
+    raw_digit_producers: [daq]
+    verbose: false
+    timing: false
+    }
+  }
+
+  filters: {
+    f1: {
+        module_type: EventIDFilter
+        errorOnFailureToPut: true  # default
+        idsToMatch: [
+            "*:*:0"
+        ]
+    }
+  }
+
+  my_producer_modules: ["!f1", daq]
+  a: [OnlineEvd]
+#  a: [Meta]
+  out1 : [dumper]
+  end_paths: [a]
+#  end_paths: [out1]
+}
+
+
+services:
+{
+  AuxDetExptGeoHelperInterface: { service_provider: "sbndcode/CRT/CRTGeometryHelper" }
+  ExptGeoHelperInterface:    @local::sbnd_geometry_helper
+  Geometry:                  @local::sbnd_geo
+  GeometryConfigurationWriter:    {}
+#  AuxDetGeometry:            @local::sbnd_auxdetgeo
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
+  TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+}
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
+
+
+source:
+{
+  firstEvent : 20
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 5021
+
+  transfer_plugin: {
+
+     unique_label: "OnlineDQMEVD2"
+      transferPluginType: Shmem
+      shm_key: 0x40471127
+      max_fragment_size_words: 10e7
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "OnlineDQMEVD2"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "OnlineDQMEVD2"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471127
+
+            max_fragment_size_words: 10e7
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+process_name: TPCANALYSIS
+

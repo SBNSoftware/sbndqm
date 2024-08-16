@@ -2,8 +2,7 @@
 #include "redis_connection.fcl"
 #include "TPCChannelMapService.fcl"
 #include "SBNDTPCDecoderDefaults.fcl"
-#include "services_sbnd.fcl"
-#include "simulationservices_sbnd.fcl"
+
 
 BEGIN_PROLOG
 analysis_config: {
@@ -14,7 +13,7 @@ analysis_config: {
   // channel info
   channel_info: {
     n_channels: 11264 # 16 crates
-    collection_channels: [[3968,5631],[9600,11263]]  # no signal -- plane is arbitrary
+    collection_channels: [[3968,5631],[9600,11263]] # no signal -- plane is arbitrary
     induction_channels: [[0,3967],[5632,9599]]
   }
   
@@ -61,20 +60,29 @@ physics:
   // now also have something produce the digits and headers
 
 
+  filters:
+  {
+    prescale5:{ 
+      module_type: "Prescaler"
+      prescaleFactor: 5
+      prescaleOffset: 0
+    }
+  }
+
   producers:
   {
     daq: {
       module_type: SBNDTPCDecoder
-      # for debugging -- time (in s) to wait in between analyzing events
+      // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
-      # make the header
+      // make the header
       produce_header: true
-      baseline_calc: true
-      # parameters for timestamps
-      timesize: 2519
-      # produce timestamps in units of mus
+      baseline_calc: false
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
       frame_to_dt: 0.5
-      # parameters for header index
+      // parameters for header index
       min_slot_no: 3
       channel_per_slot: 64
     }
@@ -84,32 +92,6 @@ physics:
   {
     Meta: {
       module_type: ReportMetadata
-    }
-
-    OnlineEvd: {
-      module_type: OnlineEvd
-      raw_digit_producers: [daq]
-      verbose: false
-      timing: false
-    }
-
-    OnlineSunset: {
-      module_type: TPCSunsetAnalyzer
-      sunset_tick: 375
-      metric_sunsets: {
-        streams: [archiving, 10s]
-        groups: {
-          Sunset: [0]
-        }
-        metrics:{
-          ndigi: {
-      #      title: "# of Digital Noise Ch"
-          }
-          nspikes: {
-      #      title: "# of a Spiked Ch"
-          }
-        }
-      }
     }
  
     OnlineAnalysisRawData: {
@@ -125,19 +107,19 @@ physics:
       send_time_avg_ffts: false
       n_evt_fft_avg: 50
       n_evt_send_rawdata: 1
-      broken_th: 1
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
     }
 
-    OnlineAnalysis: {
+    OnlineAnalysis:
+     {
       module_type: OnlineAnalysis
       group_name: tpc_channel
       send_sbnd_metrics: false
-      broken_th: 1
       @table::analysis_config
       metrics: {
+
         redis_metric_10s: {    
           level: 3
           metricPluginType: "redis"
@@ -154,24 +136,12 @@ physics:
           // need to add postfix otherwise this metric sender and the other one will collide
           redis_key_postfix: ":archiving"
         }
+
       }
-      metric_config_broken: {
-        streams: [archiving, 10s]
-        groups: {
-          tpc: [0]
-        }
-        metrics: {
-          broken: {
-            units: Broken
-            title: "Broken Events"
-            display_range: [-1, 2]
-          }
-       }
-     }
       metric_config: {
         streams: [archiving, 10s]
         groups: {
-          tpc_channel:[[0,11263]] # 8 crates
+	  tpc_channel:[[0,11263]] # 8 crates
         }
         metrics: {
           rms: {
@@ -213,42 +183,48 @@ physics:
     }
   }
 
-  filters: {
-    f1: {
-        module_type: EventIDFilter
-        errorOnFailureToPut: true  # default
-        idsToMatch: [
-            "*:*:0"
-        ]
-    }
-  }
-
-   my_producer_modules: ["!f1", daq]
-  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta, OnlineEvd, OnlineSunset]
+  my_producer_modules: [daq]
+  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta]
+#  a: [Meta]
   out1 : [dumper]
   end_paths: [a]
 }
 
+#decoder output -- as in the ICARUS fhicl, but prescale 5
+physics.pscale_OnMonFiles:  [ daq ]
+outputs.decodedout:{
+ module_type: RootOutput
+ fileName:  "/scratch_local/onmon_files_test/onmon_output_%r_%s_%tc_%#-decoded.root"
+ dataTier:  "raw"
+ compressionLevel: 3
+ SelectEvents: [pscale_OnMonFiles]
+ fileProperties: {
+  #maxSubRuns: 1
+  #maxRuns: 1
+  maxEvents: 1
+ }
+}
+physics.decoded_stream: [ decodedout ]
+#physics.end_paths: [ a, out1, decoded_stream ]
+physics.end_paths: [ a,  decoded_stream ]
+physics.tpc_path: [pscale_OnMonFiles]
+physics.trigger_paths: [ @sequence::physics.tpc_path ]
+# end decoder output stuff
 
 services:
 {
   RedisConnection: @local::redis_connection
   ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
   TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
-  AuxDetExptGeoHelperInterface: { service_provider: "sbndcode/CRT/CRTGeometryHelper" }
-  ExptGeoHelperInterface:    @local::sbnd_geometry_helper
-  Geometry:                  @local::sbnd_geo
-  GeometryConfigurationWriter:    {}
 }
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
 services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
-services.TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
 
 
 source:
 {
-  firstEvent : 20
   module_type: TransferInput
   register_fragment_types: false
   # The timeout shouldn't be much smaller than the period between events, otherwise
@@ -257,21 +233,21 @@ source:
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
-  dispatcherPort: 6021
+  dispatcherPort: 6027
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitorTPCwEVDwSunset"
+     unique_label: "OnlineMonitorTPC3"
       transferPluginType: Shmem
-      shm_key: 0x40470926
-      max_fragment_size_words: 20e7
+      shm_key: 0x40471454
+      max_fragment_size_words: 10e7
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
   }
 
   dispatcher_config: {
-    unique_label: "OnlineMonitorTPCwEVDwSunset"
+    unique_label: "OnlineMonitorTPC3"
     path: [ out ]
     physics: {}
     outputs: {
@@ -279,12 +255,12 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "OnlineMonitorTPCwEVDwSunset"
+           unique_label: "OnlineMonitorTPC3"
             transferPluginType: Shmem
 
-            shm_key: 0x40470926
+            shm_key: 0x40471454
 
-            max_fragment_size_words: 20e7
+            max_fragment_size_words: 10e7
               first_event_builder_rank: 0
               destination_rank: 6
         }

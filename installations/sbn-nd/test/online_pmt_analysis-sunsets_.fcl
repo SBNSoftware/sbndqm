@@ -162,7 +162,7 @@ physics.analyzers:
        hostname: "sbnd-db01.fnal.gov"
 
         groups: {
-            PMT: [ [0, 143] ]
+            PMT: [ [160, 208] ]
         }
 
         #streams: ["archiving"]
@@ -185,7 +185,7 @@ physics.analyzers:
           rate: {
             untis: Hz 
             title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ -50, 250 ]
+            display_range: [ 100000, 300000 ]
           }
 
         }   

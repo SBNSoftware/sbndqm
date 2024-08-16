@@ -125,7 +125,6 @@ physics:
       send_time_avg_ffts: false
       n_evt_fft_avg: 50
       n_evt_send_rawdata: 1
-      broken_th: 1
       // send_correlation_matrix: true
       // correlation_matrix_name: correlation
       // n_correlation_matrix_samples: 100
@@ -135,7 +134,6 @@ physics:
       module_type: OnlineAnalysis
       group_name: tpc_channel
       send_sbnd_metrics: false
-      broken_th: 1
       @table::analysis_config
       metrics: {
         redis_metric_10s: {    
@@ -155,19 +153,6 @@ physics:
           redis_key_postfix: ":archiving"
         }
       }
-      metric_config_broken: {
-        streams: [archiving, 10s]
-        groups: {
-          tpc: [0]
-        }
-        metrics: {
-          broken: {
-            units: Broken
-            title: "Broken Events"
-            display_range: [-1, 2]
-          }
-       }
-     }
       metric_config: {
         streams: [archiving, 10s]
         groups: {
@@ -223,7 +208,7 @@ physics:
     }
   }
 
-   my_producer_modules: ["!f1", daq]
+  my_producer_modules: ["!f1", daq]
   a: [OnlineAnalysis,OnlineAnalysisRawData, Meta, OnlineEvd, OnlineSunset]
   out1 : [dumper]
   end_paths: [a]

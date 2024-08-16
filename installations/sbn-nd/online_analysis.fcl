@@ -1,0 +1,698 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "TPCChannelMapService.fcl"
+#include "SBNDTPCDecoderDefaults.fcl"
+#include "services_sbnd.fcl"
+#include "simulationservices_sbnd.fcl"
+#include "opticaldetectormodules.fcl"
+#include "pmt_stream_config_SBND.fcl" 
+
+BEGIN_PROLOG 
+
+analysis_config: {
+  // producer of digits and header info
+  raw_digit_producers: [daq]
+  header_producer: "daq"
+  
+  // channel info
+  channel_info: {
+    n_channels: 11264 # 16 crates
+    collection_channels: [[3968,5631],[9600,11263]]  # no signal -- plane is arbitrary
+    induction_channels: [[0,3967],[5632,9599]]
+  }
+  
+  // standard analysis config
+  threshold_calc: 3
+  threshold_sigma: 5
+  noise_range_sampling: 1
+  n_smoothing_samples: 1
+  baseline_calc: 2
+  n_mode_skip: 3
+  use_planes: false
+  // n_max_noise_samples: 100
+  refine_baseline: false
+  find_signal: false
+  
+  // turn on for analysis information printed out on stdin
+  verbose: false
+  // turn on for timing information printed out on stdin
+  timing: false
+  
+  // turn on to save waveform in output ChannelData
+  fill_waveforms: false
+  
+  // turn on to output ReducedChannelData objects instead of
+  // ChannelData (will throw out waveform and FFT info)
+  reduce_data: false
+  
+  // number of headers per event provided by input (will be ignored if value is negative)
+  // 10 for SBND
+  n_headers: 16
+}
+
+END_PROLOG
+
+services:
+{
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+  AuxDetExptGeoHelperInterface: { service_provider: "sbndcode/CRT/CRTGeometryHelper" }
+  ExptGeoHelperInterface:    @local::sbnd_geometry_helper
+  Geometry:                  @local::sbnd_geo
+  GeometryConfigurationWriter:    {}
+
+  #For CRT
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+}
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
+services.TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+
+
+source:
+{
+#  firstEvent : 20
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
+
+  transfer_plugin: {
+     unique_label: "SBNDOM"
+      transferPluginType: Shmem
+      shm_key: 0x40470926
+      max_fragment_size_words: 1e8
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "SBNDOM"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "SBNDOM"
+          transferPluginType: Shmem
+          shm_key: 0x40470926
+          max_fragment_size_words: 1e8
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+
+physics:
+{
+  filters: {
+    f1: {
+        module_type: EventIDFilter
+        errorOnFailureToPut: true  # default
+        idsToMatch: [
+            "*:*:0"
+        ]
+    }
+    crtfilter: {
+        module_type: EventIDFilter
+        errorOnFailureToPut: true  # default
+        idsToMatch: [
+            "*:*:0"
+        ]
+    }
+    prescale1:{
+      module_type: "Prescaler"
+      prescaleFactor: 1
+      prescaleOffset: 0
+    }
+    prescale2:{
+      module_type: "Prescaler"
+      prescaleFactor: 2
+      prescaleOffset: 0
+    }
+    prescale3:{
+      module_type: "Prescaler"
+      prescaleFactor: 3
+      prescaleOffset: 0
+    }
+    prescale5:{
+      module_type: "Prescaler"
+      prescaleFactor: 5
+      prescaleOffset: 0
+    }
+    prescale10:{
+      module_type: "Prescaler"
+      prescaleFactor: 10
+      prescaleOffset: 0
+    }
+    prescale20:{
+      module_type: "Prescaler"
+      prescaleFactor: 20
+      prescaleOffset: 0
+    }
+    prescale50:{
+      module_type: "Prescaler"
+      prescaleFactor: 50
+      prescaleOffset: 0
+    }
+    prescale100:{
+      module_type: "Prescaler"
+      prescaleFactor: 100
+      prescaleOffset: 0
+    }
+  }
+
+
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      module_type: SBNDTPCDecoder
+      # for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      # make the header
+      produce_header: true
+      baseline_calc: true
+      # parameters for timestamps
+      timesize: 2519
+      # produce timestamps in units of mus
+      frame_to_dt: 0.5
+      # parameters for header index
+      min_slot_no: 3
+      channel_per_slot: 64
+    }
+    daqPMT: {
+      module_type: DaqDecoderSBNDPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+    daqSPECTDC: {
+      module_type:           "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+    }
+  }
+
+  analyzers:
+  {
+    # Trigger
+    ptbAnalysis: {
+      SelectEvents: [trigger_only]
+      module_type: PTBdqm
+      metric_llt_trigger_rate: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          LLT_ID: [ [0, 32] ]
+        }
+        streams: ["archiving"]
+        metrics: {
+
+          LLT_periodicity:{
+            units: seconds
+            title: "PTB LLT %(instance)s periodicity"
+            display_range: [ 0, 6 ]
+
+          }
+        }
+      }
+      metric_hlt_trigger_rate: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          HLT_ID: [ [0, 32] ]
+        }
+        streams: ["archiving"]
+        metrics: {
+
+          HLT_periodicity:{
+            units: seconds
+            title: "PTB HLT %(instance)s periodicity"
+            display_range: [ 0, 6 ]
+
+          }
+        }
+      }
+      metric_beam_light_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: { 
+          BEAM_LIGHT_DIFF: [ [0, 2] ]
+        } 
+        streams: ["archiving"]
+        metrics: {
+        
+          BEAM_LIGHT:{
+            units: microseconds
+            title: "BEAM (BES) - LIGHT"
+            display_range: [-10000, 10000]
+          } 
+          
+          OFFBEAM_LIGHT:{
+            units: microseconds
+            title: "OFFBEAM (BES) - LIGHT"
+            display_range: [-10000, 10000]
+            
+          }
+        } 
+      }
+
+      metric_beam_crt_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          BEAM_CRT_DIFF: [ [0, 6] ]
+        }
+        streams: ["archiving"]
+        metrics: {
+
+          BEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "BEAM HLT - BEAM T1 RESET"
+          }
+
+          OFFBEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "OFFBEAM HLT - OFFBEAM T1 RESET"
+          }
+
+          NUMBER_OFFBEAM_T1RESET:{}
+
+          NUMBER_BEAM_T1RESET:{}
+          NUMBER_OFFBEAM_HLT:{}
+
+          NUMBER_BEAM_HLT:{}
+
+        }
+      }
+      metric_ptb_tdc_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          PTB_TDC_DIFF: [ [0, 12] ]
+        }
+        streams: ["archiving"]
+        metrics: {
+
+          FLASH_TDC_4:{
+            units: microseconds
+            title: "|PTB - TDC| flash trigger timestamps"
+          }
+
+          EVENT_TDC_5:{
+            units: microseconds
+            title: "|PTB - TDC| event trigger timestamps"
+          }
+
+          T1RESET_TDC_1:{
+            units: microseconds
+            title: "|PTB - TDC| CRT t1 reset timestamps"
+          }
+          LLTBES_TDC_2:{
+            units: microseconds
+            title: "|PTB - TDC| BES timestamps"
+          }
+
+          NUMBER_TDC_1:{}
+
+          NUMBER_TDC_2:{}
+
+          NUMBER_TDC_4:{}
+
+          NUMBER_TDC_5:{}
+
+          NUMBER_T1RESET:{}
+
+          NUMBER_BES:{}
+
+          NUMBER_FLASH:{}
+
+          NUMBER_EVENT:{}
+        }
+      }
+    }
+
+    # Timing
+    dqmSPECTDC: {
+
+      SelectEvents: [timing_only]
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "daqSPECTDC"
+
+      SPECTDCMetricConfig: {
+
+        hostname: "sbnd-db.fnal.gov"
+        streams: ["archiving"]
+
+        groups: {
+          SPECTDC_Streams_Timing: [0]
+        }
+        metrics: {
+
+          oneETRIG: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 ETRIG"
+            display_range: [0., 2.]
+          }
+
+          oneCRT: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 CRT T1 Reset"
+            display_range: [0., 2.]
+          }
+
+          manyFTRIG: {
+            units: True_False
+            title: "SPECTDC Streams Timing ~10 FTRIG"
+            display_range: [0., 2.]
+          }
+          oneBES: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 BES"
+            display_range: [0., 2.]
+          }
+
+          oneRWM: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 RWM"
+            display_range: [0., 2.]
+          }
+
+          RWM_BES_const: {
+            units: True_False
+            title: "RWM BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+          CRT_BES_const: {
+            units: True_False
+            title: "CRT T1 Reset BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+
+          ETRIG_BES_diff: {
+            units: ns
+            title: "ETRIG BES Timing Difference"
+            display_range: [-40., 40.]
+          }
+
+          ETRIG_RWM_diff: {
+            units: ns
+            title: "ETRIG RWM Timing Difference"
+            display_range: [-40., 40.]
+          }
+          ETRIG_FTRIG_diff: {
+            units: ns
+            title: "ETRIG FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          BES_FTRIG_diff: {
+            units: ns
+            title: "BES FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          ch0exists: {
+            units: True_False
+            title: "Channel 0 exists"
+            display_range: [0., 2.]
+          }
+          ch1exists: {
+            units: True_False
+            title: "Channel 1 exists"
+            display_range: [0., 2.]
+          }
+
+          ch2exists: {
+            units: True_False
+            title: "Channel 2 exists"
+            display_range: [0., 2.]
+          }
+
+          ch3exists: {
+            units: True_False
+            title: "Channel 3 exists"
+            display_range: [0., 2.]
+          }
+          ch4exists: {
+            units: True_False
+            title: "Channel 4 exists"
+            display_range: [0., 2.]
+          }
+        }
+      }
+    }
+
+    # PMT
+    MetaPMT: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaPMT
+      SelectEvents: [pmt_only]
+    }
+    pmtAnalysis: {
+      module_type: CAENV1730StreamsSBND
+      OpDetWaveformLabel: "daqPMT"
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::sbnd_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::sbnd_opreco_pedestal_rmsslider
+
+      PMTMetricConfig: {
+       hostname: "sbnd-db01.fnal.gov"
+        groups: {
+            PMT: [ [0, 126] ]
+        }
+        streams: ["archiving"]
+        metrics: {
+          rms: {
+            units: ADC
+            title: "PMT channel %(instance)s rms"
+            display_range: [0., 50.]
+          }
+          baseline: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [14000, 16000]
+          }
+          rate: {
+            untis: Hz
+            title: "%(group)s channel %(instance)s single PMT rate"
+            display_range: [ -50, 250 ]
+          }
+        }
+      }
+      SelectEvents: [pmt_only]
+    }
+
+    # CRT
+    crtana: {
+      module_type: BernCRTdqm
+      SelectEvents: [crt_only]
+      metric_board_config: {
+        groups: { CRT_board:[18, 132, 133, 162, 143, 131, 146, 147, 44, 160, 222, 220, 81, 85, 200, 206, 204, 200, 174, 148, 163, 164, 165, 80, 142, 42, 138, 130, 19, 202, 199, 197, 198, 45, 203, 207, 60, 56, 169, 166, 24, 57, 33, 34, 61, 171, 59, 176, 170, 168, 172, 173, 82, 86, 90, 91, 99, 100, 101, 102, 103, 104, 84, 83, 78, 77, 98, 97, 236, 95, 94, 93, 151,150,136,157,158,182,149,73,181,88,152,156,153,159,134,135,238,155] }                
+        streams:[archiving]
+        metrics:{
+          TS0:{}
+          TS1:{}
+          T0clockdrift:{}
+          MaxADCValue:{}
+          MaxADCChannel:{}
+          Flag:{}
+          baseline:{}     
+          earlysynch: { alarmrange: [-100000,100000] }
+          latesynch: { alarmrange: [-100000,100000] }
+        }
+      }
+      metric_channel_config: {
+        groups: { CRT_channel:[[0,7616]] }
+        streams: [archiving]
+        metrics:{ ADC:{ display_range: [0, 4000] }
+                  lastbighit:{}
+		  pedestalMean:{}
+	          pedestalRMS:{}
+        	  pedestalRMS2:{}
+
+        }       
+      }
+      metric_event_config: {
+        groups: { }
+        streams:[archiving]
+        metrics:{ }
+      }
+      metric_fragment_config: {
+         groups:{ CRT_cont_frag:[] }
+         streams:[archiving]
+         metrics:{ }
+      }
+    }
+    # TPC
+    Meta: {
+      module_type: ReportMetadata
+#      SelectEvents: [tpc_only]
+    }
+
+    OnlineEvd: {
+      module_type: OnlineEvd
+      raw_digit_producers: [daq]
+      verbose: false
+      timing: false
+#      SelectEvents: [tpc_only]
+    }
+
+    OnlineAnalysisRawData: {
+      module_type: OnlineAnalysis
+      @table::analysis_config
+#      SelectEvents: [tpc_only]
+      send_metrics: false
+      send_waveforms: false
+      send_ffts: false
+      fft_name: fft
+      waveform_name: waveform
+      fft_per_channel: false # don't calculate FFT's
+      wait_period: 10 # s 
+      send_time_avg_ffts: false
+      n_evt_fft_avg: 50
+      n_evt_send_rawdata: 1
+      broken_th: 1
+      // send_correlation_matrix: true
+      // correlation_matrix_name: correlation
+      // n_correlation_matrix_samples: 100
+    }
+
+    OnlineAnalysis: {
+      module_type: OnlineAnalysis
+#      SelectEvents: [tpc_only]
+      group_name: tpc_channel
+      send_sbnd_metrics: false
+      broken_th: 1
+      @table::analysis_config
+      metrics: {
+        redis_metric_10s: {    
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 10.0
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":10s"
+        }
+        redis_metric_archive: {
+          level: 3
+          metricPluginType: "redis"
+          reporting_interval: 30.0 # 30s
+          verbose: true
+          // need to add postfix otherwise this metric sender and the other one will collide
+          redis_key_postfix: ":archiving"
+        }
+      }
+      metric_config_broken: {
+        streams: [archiving]
+        groups: {
+          tpc: [0]
+        }
+        metrics: {
+          broken: {
+            units: Broken
+            title: "Broken Events"
+            display_range: [-1, 2]
+          }
+       }
+     }
+      metric_config: {
+        streams: [archiving]
+        groups: {
+          tpc_channel:[[0,11263]] # 8 crates
+        }
+        metrics: {
+          rms: {
+            units: ADC
+            #title: "TPC wire %(instance)s rms"
+            #display_range: [0, 5]
+          }
+          baseline: {
+            units: ADC
+            format: "0x#"
+            #title: "TPC wire %(instance)s baseline"
+            #display_range: [1990, 2040]
+          }
+          next_channel_dnoise: {
+            #title: "TPC wire %(instance)s next channel dnoise"
+            display_range: [0.2, 1.2]
+          }
+          mean_peak_height: {
+            units: ADC
+            #title: "TPC wire %(instance)s mean peak height"
+            display_range: [0, 50]
+          }
+          occupancy: {
+            #title: "TPC wire %(instance)s occupancy"
+            display_range: [0., 1.]
+          }
+          baseline_femb: {
+            format: "0x#"
+          }
+          baseline_asic: {
+            format: "0x#"
+          }
+          baseline_chan: {
+            format: "0x#"
+            units: "ADC"
+          }
+      	}
+      }
+    }
+  }
+}
+
+physics.crt_only: [ "!prescale10", prescale1 ]
+physics.pmt_only: [ prescale1, daqPMT ]
+physics.tpc_only: [ prescale10, daq ]
+physics.timing_only: [ prescale5, daqSPECTDC ]
+physics.trigger_only: [ "!prescale10", prescale1 ]
+
+
+physics.crt_path: [ crt_only ]
+physics.pmt_path: [ pmt_only ]
+physics.tpc_path: [ tpc_only ]
+physics.timing_path: [ timing_only ]
+physics.trigger_path: [ trigger_only ]
+
+physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path ]
+
+physics.acrt: [ crtana ]
+physics.apmt: [ MetaPMT, pmtAnalysis ]
+physics.atpc: [ OnlineAnalysis, OnlineAnalysisRawData, Meta, OnlineEvd ]
+physics.atiming:  [ dqmSPECTDC ]
+physics.atrigger:  [ ptbAnalysis ]
+
+physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger ]
+physics.b: [@sequence::physics.acrt]
+
+physics.decoded_stream: [ decodedout ]
+
+physics.end_paths: [ a ]
+physics.out1 : [dumper]
+
+
+
+process_name: DQMANALYSIS
+

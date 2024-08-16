@@ -87,8 +87,11 @@ private:
   bool IsSideCRT(const icarus::crt::BernCRTTranslator & hit);
 
    uint64_t lastbighit[32];
+   float pedSum[32];
+   float pedSumSq[32];
+   float pedNHits[32];
 
-  bool debug = true;
+  bool debug = false;
 
   //sample histogram
   TH1F* fSampleHist;
@@ -129,9 +132,9 @@ bool sbndaq::BernCRTdqm::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //sleep(2);
 
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;  
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+  if (debug) std::cout << "######################################################################" << std::endl;
+  if (debug) std::cout << std::endl;  
+  if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
   /**
@@ -153,6 +156,10 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     
     //Copied from FragmentDQMAna_module.cc
     
+    // Variables used to calculate pedestals
+    //map<int, vector<double> > sum, sumsq;
+    //map<int, vector<int> > nhits;
+
     for (auto const& frag : *handle){
       //frag is artdaq::Fragment
 
@@ -177,7 +184,14 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";} //this one is relevant for us
 	//print out arguments of the sendMetric line
 	//i.e. print out fragment_id to match to fcl
-	std::cout<<"fragment_id: "<<fragment_id<<std::endl;
+	if (debug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
+
+        /*/Initialize variables used to calculate pedestals
+        for(int c=0; c<32; c++){
+          sum[fragment_id].push_back(0.); 
+          sumsq[fragment_id].push_back(0.); 
+          nhits[fragment_id].push_back(0); 
+        }*/
 
       sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
       sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
@@ -201,6 +215,13 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //Variables used in Grafana to be sent to DQM OM:
   size_t num_t1_resets = 0;
   size_t hitsperplane[7] = {0,0,0,0,0,0,0};
+
+  //Initialize variables used to calculate pedestals
+  for(int c=0; c<32; c++){
+    sbndaq::BernCRTdqm::pedSum[c] = 0.; 
+    sbndaq::BernCRTdqm::pedSumSq[c] = 0.; 
+    sbndaq::BernCRTdqm::pedNHits[c] = 0.; 
+  }
 
   //loop over all CRT hits in an event
   for(const auto & hit : hit_vector) {
@@ -251,7 +272,6 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     size_t totaladc   = 0;
     size_t ADCchannel = 0;
 
-
     std::string FEBID_str = std::to_string(fragment_id);
     sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
 
@@ -259,10 +279,10 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
     if(isTS0){
-      std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+      if (debug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
     }
     if(isTS1){
-      std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
+      if (debug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
       num_t1_resets++;
     }
     
@@ -274,13 +294,32 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     for(int i = 0; i<32; i++) {
       totaladc  += adc[i];
       ADCchannel = adc[i];
+      if (adc[i] < 4000) { 
+        sbndaq::BernCRTdqm::pedSum[i] += adc[i];
+        sbndaq::BernCRTdqm::pedSumSq[i] += adc[i]*adc[i];
+        sbndaq::BernCRTdqm::pedNHits[i]++;
+        //sum[fragment_id][i] += adc[i];
+        //sumsq[fragment_id][i] += adc[i];
+        //nhits[fragment_id][i]++;
+      }
       uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqm::lastbighit[i];
       /////    RMSchannel = rms[i];
       
       //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
-      
+      // Pedestals
+      //if nhits[fragment_id][i] > 4000 {}
+      /*double pedestalMean = sum[fragment_id][i]/nhits[fragment_id][i];
+      double pedestalRMS2 = nhits[fragment_id][i]* pedestalMean*pedestalMean - 2 * pedestalMean*sum[fragment_id][i] + sumsq[fragment_id][i];
+      double pedestalRMS = sqrt(pedestalRMS2/nhits[fragment_id][i]);*/
+      double pedestalMean = sbndaq::BernCRTdqm::pedSum[i]/sbndaq::BernCRTdqm::pedNHits[i];
+      double pedestalRMS2 = sbndaq::BernCRTdqm::pedNHits[i] * pedestalMean*pedestalMean - 2 * pedestalMean*sbndaq::BernCRTdqm::pedSum[i] + sbndaq::BernCRTdqm::pedSumSq[i];
+      double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqm::pedNHits[i]);
+      // Send Metrics to the database **
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average); 
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average); 
       //sbndaq::sendMetric("CRT_channel", std::to_string(i), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
       //sbndaq::sendMetric("CRT_channel", std::to_string(i), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average); 
       
@@ -316,9 +355,9 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     //From the code that writes to Grafana	
     auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
     
-    if(debug) std::cout<<"Plane: "<<plane<<std::endl;
+    if (debug) std::cout<<"Plane: "<<plane<<std::endl;
     
-    if (plane>7) {std::cout << "bad plane value " << plane << std::endl; plane=0;}
+    if (plane>7) {if (debug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
     auto thisflag = hit.flags;
     // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
@@ -375,7 +414,17 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     sbndaq::sendMetric("CRT_board", readout_number_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
     
   } //loop over all CRT hits in an event
-  
+ 
+  /*/ Pedestals (only calculate each event)
+  double mean = sum[fragment_id][i]/nhits[fragment_id][i];
+  double rms2 = nhits[fragment_id][i]* mean*mean - 2 * mean*sum[fragment_id][i] + sumsq[fragment_id][i];
+  double rms = sqrt(rms2/nhits[fragment_id][i]);
+  // Send Metrics to the database **
+  sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "Pedestal", mean, 0, artdaq::MetricMode::Average); 
+  sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "RMS^2", rms2, 0, artdaq::MetricMode::Average); 
+  sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "RMS", rms, 0, artdaq::MetricMode::Average); 
+ */
+
     /////////////////////////
     // Event-Level Metrics //
     /////////////////////////

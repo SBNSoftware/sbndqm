@@ -1,0 +1,218 @@
+#include "redis_connection.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+
+  producers:  {
+
+    daqSPECTDC: {
+      module_type:           "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+
+    }
+
+  }
+
+  analyzers: {
+
+   dqmSPECTDC: {
+
+      module_type: SPECTDCStreams
+
+      DAQTimestampLabel: "daqSPECTDC"
+      SPECTDCMetricConfig: {
+
+        hostname: "sbnd-db.fnal.gov"
+
+        streams: ["30s"]
+
+        groups: {
+            SPECTDC_Streams_Timing: [0]
+        } 
+
+        metrics: {
+
+          oneETRIG: {
+            units: True_False 
+            title: "SPECTDC Streams Timing 1 ETRIG"
+            display_range: [0., 2.]
+          }
+
+          oneCRT: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 CRT T1 Reset"
+            display_range: [0., 2.]
+          }
+
+          manyFTRIG: {
+            units: True_False
+            title: "SPECTDC Streams Timing ~10 FTRIG"
+            display_range: [0., 2.]
+          }
+
+          oneBES: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 BES"
+            display_range: [0., 2.]
+          }
+
+          oneRWM: {
+            units: True_False
+            title: "SPECTDC Streams Timing 1 RWM"
+            display_range: [0., 2.]
+          }
+
+          RWM_BES_const: {
+            units: True_False
+            title: "RWM BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+
+          CRT_BES_const: {
+            units: True_False
+            title: "CRT T1 Reset BES Timing Difference Constant"
+            display_range: [0., 2.]
+          }
+
+          ETRIG_BES_diff: {
+            units: ns
+            title: "ETRIG BES Timing Difference"
+            display_range: [-40., 40.]
+          }
+
+          ETRIG_RWM_diff: {
+            units: ns
+            title: "ETRIG RWM Timing Difference"
+            display_range: [-40., 40.]
+          }
+
+          ETRIG_FTRIG_diff: {
+            units: ns
+            title: "ETRIG FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          BES_FTRIG_diff: {
+            units: ns
+            title: "BES FTRIG Timing Difference"
+            display_range: [-4000., 4000.]
+          }
+
+          ch0exists: {
+            units: True_False
+            title: "Channel 0 exists"
+            display_range: [0., 2.]
+          }
+
+          ch1exists: {
+            units: True_False
+            title: "Channel 1 exists"
+            display_range: [0., 2.]
+          }
+
+          ch2exists: {
+            units: True_False
+            title: "Channel 2 exists"
+            display_range: [0., 2.]
+          }
+
+          ch3exists: {
+            units: True_False
+            title: "Channel 3 exists"
+            display_range: [0., 2.]
+          }
+
+          ch4exists: {
+            units: True_False
+            title: "Channel 4 exists"
+            display_range: [0., 2.]
+          }
+
+        }
+      }
+    }
+  }
+  
+  my_producer_modules: [daqSPECTDC]
+  trigger_paths: [my_producer_modules ]
+
+  ana: [ dqmSPECTDC ]
+  end_paths: [ ana ]
+  #end_paths: [ ]
+}
+
+services: {
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService }
+  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
+ 
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+
+source:
+{
+  module_type: TransferInput
+
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+
+  dispatcherPort: 6028
+
+  transfer_plugin: {
+
+     unique_label: "ExampleOnlineMonitor2"
+      transferPluginType: Shmem
+      shm_key: 0x40471453
+      max_fragment_size_words: 10e7
+      first_event_builder_rank: 0
+          source_rank: 5555
+          destination_rank: 6666
+  }
+
+  dispatcher_config: {
+    unique_label: "ExampleOnlineMonitor2"
+    filter_paths: [ {name: pmod path: [ prescale ]}  ]
+    path: [ out ]
+    physics: {
+      filters: {
+        prescale: {
+          module_type: Prescaler
+          prescaleFactor: 10
+          prescaleOffset: 0
+        }
+      }
+    }
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "ExampleOnlineMonitor2"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471453
+
+            max_fragment_size_words: 10e7
+              first_event_builder_rank: 0
+              destination_rank: 6666
+        }
+      }
+    }
+  }
+}
+

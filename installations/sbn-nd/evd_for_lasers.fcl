@@ -86,11 +86,17 @@ physics:
       module_type: ReportMetadata
     }
 
-    OnlineEvd: {
-      module_type: OnlineEvd
+    OfflineEvd: {
+      module_type: OfflineEvd
       raw_digit_producers: [daq]
       verbose: false
       timing: false
+      qmax_0: 80
+      qmin_0: -20
+      qmax_1: 80
+      qmin_1: -20
+      qmax_2: 200
+      qmin_2: -50
     }
 
     OnlineSunset: {
@@ -223,8 +229,8 @@ physics:
     }
   }
 
-   my_producer_modules: ["!f1", daq]
-  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta, OnlineEvd, OnlineSunset]
+  my_producer_modules: ["!f1", daq]
+  a: [Meta, OfflineEvd]
   out1 : [dumper]
   end_paths: [a]
 }
@@ -248,49 +254,8 @@ services.TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
 
 source:
 {
-  firstEvent : 20
-  module_type: TransferInput
-  register_fragment_types: false
-  # The timeout shouldn't be much smaller than the period between events, otherwise
-  # there's a spew of timeout messages
-  timeoutInUsecs: 10000000
-
-  commanderPluginType: xmlrpc
-  dispatcherHost: localhost
-  dispatcherPort: 6021
-
-  transfer_plugin: {
-
-     unique_label: "OnlineMonitorTPCwEVDwSunset"
-      transferPluginType: Shmem
-      shm_key: 0x40470926
-      max_fragment_size_words: 20e7
-      first_event_builder_rank: 0
-          source_rank: 5
-          destination_rank: 6
-  }
-
-  dispatcher_config: {
-    unique_label: "OnlineMonitorTPCwEVDwSunset"
-    path: [ out ]
-    physics: {}
-    outputs: {
-      out: {
-        module_type: TransferOutput
-        transfer_plugin: {
-
-           unique_label: "OnlineMonitorTPCwEVDwSunset"
-            transferPluginType: Shmem
-
-            shm_key: 0x40470926
-
-            max_fragment_size_words: 20e7
-              first_event_builder_rank: 0
-              destination_rank: 6
-        }
-      }
-    }
-  }
+  module_type: RootInput
+  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/digits_and_header_data.root"]
 }
 
 process_name: TPCANALYSIS

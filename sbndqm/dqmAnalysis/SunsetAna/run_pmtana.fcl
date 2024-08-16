@@ -1,0 +1,54 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+#include "opticaldetectormodules.fcl"
+#include "pmt_stream_config_SBND.fcl"
+
+physics: {
+  
+  producers: {
+
+    pmtdecoder: {
+      module_type: DaqDecoderSBNDPMT
+      FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+    }
+  }
+
+  analyzers: {
+    pmtanalyzer: {
+      module_type: PMTSunsetAnalyzer
+
+      OpDetWaveformHandle: "pmtdecoder" # NEEDS to match the decoder producer name
+      rms_threshold: 20 # threshold to determine whether or not the rms is above "normal" rms
+      use_local_baseline: false
+
+      metric_sunsets: {
+        hostname: "sbnd-db01.fnal.gov"
+        streams: ["slow","fast","archiving","30s"]
+        
+        metrics: {
+          pmt_noise_metric: {
+            title: "PMT Sunset Noise Metric"
+          }
+        }
+      }
+    }
+  }
+
+  my_producer_modules: [ pmtdecoder ]
+  my_analysis_modules: [ pmtanalyzer ]
+  trigger_paths: [ my_producer_modules ]
+  end_paths: [ my_analysis_modules ]
+}
+
+services:
+{
+  RedisConnection: @local::redis_connection
+  TFileService: { fileName: "pmt_out.root"}
+} 
+
+source:
+{
+  module_type: RootInput
+}
+
+process_name: PMTSunsetAna

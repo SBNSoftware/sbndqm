@@ -11,4 +11,5 @@ add_subdirectory(Meta)
 add_subdirectory(example)
 add_subdirectory(FragmentAna)
 add_subdirectory(SunsetAna)
+add_subdirectory(Timing)
 

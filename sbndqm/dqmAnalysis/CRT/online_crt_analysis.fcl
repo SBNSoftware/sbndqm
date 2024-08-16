@@ -32,7 +32,7 @@ services.ArtdaqSharedMemoryServiceInterface:
 source: {
    commanderPluginType: xmlrpc
    dispatcherHost: localhost
-   dispatcherPort: 6022
+   dispatcherPort: 6021
    dispatcher_config: {
       outputs: {
          out: {
@@ -43,7 +43,7 @@ source: {
                max_fragment_size_words: 1e8
                shm_key: 1078400086
                transferPluginType: "Shmem"
-               unique_label: "OnlineMonitor"
+               unique_label: "CRTOnlineMonitor"
             }
          }
       }
@@ -51,7 +51,7 @@ source: {
          "out"
       ]
       physics: {}
-      unique_label: "OnlineMonitor"
+      unique_label: "CRTOnlineMonitor"
 }
    module_type: "TransferInput"
    register_fragment_types: false
@@ -63,7 +63,7 @@ source: {
       shm_key: 1078400086
       source_rank: 5
       transferPluginType: "Shmem"
-      unique_label: "OnlineMonitor"
+      unique_label: "CRTOnlineMonitor"
    }
 }
 

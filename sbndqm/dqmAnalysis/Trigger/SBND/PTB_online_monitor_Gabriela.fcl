@@ -7,8 +7,7 @@ BoardID: 3
 ChannelNumber: 15
 
 EventBlock: 40
-BeamBESGate: 30
-OffBeamBESGate: 26
+BESGate: 28
 }
 
 physics: {
@@ -21,137 +20,84 @@ physics: {
 
       module_type: PTBdqm
 
-      metric_llt_trigger_rate: {
+      metric_trigger_rate: {
+
         hostname: "sbnd-db01.fnal.gov"
+    
         groups: {
+          
           LLT_ID: [ [0, 32] ]
+          HLT_ID: [ [0, 32] ]
+
         }
+
         streams: ["slow","fast","archiving"]
+        
         metrics: {
 
           LLT_periodicity:{            
             units: seconds 
             title: "PTB LLT %(instance)s periodicity" 
             display_range: [ 0, 6 ]
-
-          }
-        }
-      }
-
-      metric_hlt_trigger_rate: {
-        hostname: "sbnd-db01.fnal.gov"
-        groups: {
-          HLT_ID: [ [0, 32] ]
-        }
-        streams: ["slow","fast","archiving"]
-        metrics: {
+            }
 
           HLT_periodicity:{
             units: seconds 
             title: "PTB HLT %(instance)s periodicity" 
             display_range: [ 0, 6 ]
-
-          }
-        }
-      }
-
-      metric_beam_light_diff: {
-        hostname: "sbnd-db01.fnal.gov"
-        groups: {
-          BEAM_LIGHT_DIFF: [ [0, 2] ]
-        }
-        streams: ["slow","fast","archiving"]
-        metrics: {
-
-          BEAM_LIGHT:{
-            units: microseconds
-            title: "BEAM (BES) - LIGHT"
-            display_range: [-10000, 10000]
-          }
-
-          OFFBEAM_LIGHT:{
-            units: microseconds
-            title: "OFFBEAM (BES) - LIGHT"
-            display_range: [-10000, 10000]
-
-          }
-        }
-      }
-
-      metric_beam_crt_diff: {
-        hostname: "sbnd-db01.fnal.gov"
-        groups: {
-          BEAM_CRT_DIFF: [ [0, 6] ]
-        }
-        streams: ["slow","fast","archiving"]
-        metrics: {
-
-          BEAM_HLT_T1RESET:{
-            units: microseconds
-            title: "BEAM HLT - BEAM T1 RESET"
-          }
-
-          OFFBEAM_HLT_T1RESET:{
-            units: microseconds
-            title: "OFFBEAM HLT - OFFBEAM T1 RESET"
-          }
-
-          NUMBER_OFFBEAM_T1RESET:{}
-
-	  NUMBER_BEAM_T1RESET:{}
-
-          NUMBER_OFFBEAM_HLT:{}
-
-	  NUMBER_BEAM_HLT:{}
-
+            }
         }   
       }
       
       metric_ptb_tdc_diff: {
+
         hostname: "sbnd-db01.fnal.gov"
-        groups: {
-          PTB_TDC_DIFF: [ [0, 12] ]
-        }
-        streams: ["slow","fast","archiving"]
+    
+        ## groups: {}
+
+        streams: ["slow","fast","archiving","30s"]
+        
         metrics: {
 
           FLASH_TDC_4:{
             units: microseconds 
             title: "|PTB - TDC| flash trigger timestamps"
-          }
+            }
 
           EVENT_TDC_5:{
             units: microseconds 
             title: "|PTB - TDC| event trigger timestamps"
-          }
+            }
 
           T1RESET_TDC_1:{
             units: microseconds 
             title: "|PTB - TDC| CRT t1 reset timestamps"
-          }
+            }
 
           LLTBES_TDC_2:{
             units: microseconds 
             title: "|PTB - TDC| BES timestamps"
-          }
+            }
 
           NUMBER_TDC_1:{}
 
           NUMBER_TDC_2:{}
 
-          NUMBER_TDC_4:{}
+	        NUMBER_TDC_4:{}
 
-          NUMBER_TDC_5:{}
+ 	        NUMBER_TDC_5:{}
 
           NUMBER_T1RESET:{}
 
-          NUMBER_BES:{}
+	        NUMBER_BES:{}
           
           NUMBER_FLASH:{}
 
-          NUMBER_EVENT:{}
+	        NUMBER_EVENT:{}
+
         }
       }
+
 
     }
   }
