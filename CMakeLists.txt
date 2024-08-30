@@ -54,6 +54,7 @@ find_ups_product( sbndaq_online REQUIRED )
 find_ups_product( sbnobj REQUIRED )
 find_ups_product( sbnanaobj REQUIRED )
 find_ups_product( sbncode REQUIRED)
+find_ups_product( sbndcode REQUIRED)
 find_ups_product( TRACE REQUIRED)
 
 find_package( ROOT REQUIRED )
