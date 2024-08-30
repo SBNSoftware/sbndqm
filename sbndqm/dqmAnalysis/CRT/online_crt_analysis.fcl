@@ -32,7 +32,7 @@ services.ArtdaqSharedMemoryServiceInterface:
 source: {
    commanderPluginType: xmlrpc
    dispatcherHost: localhost
-   dispatcherPort: 6021
+   dispatcherPort: 6027
    dispatcher_config: {
       outputs: {
          out: {

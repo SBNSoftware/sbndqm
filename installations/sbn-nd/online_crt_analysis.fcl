@@ -688,7 +688,7 @@ physics.b: [@sequence::physics.acrt]
 
 physics.decoded_stream: [ decodedout ]
 
-physics.end_paths: [ a ]
+physics.end_paths: [ b ]
 physics.out1 : [dumper]
 
 

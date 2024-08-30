@@ -685,7 +685,7 @@ physics.atiming:  [ dqmSPECTDC ]
 physics.atrigger:  [ ptbAnalysis ]
 
 physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger ]
-physics.b: [@sequence::physics.acrt]
+#physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.atiming, @sequence::physics.atrigger ]
 
 physics.decoded_stream: [ decodedout ]
 
