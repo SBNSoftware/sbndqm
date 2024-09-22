@@ -1,67 +1,12 @@
 #include "redis_connection.fcl"
-#include "stage0_icarus_defs.fcl"
-#include "pmt_online_monitor_configuration.fcl"
-
-#analysis configuration pieces
-BEGIN_PROLOG
-
-tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW","daq:PHYSCRATEDATATPCWE","daq:PHYSCRATEDATATPCWW"]
-tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW","daqTPC:PHYSCRATEDATATPCWERAW","daqTPC:PHYSCRATEDATATPCWWRAW"]
-tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW","daqTPC:PHYSCRATEDATATPCWE","daqTPC:PHYSCRATEDATATPCWW"]
-
-analysis_config: {
-  // producer of digits and header info
-  raw_digit_producers: [@sequence::tpclabels_DecoderRaw]
-#  raw_digit_instance: RAW
-  header_producer: ""
-
-  // channel info
-  channel_info: {
-    n_channels: 55296 # ALL crates
-    collection_channels: [[0,55296]] # no signal -- plane is arbitrary
-    induction_channels: []
-  }
-
-  // standard analysis config
-  threshold_calc: 3
-  threshold_sigma: 5
-  noise_range_sampling: 1
-  n_smoothing_samples: 1
-  baseline_calc: 2
-  n_mode_skip: 3
-  use_planes: false
-  refine_baseline: false
-
-  // turn on for analysis information printed out on stdin
-  verbose: false
-  // turn on for timing information printed out on stdin
-  timing: false
-
-  // turn on to save waveform in output ChannelData
-  fill_waveforms: false
-
-  // turn on to output ReducedChannelData objects instead of
-  // ChannelData (will throw out waveform and FFT info)
-  reduce_data: false
-
-  // number of headers per event provided by input (will be ignored if value is negative)
-  // 10 for SBND
-  n_headers: -1
-
-  // Change tick period to be 0.4 for ICARUS
-  tick_period: 0.4
-}
-
-END_PROLOG
-
-
-###use icaruscode decoder.fcl as a base
-###include "decoder.fcl"
-#include "stage0_icarus_driver_common.fcl"
+#include "services_basic_icarus.fcl"
+#include "icarus_online_decoder_defs.fcl"
+#include "icarus_pmt_analysis_defs.fcl"
+#include "icarus_trigger_analysis_defs.fcl"
 
 #service overrides
 services.RedisConnection: @local::redis_connection
-services.RedisConnection.host: "icarus-db01.fnal.gov"
+services.RedisConnection.host: "icarus-db02.fnal.gov"
 services.InitMetricManager: {
   connections: {
     archiving: {
@@ -79,14 +24,14 @@ services.ArtdaqSharedMemoryServiceInterface:
 {
   service_provider: "ArtdaqSharedMemoryService"
 }
+
 services.NuRandomService: @erase
 services.MemoryTracker: @erase
 services.TimeTracker: @erase
-services.DetectorPropertiesService: @erase
-services.DetectorClocksService: @local::icarus_detectorclocks
-services.SignalShapingICARUSService: @erase
 services.TFileService.fileName: "/dev/null"
-
+services.message: @local::icarus_basic_services.message
+services.message.destinations.LogErrorFile: @erase
+services.message.destinations.LogSeeds: @erase
 
 #replace the source
 source:
@@ -103,7 +48,7 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitor"
+      unique_label: "OnlineMonitor"
       transferPluginType: Shmem
       shm_key: 0x40471454
       max_fragment_size_words: 100000000 #58543672 #33554432
@@ -151,34 +96,6 @@ outputs.decodedout:{
   }
 }
 
-physics.producers.daqTPC: @local::physics.producers.daqTPC
-physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
-physics.producers.daqTPC.OutputRawWaveform: true
-
-physics.producers.daqPMT:
-{
-  module_type: DaqDecoderIcarusPMT
-  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
-}
-
-physics.producers.daqTrigger: @local::decodeTrigger
-
-#add online purity producers
-physics.producers.purityana0:
-{
-  RawModuleLabel: [@sequence::tpclabels_DecoderDenoised] 
-  module_type:    "ICARUSPurityDQM"
-  ValoreTauFCL:  600000.
-  CryostatFCL: 0
-  PlaneFCL: 2
-  ThresholdFCL: 3
-  PersistPurityInfo: false
-  FillAnaTuple: false
-}
-physics.producers.purityana1: @local::physics.producers.purityana0
-physics.producers.purityana1.CryostatFCL: 1
-
-
 #declare a filters section
 physics.filters:
 {
@@ -209,342 +126,42 @@ physics.filters:
   }
 }
 
-##override the analyzers section
+physics.producers:
+{
+  daqTrigger: @local::decodeTriggerOnline
+  daqPMT: @local::decodePMTOnline
+}
+
 physics.analyzers:
 {
-  Meta: {
-    module_type: ReportMetadata
-    RedisKey: eventmetaTPC
-
-    SelectEvents: [tpc_only]
-  }
-
+  pmtana: @local::pmtAnalysis
+  timingana: @local::timingAnalysis
+  triggerana: @local::triggerAnalysis 
+ 
   MetaPMT: {
     module_type: ReportMetadata
     RedisKey: eventmetaPMT
 
     SelectEvents: [pmt_only]
   }
-
-  OnlineAnalysisRawData: {
-    module_type: OnlineAnalysis
-    @table::analysis_config
-    send_metrics: false
-    send_waveforms: true
-    send_ffts: true
-    fft_name: fft
-    waveform_name: waveform
-    fft_per_channel: true # calculate FFT's
-    wait_period: -1 # s
-    send_time_avg_ffts: false
-    n_evt_fft_avg: 100
-    n_evt_send_rawdata: 10
-    // send_correlation_matrix: true
-    // correlation_matrix_name: correlation
-    // n_correlation_matrix_samples: 100
-
-    SelectEvents: [tpc_only]
-  }
-  
-     triggerAnalysis: {
-      SelectEvents: [trigger_only]
-
-      module_type: TriggerStreams
-      
-      TriggerLabel: "daqTrigger"      
-      
-      TriggerMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-  
-        streams: ["30s"]
-        
-        metrics: {
-	    Offbeam_BNB_RATE:{
-		units: Hz 
-		title: "Offbeam BNB triggers rate"
-		display_range:[0, 2]
-	    }
-            BNB_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            Offbeam_NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-            NuMI_RATE:{
-                units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }
-	    Unknown_RATE:{
-		units: Hz
-                title: "Offbeam BNB triggers rate"
-                display_range:[0, 2]
-            }		 
-	}   
-      }
-   }
-
-   pmtAnalysis: {
-
-      module_type: CAENV1730Streams
-      
-
-      OpDetWaveformLabel: "daqPMT"
-
-      reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
-      PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo 
-
-
-      PMTMetricConfig: {
-
-        hostname: "icarus-db01.fnal.gov"
-    
-        groups: {
-            PMT: [ [0, 384] ]
-        }
-
-        streams: ["archiving"]
-        
-        metrics: {
-        
-          rms: {
-            units: ADC
-            title: "PMT channel %(instance)s rms"
-            display_range: [0., 20.]
-          }
-
-          baseline: {
-            units: ADC
-            title: "%(group)s channel %(instance)s Pedestal"
-            display_range: [13000, 16000]
-          }
-          
-          rate: {
-            untis: Hz 
-            title: "%(group)s channel %(instance)s single PMT rate" 
-            display_range: [ 100000, 300000 ]
-          }
-
-        }   
-      }
-      SelectEvents: [pmt_only]
-    }
-
-  PurityAnalysis:{
-    module_type: TPCPurityDQMSender
-    group_name: tpc_purity
-
-    PurityInfoLabels: [purityana0,purityana1]
-    PrintInfo: true
-    MinTracksToReport: 100
-
-    metric_config: {
-      streams: ["archiving"]
-      groups: {
-        tpc_purity:["EastCryostat","WestCryostat"]
-      }
-      metrics:{
-        attenuation_raw:{
-	  units: "ms-1"
-	  display_range: [0,2]
-        }
-        lifetime_raw:{
-	  units: ms
-	  display_range: [0,20]
-        }
-      }
-    } 
-    SelectEvents: [online_purity]
-  }
-
-  TPCOnlineAnalysis: {
-    module_type: OnlineAnalysis
-    group_name: tpc_channel
-    @table::analysis_config
-
-
-    metric_config: {
-      streams: ["archiving"]
-      groups: {
-	tpc_channel:[[0,5760]] # 8 crates
-      }
-      metrics: {
-        rms: {
-          units: ADC
-          #title: "TPC wire %(instance)s rms"
-          display_range: [0, 10]
-        }
-	filtered_rms: {
-          units: ADC
-          #title: "TPC wire %(instance)s rms"
-          display_range: [0, 10]
-        }
-        baseline: {
-          units: ADC
-          #title: "TPC wire %(instance)s baseline"
-          display_range: [1990, 2040]
-        }
-        next_channel_dnoise: {
-          #title: "TPC wire %(instance)s next channel dnoise"
-          display_range: [0.2, 1.2]
-        }
-        mean_peak_height: {
-          units: ADC
-          #title: "TPC wire %(instance)s mean peak height"
-          display_range: [0, 50]
-        }
-        occupancy: {
-          #title: "TPC wire %(instance)s occupancy"
-          display_range: [0., 1.]
-        }
-      }
-    }
-    SelectEvents: [tpc_only]
-  }
-
-  TPCOnlineAnalysisDenoised:{
-    module_type: OnlineAnalysis
-    group_name: tpc_channel
-    @table::analysis_config
-
-    raw_digit_producers: [@sequence::tpclabels_DecoderDenoised]
-
-    #raw_digit_instance: ""
-
-    metric_prefix: filtered_
-
-    send_peakheight: false
-    send_baseline: false
-    send_occupancy: false
-    send_dnoise: false
-    
-    SelectEvents: [tpc_only]
-  }
-
-  CRTAna:{
-    SelectEvents: [ crt_only ]
-    module_type: BernCRTdqm
-
-    metric_board_config: {
-      groups:{
-        CRT_board:[[1,97]] //1, 3-11, 13-17, 19, 21-97
-        CRT_board_top:[[1,123]]
-     }                  //missing 2, 12, 18, 20
-      streams:[archiving]
-				
-      metrics:{
-        TS0:{}
-	TS1:{}
-	n_events:{}
-	MaxADCValue:{}
-	baseline:{}
-
-	earlysynch:{alarmrange: [-100000,100000] }
-	latesynch:{ alarmrange: [-100000,100000] }
-
-	lastbighit:{ alarmrange: [0,100000000] }
-      }
-    }
-
-    metric_channel_config: {
-      groups:
-      {
-        CRT_channel:[[0,256]]
-      }
-      streams:[archiving]
-      
-      metrics:{
-        ADC:{
-          display_range: [0, 5000]
-        }
-      }	
-    }
-  }
-
-
-  fragana:{
-    SelectEvents: [ pmt_only, crt_only ]
-
-    module_type: FragmentDQMAna
-    
-    metric_config: {
-      
-      groups: { 
-        PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 8199, 
-		         8211, 8213, 8198, 8215, 8205, 8212, 8201, 8210, 8192, 8196, 
-			 8195, 8197, 8207, 8193]
- 
-        CRT_cont_frag : [12551, 12568, 12614, 12598, 12595, 12593, 12591, 12618, 12586, 12559, 
-		         12576, 12580, 12552, 12605, 12560, 12594, 12570, 12630, 12550, 12615, 
-			 12589, 12620, 12554, 12578, 12596, 12627, 12641, 12621, 12588, 12590, 
-			 12637, 12555, 12638, 12579, 12553, 12563, 12608, 12592, 12634, 12585, 
-			 12632, 12583, 12624, 12558, 12566, 12613, 12597, 12635, 12622, 12610, 
-			 12587, 12603, 12629, 12600, 12569, 12584, 12609, 12581, 12606, 12619, 
-			 12561, 12626, 12577, 12548, 12582, 12607, 12625, 12631, 12599, 12575, 
-			 12617, 12573, 12628, 12640, 12557, 12639, 12567, 12636, 12616, 12545, 
-			 12601, 12549, 12572, 12571, 12623, 12547, 12633, 12565, 12612, 12602, 
-			 12604, 12611, 12574]         
-      }
-        
-  
-      streams: [archiving]
-      metrics: {
-        frag_count: {}
-        zero_rate: {}
-      }
-
-    }
-  }
-
 }
 
-physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
-physics.online_purity:   [prescale10,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale10, daqTPC ]
-physics.pmt_only: [ prescale1, daqPMT ]
-physics.trigger_only: [ prescale1, daqTrigger ]
-physics.crt_only: [ prescale1 ]
+##paths
+physics.pmt_only: [ prescale1, daqTrigger, daqPMT ]
 
-# BH: COMMENT PSCALE_OnMonFiles TO TURN OFF OUTPUT FILE
-physics.tpc_path: [ pscale_OnMonFiles, online_purity, tpc_only ]
-physics.trigger_path: [trigger_only]
-physics.pmt_path: [ pmt_only ]
-physics.crt_path: [ crt_only ]
+##setting up event filtering
+physics.analyzers.pmtana.SelectEvents: [ pmt_only ]
+physics.analyzers.timingana.SelectEvents: [ pmt_only ]
+physics.analyzers.triggerana.SelectEvents: [ pmt_only ]
 
-#physics.trigger_paths: [ @sequence::physics.tpc_path,
-#		         @sequence::physics.pmt_path,
-#			 @sequence::physics.crt_path]
-#			 @sequence::physics.trigger_path]
-
-physics.trigger_paths: [ @sequence::physics.pmt_path,
-                         @sequence::physics.crt_path ]  
-
-
-physics.anatpc: [ TPCOnlineAnalysis, TPCOnlineAnalysisDenoised, OnlineAnalysisRawData, Meta, PurityAnalysis ]
-physics.anatrigger: [ triggerAnalysis ]
-
-# Gray Putnam: TEMPORARY -- remove fragana from analyzers
-physics.anapmt: [ MetaPMT, pmtAnalysis] #, fragana ]
-physics.anacrt: [ CRTAna] #, fragana ]
-
-#physics.a: [ @sequence::physics.anatrigger, @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
-physics.a: [ @sequence::physics.anatpc, @sequence::physics.anapmt, @sequence::physics.anacrt ]
+##analysis paths combined
+physics.anatrigger: [ triggerana ]
+physics.anapmt: [ MetaPMT, pmtana, timingana] 
 
 physics.decoded_stream: [ decodedout ]
 
-#physics.end_paths: [ a, decoded_stream ] # BH: COMMENT DECODED_STREAM TO TURN OFF OUTPUT FILE
-#physics.end_paths: [ anapmt, decoded_stream ]
-physics.end_paths: [ anapmt ]
+####FINAL PATHS
+physics.trigger_paths: [ pmt_only ]  
+physics.end_paths: [ anatrigger, anapmt ]
 
 process_name: ICARUSOnlineMonitor
-
-#PMT overrides for the online
-#physics.producers.daqPMT.DecoderTool.PMTconfigTag: @erase
-#physics.producers.daqPMT.DecoderTool.RequireKnownBoards: false
-#physics.producers.daqPMT.DecoderTool.RequireBoardConfig: false

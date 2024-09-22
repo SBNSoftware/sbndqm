@@ -20,6 +20,30 @@ cet_build_plugin( CAENV1730Streams art::module
   sbndaq_online::hiredis
   sbndqm_Decode_PMT_PMTDecodeData
   larana::OpticalDetector_OpHitFinder
+  FFTW3::FFTW3
+)
+
+cet_build_plugin( BeamTimingStreams art::module
+  LIBRARIES
+  lardataobj::RawData
+  art::Utilities
+  canvas::canvas  
+  art::Framework_Core
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  ROOT::Core
+  cetlib::cetlib
+  cetlib_except::cetlib_except
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
+  artdaq_core::artdaq-core_Utilities
+  artdaq_utilities::artdaq-utilities_Plugins
+  sbndaq_online::storage
+  sbndaq_online::redis_connection
+  sbndaq_online::hiredis
+  sbndqm_Decode_PMT_PMTDecodeData
 )
 
 add_subdirectory(fcl)

@@ -42,8 +42,8 @@ EXAMPLES:
 python group_config.py -g TPC
 
 # print out the configuration associated with the TPC as stored
-# on the server "icarus-db01.fnal.gov"
-python group_config. -g TPC -s "icarus-db01.fnal.gov"
+# on the server "icarus-db02.fnal.gov"
+python group_config. -g TPC -s "icarus-db02.fnal.gov"
 
 MONITORING DATA STREAMS:
 monitor_streams.py: Gets the last value from a set of specified streams
@@ -90,10 +90,10 @@ python monitor_streams.py -g tpc_channel -i 45
 python monitor_streams.py -m rms
 
 VIEWING WAVEFORMS:
-view_waveform.py: Given a user-supplied key, the script loads the
-                  waveform from redis and plots the waveform in
-                  matplotlib. Will fail if the key does not exist or is
-                  unfilled.
+view_waveform[_binary].py: Given a user-supplied key, the script loads the
+                           waveform from redis and plots the waveform in
+                           matplotlib. Will fail if the key does not exist or is
+                           unfilled.
 
 ARGUMENTS:
 	-k	The key of the waveform to plot.

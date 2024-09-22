@@ -53,6 +53,7 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 //---
 //#include "art/Framework/Services/Optional/TFileService.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 
@@ -88,7 +89,7 @@ private:
 
    uint64_t lastbighit[32];
 
-  bool debug = true;
+  bool const debug = false;
 
   //sample histogram
   TH1F* fSampleHist;
@@ -129,9 +130,10 @@ bool sbndaq::BernCRTdqm::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //sleep(2);
 
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;  
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+  mf::LogInfo("BernCRTdqm") << "Computing CRT metrics...";
+  
+  //std::cout << "######################################################################" << std::endl;
+  //std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event() << std::endl;
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
   /**
@@ -177,7 +179,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
       else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";} //this one is relevant for us
 	//print out arguments of the sendMetric line
 	//i.e. print out fragment_id to match to fcl
-	std::cout<<"fragment_id: "<<fragment_id<<std::endl;
+      if(debug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
 
       sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
       sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
@@ -259,10 +261,10 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
     if(isTS0){
-      std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+      if(debug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
     }
     if(isTS1){
-      std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
+      if(debug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
       num_t1_resets++;
     }
     
@@ -402,7 +404,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
 
-
+  mf::LogInfo("BernCRTdqm") << "CRT metrics sent!";
 } //analyze
 
 void sbndaq::BernCRTdqm::reconfigure(fhicl::ParameterSet const & pset)
