@@ -1,0 +1,109 @@
+#include "icarus_pmt_online_monitor_configuration.fcl"
+
+BEGIN_PROLOG
+
+  pmtAnalysis: {
+    module_type: CAENV1730Streams
+    SelectEvents: [] 
+      
+    OpDetWaveformLabel: "daqPMT"
+    PMTDigitizerLabel: "daqPMT"
+
+    reco_man:      @local::standard_preco_manager
+    HitAlgoConfig: @local::icarus_pmt_om_ophit_algo
+    PedAlgoConfig: @local::icarus_pmt_om_pedestal_algo
+      
+    PMTMetricConfig: {
+    
+      hostname: "icarus-db02.fnal.gov"
+    
+      groups: {
+        PMT: [ [0, 384] ]
+      }
+
+      streams: ["archiving"]
+        
+      metrics: {
+        
+        rms: {
+          units: ADC
+          title: "PMT channel %(instance)s rms"
+          display_range: [-1., 6.]
+        }
+
+        baseline: {
+          units: ADC
+          title: "%(group)s channel %(instance)s baseline"
+          display_range: [13000, 16000]
+        }
+          
+        rate: {
+          units: Hz 
+          title: "%(group)s channel %(instance)s single PMT rate" 
+          display_range: [ 0, 2. ]
+        }
+          
+        temperature: {
+          units: C 
+          title: "%(group)s channel %(instance)s temperature" 
+          display_range: [ 30., 75. ]
+        }   
+      }   
+    }
+   
+    PMTBoardMetricConfig: {
+      
+      hostname: "icarus-db02.fnal.gov"
+    
+      groups: {
+        PMTBoard: [ [0, 24] ]
+      }
+
+      streams: ["archiving"]
+        
+      metrics: {
+        
+        max_temperature: {
+          units: C 
+          title: "%(group)s %(instance)s max temperature" 
+          display_range: [ 30., 75. ]
+        }
+      }   
+    }
+  }
+
+  timingAnalysis: {
+
+    module_type: BeamTimingStreams
+    SelectEvents: [] 
+    
+    OpDetWaveformLabel: "daqPMT"
+    TriggerLabel: "daqTrigger"
+
+    TimingMetricConfig: {
+
+      hostname: "icarus-db02.fnal.gov"
+    
+      groups: {
+        BeamTiming: [ [0, 7] ]
+      }
+
+      streams: ["archiving"]
+        
+      metrics: {
+        
+          BNB_RWM_EW: {
+            units: us
+            title: "Crate %(instance)s RWM-EW"
+            display_range: [-12., 12.]
+          }
+          NUMI_RWM_EW: {
+            units: us
+            title: "Crate %(instance)s RWM-EW"
+            display_range: [-12., 12.]
+          }
+      }   
+    }
+  }
+
+END_PROLOG

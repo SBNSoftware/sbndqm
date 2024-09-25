@@ -1,0 +1,38 @@
+#include "opticaldetectormodules.fcl"
+
+BEGIN_PROLOG
+#
+# Dirty solution: should depend on the configuration defined in icaruscode icarus_ophitfinder.fcl 
+# Currently we are setting it manually to the same configuration and values of icaruscode v09_83_01
+# configuration from "icarus_opreco_pedestal_DocDB24969"
+#
+icarus_pmt_om_pedestal_algo.Name:                         "RollingMean"
+icarus_pmt_om_pedestal_algo.SampleSize:                   20
+icarus_pmt_om_pedestal_algo.NPrePostSamples:              5
+icarus_pmt_om_pedestal_algo.Threshold:                    1.5
+icarus_pmt_om_pedestal_algo.MaxSigma:                     5.0
+icarus_pmt_om_pedestal_algo.DiffADCCounts:                2
+icarus_pmt_om_pedestal_algo.DiffBetweenGapsThreshold:     2
+icarus_pmt_om_pedestal_algo.PedRangeMax:                  18000  # Very high constrain. Let the OM find the right one 
+icarus_pmt_om_pedestal_algo.PedRangeMin:                  10000  # Very low constrain. Let the OM find the right one
+#
+# Dirty solution: should depend on the configuration defined in icaruscode icarus_ophitfinder.fcl
+# Currently we are setting it manually to the same configuration and values of icaruscode v09_83_01
+# configuration from "icarus_opreco_hit_slidingwindow_201910"
+#
+icarus_pmt_om_ophit_algo: @local::standard_algo_slidingwindow
+icarus_pmt_om_ophit_algo.PositivePolarity:    false
+icarus_pmt_om_ophit_algo.NumPreSample:        5
+icarus_pmt_om_ophit_algo.NumPostSample:       10
+icarus_pmt_om_ophit_algo.ADCThreshold:        10 
+icarus_pmt_om_ophit_algo.NSigmaThreshold:     3 
+icarus_pmt_om_ophit_algo.TailADCThreshold:    6 
+icarus_pmt_om_ophit_algo.TailNSigmaThreshold: 2 
+icarus_pmt_om_ophit_algo.EndADCThreshold:     2 
+icarus_pmt_om_ophit_algo.EndNSigmaThreshold:  1 
+icarus_pmt_om_ophit_algo.MinPulseWidth:       5 
+icarus_pmt_om_ophit_algo.Verbosity:           false
+
+
+END_PROLOG
+

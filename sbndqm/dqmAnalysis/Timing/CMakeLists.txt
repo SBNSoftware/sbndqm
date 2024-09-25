@@ -25,9 +25,9 @@ simple_plugin( SPECTDCStreams "module"
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
 
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
+  sbndaq_online::storage
+  sbndaq_online::redis_connection
+  sbndaq_online::hiredis
 
 )
 

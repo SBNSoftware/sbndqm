@@ -53,6 +53,7 @@
 #include "sbndaq-online/helpers/MetricConfig.h"
 //---
 //#include "art/Framework/Services/Optional/TFileService.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 
@@ -91,7 +92,7 @@ private:
    float pedSumSq[32];
    float pedNHits[32];
 
-  bool debug = false;
+  bool const debug = false;
 
   //sample histogram
   TH1F* fSampleHist;
@@ -132,9 +133,10 @@ bool sbndaq::BernCRTdqm::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
 void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   //sleep(2);
 
-  if (debug) std::cout << "######################################################################" << std::endl;
-  if (debug) std::cout << std::endl;  
-  if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+  mf::LogInfo("BernCRTdqm") << "Computing CRT metrics...";
+  
+  //std::cout << "######################################################################" << std::endl;
+  //std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event() << std::endl;
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
   /**
@@ -451,7 +453,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
 
-
+  mf::LogInfo("BernCRTdqm") << "CRT metrics sent!";
 } //analyze
 
 void sbndaq::BernCRTdqm::reconfigure(fhicl::ParameterSet const & pset)

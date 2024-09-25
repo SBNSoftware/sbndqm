@@ -12,7 +12,7 @@ def main(args):
     try:
         redis.ping()
     except:
-        print "Error: trouble connecting to redis database on server (%s) port (%i)" % (args.server, args.port)
+        print("Error: trouble connecting to redis database on server (%s) port (%i)" % (args.server, args.port))
         return
     try:
         data_type = redis.hget(key, "DataType")
@@ -22,8 +22,9 @@ def main(args):
         data = redis.hget(key, "Data")
         sizes = redis.hget(key, "Sizes")
         offsets = redis.hget(key, "Offsets")
-    except:
-         print "ERROR: key (%s) is misformed" % (args.key)
+    except Exception as e:
+         print("ERROR: key (%s) is misformed" % (args.key))
+         print(e)
          return
 
     data = util.parse_binary(data, data_type)
@@ -36,6 +37,13 @@ def main(args):
     else:
         offsets = [0]
 
+    total_size = 0
+    for s in sizes:
+        total_size += s
+    if total_size != len(data):
+        print("WARNING: data is %i, but total reported size is %i" % (len(data),total_size))
+        sizes = [len(data)]
+
     xs = []
     for size, offset in zip(sizes, offsets):
         xs += [i * period + offset*period for i in range(size)]
@@ -45,7 +53,7 @@ def main(args):
     plt.show()
 
 if __name__ == "__main__":
-    print "NOTE: you must have graphics forwarding enabled to use this script."
+    print("NOTE: you must have graphics forwarding enabled to use this script.")
     args = argparse.ArgumentParser()
     args = util.add_connection_args(args)
     args.add_argument("-k", "--key", required=True)

@@ -1,36 +1,23 @@
-simple_plugin( PTBdqm "module"
-
-  art_Utilities
-  canvas
-
-  art_Framework_Services_Registry
-
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  lardataobj_Simulation
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${ART_FRAMEWORK_CORE}
-
-  ${ROOT_BASIC_LIB_LIST}
-
-  art_root_io_tfile_support
-  art_root_io_TFileService_service
-
-  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
+cet_build_plugin( PTBdqm art::module
+  LIBRARIES
+  art::Utilities
+  canvas::canvas
+  art::Framework_Services_Registry
+  lardataobj::RawData
+  lardataobj::Simulation
+  fhiclcpp::fhiclcpp
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  art::Framework_Core
+  ROOT::Core
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND 
-
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
-
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
-
+  sbndaq_online::storage
+  sbndaq_online::redis_connection
+  sbndaq_online::hiredis
   sbndqm_Decode_PMT_PMTDecodeData
-  
-
-
 )

@@ -1,11 +1,12 @@
-simple_plugin( BernCRTdqm module
-  art_Framework_Services_Registry
-  ${ROOT_BASIC_LIB_LIST}
+cet_build_plugin( BernCRTdqm art::module
+  LIBRARIES
+  art::Framework_Services_Registry
+  ROOT::Core
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
   artdaq_core::artdaq-core_Data
   artdaq_utilities::artdaq-utilities_Plugins
-  sbndaq_online_storage
-  sbndaq_online_hiredis
+  sbndaq_online::storage
+  sbndaq_online::hiredis
   sbndqm_Decode_Mode
 )
 

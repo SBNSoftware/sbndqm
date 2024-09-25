@@ -1,0 +1,51 @@
+#include "redis_connection.fcl"
+#include "icarus_online_decoder_defs.fcl"
+#include "icarus_trigger_analysis_defs.fcl"
+
+process_name: ICARUSTRIGGERANALYSIS
+
+physics: {
+  
+  producers: {
+    daqTrigger: @local::decodeTriggerOnline
+  }
+
+  analyzers: {
+   
+    triggerana: @local::triggerAnalysis
+   
+  }
+
+  my_producer_modules: [ daqTrigger ]
+  trigger_paths: [ my_producer_modules ]
+  
+  ana: [ triggerana ] 
+  end_paths: [ ana ]
+
+}
+
+services: {
+
+  TFileService: { fileName: "waveformtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+
+services.RedisConnection.host: "icarus-db02.fnal.gov"
+
+source:
+{
+  module_type: RootInput
+  fileNames: @nil 
+}
+
