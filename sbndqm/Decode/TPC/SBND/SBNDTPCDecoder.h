@@ -1,22 +1,27 @@
-#ifndef SBNDTPCDecoderDQM_h
-#define SBNDTPCDecoderDQM_h
+#ifndef SBNDTPCDecoder_h
+#define SBNDTPCDecoder_h
 ////////////////////////////////////////////////////////////////////////
-// Class:       SBNDTPCDecoderDQM
+// Class:       SBNDTPCDecoder
 // Plugin Type: producer (art v2_09_06)
-// File:        SBNDTPCDecoderDQM.h
+// File:        SBNDTPCDecoder.h
 //
 // Generated at Thu Feb  8 16:41:18 2018 by Gray Putnam using cetskelgen
 // from cetlib version v3_01_03.
+// adapted from sbndqm for sbndcode use
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
+#include "canvas/Persistency/Common/Assns.h"
+#include "art/Persistency/Common/PtrMaker.h"
 #include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/RDTimeStamp.h"
+
 #include "artdaq-core/Data/Fragment.hh"
 #include "canvas/Utilities/InputTag.h"
 
 #include "sbndaq-artdaq-core/Overlays/SBND/NevisTPCFragment.hh"
 
-#include "../HeaderData.hh"
+#include "TPCDecodeAna.h"
 
 /*
   * The Decoder module takes as input "NevisTPCFragments" and
@@ -25,21 +30,21 @@
 */
 
 namespace daq {
-  class SBNDTPCDecoderDQM;
+  class SBNDTPCDecoder;
 }
 
 
-class daq::SBNDTPCDecoderDQM : public art::EDProducer {
+class daq::SBNDTPCDecoder : public art::EDProducer {
 public:
-  explicit SBNDTPCDecoderDQM(fhicl::ParameterSet const & p);
+  explicit SBNDTPCDecoder(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  SBNDTPCDecoderDQM(SBNDTPCDecoderDQM const &) = delete;
-  SBNDTPCDecoderDQM(SBNDTPCDecoderDQM &&) = delete;
-  SBNDTPCDecoderDQM & operator = (SBNDTPCDecoderDQM const &) = delete;
-  SBNDTPCDecoderDQM & operator = (SBNDTPCDecoderDQM &&) = delete;
+  SBNDTPCDecoder(SBNDTPCDecoder const &) = delete;
+  SBNDTPCDecoder(SBNDTPCDecoder &&) = delete;
+  SBNDTPCDecoder & operator = (SBNDTPCDecoder const &) = delete;
+  SBNDTPCDecoder & operator = (SBNDTPCDecoder &&) = delete;
 
   // Required functions.
   void produce(art::Event & e) override;
@@ -50,10 +55,7 @@ public:
 private:
   class Config {
     public:
-    int wait_sec;
-    int wait_usec;
     bool produce_header;
-    bool produce_metadata;
     bool baseline_calc;
     unsigned n_mode_skip;
     bool subtract_pedestal;
@@ -68,27 +70,31 @@ private:
     Config(fhicl::ParameterSet const & p);
   };
 
+  typedef std::vector<raw::RawDigit> RawDigits;
+  typedef std::vector<raw::RDTimeStamp> RDTimeStamps;
+  typedef art::Assns<raw::RawDigit,raw::RDTimeStamp> RDTsAssocs;
+  typedef art::PtrMaker<raw::RawDigit> RDPmkr;
+  typedef art::PtrMaker<raw::RDTimeStamp> TSPmkr;
+    
   // process an individual fragment inside an art event
-  void process_fragment(art::Event &event, const artdaq::Fragment &frag,
-    std::unique_ptr<std::vector<raw::RawDigit>> &product_collection,
-    std::unique_ptr<std::vector<tpcAnalysis::HeaderData>> &header_collection);
+  void process_fragment(art::Event &event,
+			const artdaq::Fragment &frag,
+                        std::unique_ptr<RawDigits> &rd_collection,
+                        std::unique_ptr<std::vector<sbndqm::TPCDecodeAna>> &header_collection,
+			RDPmkr &rdpm,
+			TSPmkr &tspm,
+			std::unique_ptr<RDTimeStamps> &rdts_collection,
+			std::unique_ptr<RDTsAssocs> &rdtsassoc_collection);
 
 
-  // Gets the WIRE ID of the channel. This wire id can be then passed
-  // to the Lariat geometry.
-  raw::ChannelID_t get_wire_id(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id);
-
-  // whether the given nevis readout channel is mapped to a wire
-  bool is_mapped_channel(const sbndaq::NevisTPCHeader *header, uint16_t nevis_channel_id);
-
-  // build a HeaderData object from the Nevis Header
-  tpcAnalysis::HeaderData Fragment2HeaderData(art::Event &event, const artdaq::Fragment &frag);
+  // build a TPCDecodeAna object from the Nevis Header
+  sbndqm::TPCDecodeAna Fragment2TPCDecodeAna(art::Event &event, const artdaq::Fragment &frag);
 
   art::InputTag _tag;
   Config _config;
-  // keeping track of incrementing numbers
-  uint32_t _last_event_number;
-  uint32_t _last_trig_frame_number;
+
+  void getMedianSigma(const std::vector<int16_t> &v_adc, float &median, float &sigma);
+
 };
 
-#endif /* SBNDTPCDecoderDQM_h */
+#endif /* SBNDTPCDecoder_h */

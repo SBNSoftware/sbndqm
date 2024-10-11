@@ -181,6 +181,8 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
 
       if( m_unique_channels.size() > nTotalChannels ) { break; }
 
+      if((opdetwaveform.ChannelNumber()+1)%16 == 0) { continue; }
+
       unsigned int const pmtId = opdetwaveform.ChannelNumber();
       
       auto findIt = std::find( m_unique_channels.begin(), m_unique_channels.end(), pmtId );
@@ -202,7 +204,7 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       auto const& pulses = threshAlg->GetPulses();
       double npulses = (double)pulses.size();
 
-      std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
+      //std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
 
       // Send the metrics 
       sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information

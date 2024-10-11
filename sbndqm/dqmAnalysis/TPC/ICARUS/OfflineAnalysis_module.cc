@@ -10,9 +10,9 @@
 #include "art/Framework/Principal/SubRun.h" 
 #include "art_root_io/TFileService.h"
 
-#include "ChannelData.hh"
+#include "sbndqm/dqmAnalysis/TPC/ChannelData.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
-#include "Analysis.hh"
+#include "sbndqm/dqmAnalysis/TPC/Analysis.hh"
 
 #include "TROOT.h"
 #include "TTree.h"
