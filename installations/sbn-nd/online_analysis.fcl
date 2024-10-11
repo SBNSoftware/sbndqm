@@ -678,8 +678,7 @@ physics.tpc_path: [ tpc_only ]
 physics.timing_path: [ timing_only ]
 physics.trigger_path: [ trigger_only ]
 
-#physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path ]
-physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path]
+physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path ]
 
 physics.acrt: [ crtana ]
 physics.apmt: [ MetaPMT, pmtAnalysis ]
@@ -687,11 +686,7 @@ physics.atpc: [ OnlineAnalysis, OnlineAnalysisRawData, Meta, OnlineEvdSBND ]
 physics.atiming:  [ dqmSPECTDC ]
 physics.atrigger:  [ ptbAnalysis ]
 
-#physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger ]
-#physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming]
-physics.a: [@sequence::physics.atpc, @sequence::physics.apmt]
-#physics.a: [@sequence::physics.atpc, @sequence::physics.acrt]
-#physics.a: [@sequence::physics.acrt]
+physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger ]
 
 physics.decoded_stream: [ decodedout ]
 
