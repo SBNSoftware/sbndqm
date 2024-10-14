@@ -1,15 +1,15 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       SBNDTPCDecoder
+// Class:       SBNDDQMTPCDecoder
 // Plugin Type: producer (art v2_09_06)
-// File:        SBNDTPCDecoder.cxx
+// File:        SBNDDQMTPCDecoder.cxx
 //
 // Generated at Thu Feb  8 16:41:18 2018 by Gray Putnam using cetskelgen
 // from cetlib version v3_01_03.
 // moved and adapted for sbndcode by Tom Junk, August 2023
 ////////////////////////////////////////////////////////////////////////
 
-#include "SBNDTPCDecoder.h"
-#include "sbndqm/Decode/TPC/SBND/ChannelMap/TPCChannelMapService.h"
+#include "SBNDDQMTPCDecoder.h"
+#include "sbndqm/Decode/TPC/SBND/DQMChannelMap/TPCDQMChannelMapService.h"
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -36,15 +36,15 @@
 #include "sbndaq-artdaq-core/Overlays/SBND/NevisTPC/NevisTPCUtilities.hh"
 
 
-DEFINE_ART_MODULE(daq::SBNDTPCDecoder)
+DEFINE_ART_MODULE(daq::SBNDDQMTPCDecoder)
 
 // constructs a header data object from a nevis header
 // construct from a nevis header
-sbndqm::TPCDecodeAna daq::SBNDTPCDecoder::Fragment2TPCDecodeAna(art::Event &event, const artdaq::Fragment &frag) {
+sbndqm::DQMTPCDecodeAna daq::SBNDDQMTPCDecoder::Fragment2DQMTPCDecodeAna(art::Event &event, const artdaq::Fragment &frag) {
   sbndaq::NevisTPCFragment fragment(frag);
 
   const sbndaq::NevisTPCHeader *raw_header = fragment.header();
-  sbndqm::TPCDecodeAna ret;
+  sbndqm::DQMTPCDecodeAna ret;
 
   ret.crate = (frag.fragmentID() >> 8) & 0xF;  
   ret.slot = raw_header->getSlot();
@@ -68,7 +68,7 @@ sbndqm::TPCDecodeAna daq::SBNDTPCDecoder::Fragment2TPCDecodeAna(art::Event &even
   return ret;
 }
 
-daq::SBNDTPCDecoder::SBNDTPCDecoder(fhicl::ParameterSet const & param): 
+daq::SBNDDQMTPCDecoder::SBNDDQMTPCDecoder(fhicl::ParameterSet const & param): 
   art::EDProducer{param},
   _tag(param.get<std::string>("raw_data_label", "daq"),param.get<std::string>("fragment_type_label", "NEVISTPC")),
   _config(param)
@@ -78,11 +78,11 @@ daq::SBNDTPCDecoder::SBNDTPCDecoder(fhicl::ParameterSet const & param):
   produces<RDTimeStamps>();
   produces<RDTsAssocs>();
   if (_config.produce_header) {
-    produces<std::vector<sbndqm::TPCDecodeAna>>();
+    produces<std::vector<sbndqm::DQMTPCDecodeAna>>();
   }
 }
 
-daq::SBNDTPCDecoder::Config::Config(fhicl::ParameterSet const & param) {
+daq::SBNDDQMTPCDecoder::Config::Config(fhicl::ParameterSet const & param) {
 
   // whether to calcualte the pedestal (and set it in SetPedestal())
   baseline_calc = param.get<bool>("baseline_calc", true);
@@ -102,7 +102,7 @@ daq::SBNDTPCDecoder::Config::Config(fhicl::ParameterSet const & param) {
   min_slot_no = param.get<unsigned>("min_slot_no", 0);
 }
 
-void daq::SBNDTPCDecoder::produce(art::Event & event)
+void daq::SBNDDQMTPCDecoder::produce(art::Event & event)
 {
   auto daq_handle = event.getHandle<artdaq::Fragments>(_tag);
   
@@ -113,7 +113,7 @@ void daq::SBNDTPCDecoder::produce(art::Event & event)
   std::unique_ptr<RawDigits> rawdigit_collection(new RawDigits);
   std::unique_ptr<RDTimeStamps> rdts_collection(new RDTimeStamps);
   std::unique_ptr<RDTsAssocs> rdtsassoc_collection(new RDTsAssocs);
-  std::unique_ptr<std::vector<sbndqm::TPCDecodeAna>> header_collection(new std::vector<sbndqm::TPCDecodeAna>);
+  std::unique_ptr<std::vector<sbndqm::DQMTPCDecodeAna>> header_collection(new std::vector<sbndqm::DQMTPCDecodeAna>);
 
   if ( daq_handle.isValid() ) {
     for (auto const &rawfrag: *daq_handle) {
@@ -122,7 +122,7 @@ void daq::SBNDTPCDecoder::produce(art::Event & event)
   }
   else
     {
-      mf::LogWarning("SBNDTPCDecoder_module") <<  " Invalid fragment handle: Skipping TPC digit decoding";
+      mf::LogWarning("SBNDDQMTPCDecoder_module") <<  " Invalid fragment handle: Skipping TPC digit decoding";
     }
 
   
@@ -142,15 +142,15 @@ void daq::SBNDTPCDecoder::produce(art::Event & event)
 }
 
 
-void daq::SBNDTPCDecoder::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
+void daq::SBNDDQMTPCDecoder::process_fragment(art::Event &event, const artdaq::Fragment &frag, 
 					   std::unique_ptr<RawDigits> &rd_collection,
-					   std::unique_ptr<std::vector<sbndqm::TPCDecodeAna>> &header_collection,
+					   std::unique_ptr<std::vector<sbndqm::DQMTPCDecodeAna>> &header_collection,
 					   RDPmkr &rdpm,
 					   TSPmkr &tspm,
 					   std::unique_ptr<RDTimeStamps> &rdts_collection,
 					   std::unique_ptr<RDTsAssocs> &rdtsassoc_collection) {
 
-  art::ServiceHandle<SBND::TPCChannelMapService> channelMap;
+  art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
   
   // convert fragment to Nevis fragment
   sbndaq::NevisTPCFragment fragment(frag);
@@ -161,7 +161,7 @@ void daq::SBNDTPCDecoder::process_fragment(art::Event &event, const artdaq::Frag
 
   // need to retrieve the timestamp from the Nevis header and save it in the art event only on request
   
-  auto header_data = Fragment2TPCDecodeAna(event, frag);
+  auto header_data = Fragment2DQMTPCDecodeAna(event, frag);
   if (_config.produce_header) {
     header_collection->push_back(header_data);
   }
@@ -203,7 +203,7 @@ void daq::SBNDTPCDecoder::process_fragment(art::Event &event, const artdaq::Frag
 // Computes the checksum, given a nevis tpc header
 //
 // Also note that this only works for uncompressed data
-uint32_t daq::SBNDTPCDecoder::compute_checksum(sbndaq::NevisTPCFragment &fragment) {
+uint32_t daq::SBNDDQMTPCDecoder::compute_checksum(sbndaq::NevisTPCFragment &fragment) {
   uint32_t checksum = 0;
 
   const sbndaq::NevisTPC_ADC_t* data_ptr = fragment.data();
@@ -221,7 +221,7 @@ uint32_t daq::SBNDTPCDecoder::compute_checksum(sbndaq::NevisTPCFragment &fragmen
 
 
 
-void daq::SBNDTPCDecoder::getMedianSigma(const std::vector<int16_t> &v_adc, float &median,
+void daq::SBNDDQMTPCDecoder::getMedianSigma(const std::vector<int16_t> &v_adc, float &median,
 					       float &sigma) {
   size_t asiz = v_adc.size();
   int imed=0;

@@ -34,8 +34,8 @@
 #include "sbndqm/Decode/TPC/HeaderData.hh"
 #include "sbndqm/dqmAnalysis/TPC/AnalysisSBND.hh"
 
-// #include "sbndqm/Decode/TPC/SBND/ChannelMap/TPCChannelMapService.h"
-#include "sbndcode/ChannelMaps/TPC/TPCChannelMapService.h"
+#include "sbndqm/Decode/TPC/SBND/DQMChannelMap/TPCDQMChannelMapService.h"
+//#include "sbndcode/ChannelMaps/TPC/TPCChannelMapService.h"
 
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
@@ -187,7 +187,7 @@ void tpcAnalysis::OfflineEvdSBND::analyze(art::Event const& e)
   }
 
   art::ServiceHandle<geo::Geometry> geo;
-  art::ServiceHandle<SBND::TPCChannelMapService> channelMap;
+  art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
 
   // Get raw digits
   for (const std::string &prod: fRawDigitModuleLabels) {

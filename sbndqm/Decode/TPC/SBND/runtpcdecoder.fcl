@@ -1,14 +1,14 @@
-#include "TPCChannelMapService.fcl"
-#include "SBNDTPCDecoderDefaults.fcl"
+#include "TPCDQMChannelMapService.fcl"
+#include "SBNDDQMTPCDecoderDefaults.fcl"
 
-services.TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
+services.TPCDQMChannelMapService: @local::SBNDTPCDQMChannelMapServiceDefaults
 
 physics:
 {
   // now also have something produce the digits and headers
   producers:
   {
-    daq: @local::SBNDTPCDecoderDefaults
+    daq: @local::SBNDDQMTPCDecoderDefaults
   }
 
   analyzers: {}

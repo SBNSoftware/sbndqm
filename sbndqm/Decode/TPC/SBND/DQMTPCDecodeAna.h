@@ -1,5 +1,5 @@
-#ifndef _sbnddaq_analysis_TPCDecodeAna
-#define _sbnddaq_analysis_TPCDecodeAna
+#ifndef _sbnddaq_analysis_DQMTPCDecodeAna
+#define _sbnddaq_analysis_DQMTPCDecodeAna
 
 #include <string>
 #include <iostream>
@@ -9,10 +9,10 @@
 
 namespace sbndqm {
 
-// TPCDecodeAna: assumes the each board is 
+// DQMTPCDecodeAna: assumes the each board is 
 // generating one fragment, and the each fragment has one header
 // which is associated with a seuqence of ADC counts 
-class TPCDecodeAna {
+class DQMTPCDecodeAna {
   public:
   uint8_t crate; //!< Index of readout electronics crate
   uint8_t slot; //!< Index of "slot" of readout board 
@@ -30,7 +30,7 @@ class TPCDecodeAna {
   // by default make words noticable
   // Nevis uses DEADBEEF as a default, so distinguish from
   // that use BEEFDEAD
-  TPCDecodeAna():
+  DQMTPCDecodeAna():
     crate(0xFF),
     slot(0xFF),
     event_number(0xBEEFDEAD),

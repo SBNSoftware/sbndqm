@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       TPCChannelIDAna
+// Class:       TPCDQMChannelIDAna
 // Plugin Type: analyzer
 // File:        PDSMeanRMSLZ_tool.cc
 // Author:      tjyang@fnal.gov
@@ -22,28 +22,28 @@
 #include "lardataobj/RawData/raw.h"
 #include "larcore/Geometry/Geometry.h"
 
-#include "sbndqm/Decode/TPC/SBND/ChannelMap/TPCChannelMapService.h"
+#include "sbndqm/Decode/TPC/SBND/DQMChannelMap/TPCDQMChannelMapService.h"
 
 #include "TTree.h"
 
 using namespace std;
 
 namespace sbnd {
-  class TPCChannelIDAna;
+  class TPCDQMChannelIDAna;
 }
 
 
-class sbnd::TPCChannelIDAna : public art::EDAnalyzer {
+class sbnd::TPCDQMChannelIDAna : public art::EDAnalyzer {
 public:
-  explicit TPCChannelIDAna(fhicl::ParameterSet const& p);
+  explicit TPCDQMChannelIDAna(fhicl::ParameterSet const& p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  TPCChannelIDAna(TPCChannelIDAna const&) = delete;
-  TPCChannelIDAna(TPCChannelIDAna&&) = delete;
-  TPCChannelIDAna& operator=(TPCChannelIDAna const&) = delete;
-  TPCChannelIDAna& operator=(TPCChannelIDAna&&) = delete;
+  TPCDQMChannelIDAna(TPCDQMChannelIDAna const&) = delete;
+  TPCDQMChannelIDAna(TPCDQMChannelIDAna&&) = delete;
+  TPCDQMChannelIDAna& operator=(TPCDQMChannelIDAna const&) = delete;
+  TPCDQMChannelIDAna& operator=(TPCDQMChannelIDAna&&) = delete;
 
   // Required functions.
   void beginJob() override;
@@ -71,7 +71,7 @@ private:
 };
 
 
-sbnd::TPCChannelIDAna::TPCChannelIDAna(fhicl::ParameterSet const& p)
+sbnd::TPCDQMChannelIDAna::TPCDQMChannelIDAna(fhicl::ParameterSet const& p)
   : EDAnalyzer{p}
   , fRawDigitModuleLabel{p.get<art::InputTag>("RawDigitModuleLabel")}
   // More initializers here.
@@ -79,9 +79,9 @@ sbnd::TPCChannelIDAna::TPCChannelIDAna(fhicl::ParameterSet const& p)
   // Call appropriate consumes<>() for any products to be retrieved by this module.
 }
 
-void sbnd::TPCChannelIDAna::beginJob(){
+void sbnd::TPCDQMChannelIDAna::beginJob(){
   art::ServiceHandle<art::TFileService> tfs;
-  chs = tfs->make<TTree>("chs","Channel information");
+  chs = tfs->make<TTree>("chs","DQMChannel information");
   chs->Branch("ch",        &ch,        "ch/I");
   chs->Branch("chid",      &chid,      "chid/I");
   chs->Branch("tpc",       &tpc,       "tpc/I");
@@ -98,12 +98,12 @@ void sbnd::TPCChannelIDAna::beginJob(){
   chs->Branch("femch",     &femch,     "femch/I");
 }
 
-void sbnd::TPCChannelIDAna::analyze(art::Event const& e)
+void sbnd::TPCDQMChannelIDAna::analyze(art::Event const& e)
 {
   // Implementation of required member function here.
 
   art::ServiceHandle<geo::Geometry> geo;
-  art::ServiceHandle<SBND::TPCChannelMapService> channelMap;
+  art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
 
   // Get raw digits
   auto const& rawdigts = e.getProduct<std::vector<raw::RawDigit>>(fRawDigitModuleLabel);
@@ -111,7 +111,7 @@ void sbnd::TPCChannelIDAna::analyze(art::Event const& e)
     std::vector<short> rawadc;      //UNCOMPRESSED ADC VALUES.
     rawadc.resize(rd.Samples());
     raw::Uncompress(rd.ADCs(), rawadc, rd.GetPedestal(), rd.Compression());
-    //cout<<rd.Channel()<<" "<<rawadc[0]<<endl;
+    //cout<<rd.hannel()<<" "<<rawadc[0]<<endl;
     ch = rd.Channel();
     chid = rawadc[0];
     auto const & chids = geo->ChannelToWire(ch);
@@ -132,4 +132,4 @@ void sbnd::TPCChannelIDAna::analyze(art::Event const& e)
   }
 }
 
-DEFINE_ART_MODULE(sbnd::TPCChannelIDAna)
+DEFINE_ART_MODULE(sbnd::TPCDQMChannelIDAna)

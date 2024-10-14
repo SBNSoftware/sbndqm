@@ -1,9 +1,9 @@
-#ifndef SBNDTPCDecoder_h
-#define SBNDTPCDecoder_h
+#ifndef SBNDDQMTPCDecoder_h
+#define SBNDDQMTPCDecoder_h
 ////////////////////////////////////////////////////////////////////////
-// Class:       SBNDTPCDecoder
+// Class:       SBNDDQMTPCDecoder
 // Plugin Type: producer (art v2_09_06)
-// File:        SBNDTPCDecoder.h
+// File:        SBNDDQMTPCDecoder.h
 //
 // Generated at Thu Feb  8 16:41:18 2018 by Gray Putnam using cetskelgen
 // from cetlib version v3_01_03.
@@ -21,7 +21,7 @@
 
 #include "sbndaq-artdaq-core/Overlays/SBND/NevisTPCFragment.hh"
 
-#include "TPCDecodeAna.h"
+#include "DQMTPCDecodeAna.h"
 
 /*
   * The Decoder module takes as input "NevisTPCFragments" and
@@ -30,21 +30,21 @@
 */
 
 namespace daq {
-  class SBNDTPCDecoder;
+  class SBNDDQMTPCDecoder;
 }
 
 
-class daq::SBNDTPCDecoder : public art::EDProducer {
+class daq::SBNDDQMTPCDecoder : public art::EDProducer {
 public:
-  explicit SBNDTPCDecoder(fhicl::ParameterSet const & p);
+  explicit SBNDDQMTPCDecoder(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  SBNDTPCDecoder(SBNDTPCDecoder const &) = delete;
-  SBNDTPCDecoder(SBNDTPCDecoder &&) = delete;
-  SBNDTPCDecoder & operator = (SBNDTPCDecoder const &) = delete;
-  SBNDTPCDecoder & operator = (SBNDTPCDecoder &&) = delete;
+  SBNDDQMTPCDecoder(SBNDDQMTPCDecoder const &) = delete;
+  SBNDDQMTPCDecoder(SBNDDQMTPCDecoder &&) = delete;
+  SBNDDQMTPCDecoder & operator = (SBNDDQMTPCDecoder const &) = delete;
+  SBNDDQMTPCDecoder & operator = (SBNDDQMTPCDecoder &&) = delete;
 
   // Required functions.
   void produce(art::Event & e) override;
@@ -80,15 +80,15 @@ private:
   void process_fragment(art::Event &event,
 			const artdaq::Fragment &frag,
                         std::unique_ptr<RawDigits> &rd_collection,
-                        std::unique_ptr<std::vector<sbndqm::TPCDecodeAna>> &header_collection,
+                        std::unique_ptr<std::vector<sbndqm::DQMTPCDecodeAna>> &header_collection,
 			RDPmkr &rdpm,
 			TSPmkr &tspm,
 			std::unique_ptr<RDTimeStamps> &rdts_collection,
 			std::unique_ptr<RDTsAssocs> &rdtsassoc_collection);
 
 
-  // build a TPCDecodeAna object from the Nevis Header
-  sbndqm::TPCDecodeAna Fragment2TPCDecodeAna(art::Event &event, const artdaq::Fragment &frag);
+  // build a DQMTPCDecodeAna object from the Nevis Header
+  sbndqm::DQMTPCDecodeAna Fragment2DQMTPCDecodeAna(art::Event &event, const artdaq::Fragment &frag);
 
   art::InputTag _tag;
   Config _config;
@@ -97,4 +97,4 @@ private:
 
 };
 
-#endif /* SBNDTPCDecoder_h */
+#endif /* SBNDDQMTPCDecoder_h */

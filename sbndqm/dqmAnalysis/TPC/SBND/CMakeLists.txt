@@ -89,7 +89,8 @@ cet_build_plugin( OnlineEvdSBND art::module
         sbndaq_online_storage
         sbndaq_online_redis_connection
         sbndaq_online_hiredis
-        sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
+        sbndqm_Decode_TPC_SBND_DQMChannelMap_TPCDQMChannelMapService_service
+        #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
 cet_build_plugin( OfflineEvdSBND art::module
@@ -100,7 +101,8 @@ cet_build_plugin( OfflineEvdSBND art::module
         sbndaq_online_storage
         sbndaq_online_redis_connection
         sbndaq_online_hiredis
-        sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
+        sbndqm_Decode_TPC_SBND_DQMChannelMap_TPCDQMChannelMapService_service
+        #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
 install_headers()

@@ -1,11 +1,8 @@
 <lcgdict>
-  <class name="sbndqm::TPCDecodeAna" ClassVersion="13">
-   <version ClassVersion="13" checksum="1924149828"/>
-   <version ClassVersion="12" checksum="4248390058"/>
-   <version ClassVersion="11" checksum="3638395479"/>
-   <version ClassVersion="10" checksum="3825172703"/>
+  <class name="sbndqm::DQMTPCDecodeAna" ClassVersion="13">
+   <version ClassVersion="13" checksum="3032010622"/>
   </class>
-  <class name="std::vector<sbndqm::TPCDecodeAna>"/>
-  <class name="art::Wrapper<sbndqm::TPCDecodeAna>"/>
-  <class name="art::Wrapper<std::vector<sbndqm::TPCDecodeAna>>"/>
+  <class name="std::vector<sbndqm::DQMTPCDecodeAna>"/>
+  <class name="art::Wrapper<sbndqm::DQMTPCDecodeAna>"/>
+  <class name="art::Wrapper<std::vector<sbndqm::DQMTPCDecodeAna>>"/>
 </lcgdict>

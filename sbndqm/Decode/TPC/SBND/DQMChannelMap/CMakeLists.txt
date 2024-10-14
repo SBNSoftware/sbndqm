@@ -2,7 +2,7 @@ install_headers()
 install_fhicl()
 install_source()
 
-file(GLOB channel_map_file *ChannelMap*.txt)
+file(GLOB channel_map_file *DQMChannelMap*.txt)
 install_fw( LIST ${channel_map_file} )
 
 art_make(SERVICE_LIBRARIES 
@@ -16,8 +16,8 @@ art_make(SERVICE_LIBRARIES
                            art_root_io::TFileService_service
                            lardataobj::RawData
                            larcore::Geometry_Geometry_service
-                           #sbndqm_Decode_TPC_SBND_ChannelMap_TPCChannelMapService_service 
-                           sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
+                           sbndqm_Decode_TPC_SBND_DQMChannelMap_TPCDQMChannelMapService_service 
+                           #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
                            ROOT::Tree
 )
 

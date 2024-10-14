@@ -1,15 +1,15 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Class:       SBND::TPCChannelMapService
+// Class:       SBND::TPCDQMChannelMapService
 // Module type: service
-// File:        TPCChannelMapService.h
+// File:        TPCDQMChannelMapService.h
 // Author:      Tom Junk and Nupur Oza, August 2023
 //
 // Implementation of hardware-offline channel mapping reading from a file or from the hardware database 
 // SBND TPC
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SBNDTPCChannelMapService_H
-#define SBNDTPCChannelMapService_H
+#ifndef SBNDTPCDQMChannelMapService_H
+#define SBNDTPCDQMChannelMapService_H
 
 #include <unordered_map>
 #include <vector>
@@ -20,16 +20,16 @@
 #include "art/Framework/Services/Registry/ServiceMacros.h"
 
 namespace SBND {
-  class TPCChannelMapService;
+  class TPCDQMChannelMapService;
 }
 
   
-class SBND::TPCChannelMapService {
+class SBND::TPCDQMChannelMapService {
 
 public:
 
-  TPCChannelMapService(fhicl::ParameterSet const& pset);
-  TPCChannelMapService(fhicl::ParameterSet const& pset, art::ActivityRegistry&);
+  TPCDQMChannelMapService(fhicl::ParameterSet const& pset);
+  TPCDQMChannelMapService(fhicl::ParameterSet const& pset, art::ActivityRegistry&);
 
   typedef struct ChanInfo {
     unsigned int wireno;          // wire number
@@ -77,6 +77,6 @@ private:
 };
 
 
-DECLARE_ART_SERVICE(SBND::TPCChannelMapService, LEGACY)
+DECLARE_ART_SERVICE(SBND::TPCDQMChannelMapService, LEGACY)
 
 #endif

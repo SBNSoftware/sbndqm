@@ -1,7 +1,7 @@
 BEGIN_PROLOG
 
-SBNDTPCDecoderDefaults: {
-      module_type: SBNDTPCDecoder
+SBNDDQMTPCDecoderDefaults: {
+      module_type: SBNDDQMTPCDecoder
       produce_header: true
       baseline_calc: true
       timesize: 2559          // for computing timestamps

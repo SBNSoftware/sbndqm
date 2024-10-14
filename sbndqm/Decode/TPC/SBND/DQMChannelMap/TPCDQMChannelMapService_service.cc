@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
-// Class:       SBND::TPCChannelMapService
+// Class:       SBND::TPCDQMChannelMapService
 // Module type: service
-// File:        SBND::TPCChannelMapService_service.cc
+// File:        SBND::TPCDQMChannelMapService_service.cc
 // Author:      Tom Junk, August 2023.  Input file from Nupur Oza
 //
 // Implementation of hardware-offline channel mapping reading from a file.
@@ -12,19 +12,19 @@
 #include <sstream>
 #include <stdlib.h>
 
-#include "TPCChannelMapService.h"
+#include "TPCDQMChannelMapService.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
   
-SBND::TPCChannelMapService::TPCChannelMapService(fhicl::ParameterSet const& pset) {
+SBND::TPCDQMChannelMapService::TPCDQMChannelMapService(fhicl::ParameterSet const& pset) {
 
   bool useDB = pset.get<bool>("UseHWDB",false);
   bool useFile = pset.get<bool>("ReadMapFromFile",true);
   if (useDB && useFile) {
-    throw cet::exception("SBND::TPCChannelMapService: UseHWDB and ReadMapFromFile are both true");
+    throw cet::exception("SBND::TPCDQMChannelMapService: UseHWDB and ReadMapFromFile are both true");
   }
   if (!useDB && !useFile) {
-    throw cet::exception("SBND::TPCChannelMapService: UseHWDB and ReadMapFromFile are both false");
+    throw cet::exception("SBND::TPCDQMChannelMapService: UseHWDB and ReadMapFromFile are both false");
   }
   if (useFile) {
     std::string channelMapFile = pset.get<std::string>("FileName");
@@ -34,10 +34,10 @@ SBND::TPCChannelMapService::TPCChannelMapService(fhicl::ParameterSet const& pset
     sp.find_file(channelMapFile, fullname);
 
     if (fullname.empty()) {
-      std::cout << "SBND::TPCChannelMapService Input file " << channelMapFile << " not found" << std::endl;
+      std::cout << "SBND::TPCDQMChannelMapService Input file " << channelMapFile << " not found" << std::endl;
       throw cet::exception("File not found");
     }
-    std::cout << "SBND TPC Channel Map: Building TPC wiremap from file " << channelMapFile << std::endl;
+    std::cout << "SBND TPC DQMChannel Map: Building TPC wiremap from file " << channelMapFile << std::endl;
     std::ifstream inFile(fullname, std::ios::in);
     std::string line;
 
@@ -46,7 +46,7 @@ SBND::TPCChannelMapService::TPCChannelMapService(fhicl::ParameterSet const& pset
       std::string planestr;
       std::string qfspstr;
     
-      SBND::TPCChannelMapService::ChanInfo_t c;
+      SBND::TPCDQMChannelMapService::ChanInfo_t c;
       linestream 
 	>> c.wireno
 	>> planestr
@@ -84,19 +84,19 @@ SBND::TPCChannelMapService::TPCChannelMapService(fhicl::ParameterSet const& pset
   }
   else
     {
-      throw cet::exception("SBND:TPCChannelMapService: Database access to be implemented.");
+      throw cet::exception("SBND:TPCDQMChannelMapService: Database access to be implemented.");
     }
 }
 
-SBND::TPCChannelMapService::TPCChannelMapService(fhicl::ParameterSet const& pset, art::ActivityRegistry&) : SBND::TPCChannelMapService
+SBND::TPCDQMChannelMapService::TPCDQMChannelMapService(fhicl::ParameterSet const& pset, art::ActivityRegistry&) : SBND::TPCDQMChannelMapService
 													    (pset) {
 }
 
-SBND::TPCChannelMapService::ChanInfo_t SBND::TPCChannelMapService::GetChanInfoFromFEMElements(unsigned int femcrate,
+SBND::TPCDQMChannelMapService::ChanInfo_t SBND::TPCDQMChannelMapService::GetChanInfoFromFEMElements(unsigned int femcrate,
 											      unsigned int fem,
 											      unsigned int femchan) const {
 
-  SBND::TPCChannelMapService::ChanInfo_t badinfo{};
+  SBND::TPCDQMChannelMapService::ChanInfo_t badinfo{};
   badinfo.valid = false;
 
   // look up one map at a time in order to handle cases where the item is not found
@@ -120,13 +120,13 @@ SBND::TPCChannelMapService::ChanInfo_t SBND::TPCChannelMapService::GetChanInfoFr
 }
 
 
-SBND::TPCChannelMapService::ChanInfo_t SBND::TPCChannelMapService::GetChanInfoFromOfflChan(unsigned int offlineChannel) const {
+SBND::TPCDQMChannelMapService::ChanInfo_t SBND::TPCDQMChannelMapService::GetChanInfoFromOfflChan(unsigned int offlineDQMChannel) const {
 
-  SBND::TPCChannelMapService::ChanInfo_t badinfo{};
+  SBND::TPCDQMChannelMapService::ChanInfo_t badinfo{};
   badinfo.valid = false;
-  auto fm = fChanInfoFromOfflChan.find(offlineChannel);
+  auto fm = fChanInfoFromOfflChan.find(offlineDQMChannel);
   if (fm == fChanInfoFromOfflChan.end()) return badinfo;
   return fm->second;
 }
 
-DEFINE_ART_SERVICE(SBND::TPCChannelMapService)
+DEFINE_ART_SERVICE(SBND::TPCDQMChannelMapService)
