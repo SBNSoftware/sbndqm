@@ -24,28 +24,28 @@
 #include "art/Framework/Principal/SubRun.h" 
 #include "art_root_io/TFileService.h"
 
-#include "ChannelData.hh"
+#include "sbndqm/dqmAnalysis/TPC/ChannelDataSBND.hh"
 #include "sbndqm/Decode/TPC/HeaderData.hh"
-#include "Analysis.hh"
+#include "sbndqm/dqmAnalysis/TPC/AnalysisSBND.hh"
 
 #include "sbndaq-online/helpers/Utilities.h"
 
 /* Uses the Analysis class to print stuff to file
 */
 namespace tpcAnalysis {
-  class TPCWaveformCreator;
+  class TPCWaveformCreatorSBND;
 }
 
 
-class tpcAnalysis::TPCWaveformCreator : public art::EDAnalyzer {
+class tpcAnalysis::TPCWaveformCreatorSBND : public art::EDAnalyzer {
 public:
-  explicit TPCWaveformCreator(fhicl::ParameterSet const & p);
+  explicit TPCWaveformCreatorSBND(fhicl::ParameterSet const & p);
   // The compiler-generated destructor is fine for non-base.
   // classes without bare pointers or other resource use. Plugins should not be copied or assigned.
-   TPCWaveformCreator(TPCWaveformCreator const &) = delete;
-   TPCWaveformCreator(TPCWaveformCreator &&) = delete;
-   TPCWaveformCreator & operator = (TPCWaveformCreator const &) = delete;
-   TPCWaveformCreator & operator = (TPCWaveformCreator &&) = delete;
+   TPCWaveformCreatorSBND(TPCWaveformCreatorSBND const &) = delete;
+   TPCWaveformCreatorSBND(TPCWaveformCreatorSBND &&) = delete;
+   TPCWaveformCreatorSBND & operator = (TPCWaveformCreatorSBND const &) = delete;
+   TPCWaveformCreatorSBND & operator = (TPCWaveformCreatorSBND &&) = delete;
    virtual void analyze(art::Event const & e) override;
 
 private:
@@ -67,7 +67,7 @@ private:
   
 };
 
-double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd){ 
+double tpcAnalysis::TPCWaveformCreatorSBND::makeStrings(raw::RawDigit const& rd){ 
    TStopwatch sendString;
    TStopwatch redisString;
    
@@ -128,7 +128,7 @@ double tpcAnalysis::TPCWaveformCreator::makeStrings(raw::RawDigit const& rd){
    return time;
 }
 
-tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & p):
+tpcAnalysis::TPCWaveformCreatorSBND::TPCWaveformCreatorSBND(fhicl::ParameterSet const & p):
   art::EDAnalyzer::EDAnalyzer(p),
   fRedisHostname(p.get<std::string>("RedisHostname","icarus-db02.fnal.gov")),
   fRedisPort(p.get<int>("RedisPort",6379))
@@ -140,7 +140,7 @@ tpcAnalysis::TPCWaveformCreator::TPCWaveformCreator(fhicl::ParameterSet const & 
 
 }
   
-void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
+void tpcAnalysis::TPCWaveformCreatorSBND::analyze(art::Event const & evt) {
   master.Start();
   art::EventNumber_t eventNumber = evt.id().event();
   //get the raw digits from the event
@@ -267,7 +267,7 @@ void tpcAnalysis::TPCWaveformCreator::analyze(art::Event const & evt) {
 }
 
 
-DEFINE_ART_MODULE(tpcAnalysis::TPCWaveformCreator)	 
+DEFINE_ART_MODULE(tpcAnalysis::TPCWaveformCreatorSBND)	 
 				  
   //fin
 

@@ -6,7 +6,7 @@ physics:
   producers:
   {
     daq: {
-      module_type: SBNDTPCDecoder
+      module_type: SBNDDQMTPCDecoder
       // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
       // make the header
