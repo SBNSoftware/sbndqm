@@ -83,6 +83,7 @@ cet_build_plugin( TPCWaveformAndFftRedisSBND art::module
 
 cet_build_plugin( OnlineEvdSBND art::module
         ROOT::Core
+	FFTW3::FFTW3
         lardataobj::RecoBase
         larcore::Geometry_Geometry_service
         artdaq_utilities::artdaq-utilities_Plugins
@@ -93,17 +94,6 @@ cet_build_plugin( OnlineEvdSBND art::module
         #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
-cet_build_plugin( OfflineEvdSBND art::module
-        ROOT::Core
-        lardataobj::RecoBase
-        larcore::Geometry_Geometry_service
-        artdaq_utilities::artdaq-utilities_Plugins
-        sbndaq_online_storage
-        sbndaq_online_redis_connection
-        sbndaq_online_hiredis
-        sbndqm_Decode_TPC_SBND_DQMChannelMap_TPCDQMChannelMapService_service
-        #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
-)
 
 install_headers()
 install_fhicl()
