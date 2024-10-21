@@ -25,7 +25,7 @@ physics: {
 
         hostname: "sbnd-db.fnal.gov"
 
-        streams: ["fast"]
+        streams: ["30s"]
 
         groups: {
             SPECTDC_Streams_Timing: [0]
@@ -139,9 +139,12 @@ physics: {
 
   ana: [ dqmSPECTDC ]
   end_paths: [ ana ]
+  #end_paths: [ ]
 }
 
 services: {
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService }
   TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
  
   RedisConnection: @local::redis_connection
@@ -158,7 +161,58 @@ services: {
 services.RedisConnection.host: "sbnd-db.fnal.gov"
 services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
 
-source: {
-  module_type: RootInput
-  fileNames: ["/data1/sbndaq_dl01_r001248_sr01_20190702T192250_22_dl2.root"]
+
+source:
+{
+  module_type: TransferInput
+
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+
+  dispatcherPort: 6028
+
+  transfer_plugin: {
+
+     unique_label: "ExampleOnlineMonitor2"
+      transferPluginType: Shmem
+      shm_key: 0x40471453
+      max_fragment_size_words: 10e7
+      first_event_builder_rank: 0
+          source_rank: 5555
+          destination_rank: 6666
+  }
+
+  dispatcher_config: {
+    unique_label: "ExampleOnlineMonitor2"
+    filter_paths: [ {name: pmod path: [ prescale ]}  ]
+    path: [ out ]
+    physics: {
+      filters: {
+        prescale: {
+          module_type: Prescaler
+          prescaleFactor: 10
+          prescaleOffset: 0
+        }
+      }
+    }
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "ExampleOnlineMonitor2"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471453
+
+            max_fragment_size_words: 10e7
+              first_event_builder_rank: 0
+              destination_rank: 6666
+        }
+      }
+    }
+  }
 }
+

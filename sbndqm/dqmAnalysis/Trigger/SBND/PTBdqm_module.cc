@@ -50,8 +50,8 @@
 /******************************** November 17, 2023 ************************************************/
 /**************************** Commissioning Phase: 0 ***********************************************/
 
-/* PTB flash triggers: HLTs 0 to 5    */
-/* PTB event triggers: HLTs 28 to 30  */
+/* PTB event triggers: HLTs 0 to 19    */
+/* PTB flash triggers: HLTs 22 to 30  */
 /* PTB CRT t1 resets:  HLTs 20 and 21 */
 
 /***************************************************************************************************/
@@ -77,12 +77,15 @@ namespace sbndaq {
       int fChannelNumber;
       
       int fEventBlock;
-      int fBES;
+      int fBBES;
+      int fOBBES;
+      int fLight;
 
       int eventcounter;
       int hlt_id;
+      int llt_id;
 
-    	void analyze_caen_fragment(artdaq::Fragment frag);
+      void analyze_caen_fragment(artdaq::Fragment frag);
       void analyze_ptb_fragment(artdaq::Fragment frag);
       void analyze_tdc_fragment(artdaq::Fragment frag);
       
@@ -91,8 +94,8 @@ namespace sbndaq {
     	
       uint32_t nChannels;
 
-	   std::vector<uint16_t>  fTicksVec;
-	   std::vector< std::vector<uint16_t> > fWvfmsVec;
+      std::vector<uint16_t>  fTicksVec;
+      std::vector< std::vector<uint16_t> > fWvfmsVec;
 
       std::vector<uint64_t> llt_trigger;
       std::vector<uint64_t> llt_ts;
@@ -110,7 +113,11 @@ namespace sbndaq {
 
       std::vector<uint64_t> flash_trigger_ts;
       std::vector<uint64_t> event_trigger_ts;
+//      std::vector<uint64_t> event_trigger_b_ts;
+//      std::vector<uint64_t> event_trigger_ob_ts;
       std::vector<uint64_t> crt_t1reset_ts;
+//      std::vector<uint64_t> crt_t1reset_b_ts;
+//      std::vector<uint64_t> crt_t1reset_ob_ts;
 
   };
 
@@ -126,7 +133,9 @@ sbndaq::PTBdqm::PTBdqm(fhicl::ParameterSet const & pset)
   fBoardID        = pset.get<int>("BoardID",3);
   fChannelNumber  = pset.get<int>("ChannelNumber",15);
   fEventBlock     = pset.get<int>("EventBlock",10);
-  fBES            = pset.get<int>("BESGate",29);
+  fBBES           = pset.get<int>("BeamBESGate",30);
+  fOBBES          = pset.get<int>("OffBeamBESGate",26);
+  fLight          = pset.get<int>("LightGate",14);
 
   // Set event counter to zero
   eventcounter=0;
@@ -136,7 +145,10 @@ sbndaq::PTBdqm::PTBdqm(fhicl::ParameterSet const & pset)
   }
   
   //sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_config"));
-  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_trigger_rate"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_llt_trigger_rate"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_hlt_trigger_rate"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_beam_light_diff")); 
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_beam_crt_diff")); 
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_ptb_tdc_diff")); 
 }
 
@@ -222,7 +234,9 @@ void sbndaq::PTBdqm::analyze_ptb_fragment(artdaq::Fragment frag) {
     
             case 0x1 : // LL Trigger
 
-               llt_trigger.emplace_back(round(log(ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF)/log(2)) ); 
+               llt_id = round(log(ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF)/log(2));
+               //llt_trigger.emplace_back(round(log(ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF)/log(2)) ); 
+               llt_trigger.emplace_back(llt_id); 
                llt_ts.emplace_back( ptb_fragment.TimeStamp(i) * 20 );
 
             break;
@@ -232,12 +246,16 @@ void sbndaq::PTBdqm::analyze_ptb_fragment(artdaq::Fragment frag) {
                hlt_id = round(log(ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF)/log(2));
 
                hlt_trigger.emplace_back( hlt_id );
-               // Assuming HLTs 28, 29 and 30 are flash triggers.
-               if(hlt_id >= 28 && hlt_id <= 30 ){flash_trigger_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
-               // Assuming HLTs 0,1,2,3,4 and 5 are event triggers.
-               if(hlt_id >= 0 && hlt_id <= 5 ){event_trigger_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               // Assuming HLTs 22 and above are flash triggers.
+               if(hlt_id >= 22 && hlt_id <= 30 ){flash_trigger_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               // Assuming HLTs 0 to 19 (inc) are event triggers.
+               if(hlt_id >= 0 && hlt_id <= 19 ){event_trigger_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               //if(hlt_id == 1 || hlt_id == 2 ){event_trigger_b_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               //if(hlt_id == 3 || hlt_id == 4 ){event_trigger_ob_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
                // Assuming HLTs 20 and 21 issue CRT t1 resets.
                if(hlt_id == 20 || hlt_id == 21){crt_t1reset_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               //if(hlt_id == 20){crt_t1reset_b_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
+               //if(hlt_id == 21){crt_t1reset_ob_ts.emplace_back(ptb_fragment.TimeStamp(i) * 20 );}
                hlt_ts.emplace_back( ptb_fragment.TimeStamp(i) * 20 );
 
                
@@ -279,74 +297,137 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
       
       // Calculate LLT and HLT rates. Loop over all possible IDs for Low- and High-Level triggers and get the correspondent timestamps
       for(size_t q=0; q<32; q++){
-
-      
          // LLT rate     
-
          bool found_at_least_once_llt = false;
          auto start_it_llt = begin(llt_trigger);
          while (start_it_llt != end(llt_trigger)) {
             start_it_llt = std::find(start_it_llt, end(llt_trigger), q);
             if (start_it_llt != end(llt_trigger)) {
                auto const pos_llt = std::distance(begin(llt_trigger), start_it_llt);
-               std::cout << "FOUND AT : " << pos_llt << '\n';
+               //std::cout << "FOUND AT : " << pos_llt << '\n';
                ++start_it_llt;
                found_at_least_once_llt = true;
-               auto llt_type_ts_ts = llt_type_ts[q].emplace_back(llt_ts[pos_llt]);
-               std::cout << "TS VALUE : " << llt_type_ts_ts << '\n';
-               std::cout << "LLT_TYPE SIZE: " << llt_type_ts[q].size() << '\n';
+               llt_type_ts[q].emplace_back(llt_ts[pos_llt]);
+               //auto llt_type_ts_ts = llt_type_ts[q].emplace_back(llt_ts[pos_llt]);
+               //std::cout << "TS VALUE : " << llt_type_ts_ts << '\n';
+               //std::cout << "LLT_TYPE SIZE: " << llt_type_ts[q].size() << '\n';
             }
          }
-         
          if (!found_at_least_once_llt) {
-              std::cout << "NOT FOUND" << '\n';
+              //std::cout << "NOT FOUND" << '\n';
               continue;
          }  
-
          std::string lt_id = std::to_string(q);
-
          for(size_t r=0; r<llt_type_ts[q].size()-1; r++){
             sbndaq::sendMetric("LLT_ID", lt_id, "LLT_periodicity", /*1/*/((llt_type_ts[q][r+1]-llt_type_ts[q][r])*pow(10,-9)), fReportingLevel, artdaq::MetricMode::Average);
-
-            std::cout << llt_type_ts[q].size()-1 << " "<< q << " " << r << " " << /*1/*/((llt_type_ts[q][r+1]-llt_type_ts[q][r])*pow(10,-9)) << std::endl; 
-         
-         
+            //std::cout << llt_type_ts[q].size()-1 << " "<< q << " " << r << " " << /*1/*/((llt_type_ts[q][r+1]-llt_type_ts[q][r])*pow(10,-9)) << std::endl; 
          }
-
-
       }
-
          // HLT rate
-        
       for(size_t q=0; q<32; q++){
-
          bool found_at_least_once_hlt = false;
          auto start_it_hlt = begin(hlt_trigger);
          while (start_it_hlt != end(hlt_trigger)) {
             start_it_hlt = std::find(start_it_hlt, end(hlt_trigger), q);
             if (start_it_hlt != end(hlt_trigger)) {
                auto const pos_hlt = std::distance(begin(hlt_trigger), start_it_hlt);
-               std::cout << "FOUND AT : " << pos_hlt << '\n';
+               //std::cout << "HLT FOUND, HLT" << q << '\n';
                ++start_it_hlt;
                found_at_least_once_hlt = true;
-               auto hlt_type_ts_ts = hlt_type_ts[q].emplace_back(hlt_ts[pos_hlt]);
-               std::cout << "TS VALUE : " << hlt_type_ts_ts << '\n';
-               std::cout << "HLT_TYPE SIZE: " << hlt_type_ts[q].size() << '\n';
+               hlt_type_ts[q].emplace_back(hlt_ts[pos_hlt]);
+               //auto hlt_type_ts_ts = hlt_type_ts[q].emplace_back(hlt_ts[pos_hlt]);
+               //std::cout << "TS VALUE : " << hlt_type_ts_ts << '\n';
+               //std::cout << "HLT_TYPE SIZE: " << hlt_type_ts[q].size() << '\n';
                }
             }
-         
             if (!found_at_least_once_hlt) {
-               std::cout << "NOT FOUND" << '\n';
+              // std::cout << "NOT FOUND" << '\n';
                continue;
             }  
-
          std::string ht_id = std::to_string(q);
-
          for(size_t s=0; s<hlt_type_ts[q].size()-1; s++){
             sbndaq::sendMetric("HLT_ID", ht_id, "HLT_periodicity", /*1/*/((hlt_type_ts[q][s+1]-hlt_type_ts[q][s])*pow(10,-9)), fReportingLevel, artdaq::MetricMode::Average);
-
-            std::cout << hlt_type_ts[q].size()-1 << " "<< q << " " << s << " " << /*1/*/((hlt_type_ts[q][s+1]-hlt_type_ts[q][s])*pow(10,-9)) << std::endl; 
+            //std::cout << hlt_type_ts[q].size()-1 << " "<< q << " " << s << " " << /*1/*/((hlt_type_ts[q][s+1]-hlt_type_ts[q][s])*pow(10,-9)) << std::endl; 
          }
+      }
+
+
+/**************************************************************************************************************************************/
+/************************************** PTB BES - light timestamp distribution ********************************************************/
+/**************************************************************************************************************************************/
+
+      //distribution of light triggers around BES (start of beam acceptance)
+      size_t init_l = 0;
+      for(size_t k=0; k<llt_type_ts[fBBES].size(); k++){
+          bool inrange = false;
+          for(size_t l = init_l; l < llt_type_ts[fLight].size(); l++){
+              double diff = llt_type_ts[fBBES][k]-llt_type_ts[fLight][l];
+              if(std::abs(diff) <= 10000){
+                  inrange = true;
+                  sbndaq::sendMetric("BEAM_LIGHT_DIFF","0","BEAM_LIGHT", diff, fReportingLevel, artdaq::MetricMode::Average);
+              }else if(inrange){
+                  init_l = l;
+                  break;
+              }
+          }
+      }
+
+      //distribution of light triggers around offbeam BES (start of off beam acceptance)
+      init_l = 0;
+      for(size_t k=0; k<llt_type_ts[fOBBES].size(); k++){
+          bool inrange = false;
+          for(size_t l = init_l; l < llt_type_ts[fLight].size(); l++){
+              double diff = llt_type_ts[fOBBES][k]-llt_type_ts[fLight][l];
+              if(std::abs(diff) <= 10000){
+                  inrange = true;
+                  sbndaq::sendMetric("BEAM_LIGHT_DIFF","0","OFFBEAM_LIGHT", diff, fReportingLevel, artdaq::MetricMode::Average);
+              }else if(inrange){
+                  init_l = l;
+                  break;
+              }
+          }
+      }
+
+/**************************************************************************************************************************************/
+/************************************** PTB (off) beam Event - PTB CRT (off) beam Reset timestamps ************************************/
+/**************************************************************************************************************************************/
+
+      // Beam HLTs - Beam T1 Reset
+      //std::cout << "size beam HLTs: " << event_trigger_b_ts.size() << ", size beam T1 resets " << crt_t1reset_b_ts.size() << std::endl;
+      if(hlt_type_ts[1].size()+hlt_type_ts[2].size() == hlt_type_ts[20].size()) {
+	  std::vector<uint64_t> hlt_beam_ts;
+	  hlt_beam_ts.insert(hlt_beam_ts.end(), hlt_type_ts[1].begin(), hlt_type_ts[1].end());
+	  hlt_beam_ts.insert(hlt_beam_ts.end(), hlt_type_ts[2].begin(), hlt_type_ts[2].end());
+	  std::sort(hlt_beam_ts.begin(), hlt_beam_ts.end());
+          for(size_t k=0; k<hlt_type_ts[20].size(); k++){
+              sbndaq::sendMetric("BEAM_CRT_DIFF","0","BEAM_HLT_T1RESET", (hlt_beam_ts[k] - hlt_type_ts[20][k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+              //std::cout << "BEAM HLT - BEAM T1 RESET: " << (event_trigger_b_ts[k] - crt_t1reset_b_ts[k])*0.001 << " microseconds" << std::endl;
+          }
+      }else {
+          sbndaq::sendMetric("BEAM_CRT_DIFF","1","NUMBER_BEAM_HLT", hlt_type_ts[1].size()+hlt_type_ts[2].size(), fReportingLevel, artdaq::MetricMode::Average);
+          //std::cout << "NUMBER_BEAM_HLT: " << event_trigger_b_ts.size() << std::endl;
+
+          sbndaq::sendMetric("BEAM_CRT_DIFF","2","NUMBER_BEAM_T1RESET", hlt_type_ts[20].size(), fReportingLevel, artdaq::MetricMode::Average);
+          //std::cout << "NUMBER_BEAM_T1RESET: " << crt_t1reset_b_ts.size() << std::endl;
+      }
+
+      // Off Beam HLTs - Off Beam T1 Reset
+      //std::cout << "size off beam HLTs: " << event_trigger_ob_ts.size() << ", size off beam T1 resets " << crt_t1reset_ob_ts.size() << std::endl;
+      if(hlt_type_ts[3].size()+hlt_type_ts[4].size() == hlt_type_ts[21].size()) {
+          std::vector<uint64_t> hlt_offbeam_ts;
+          hlt_offbeam_ts.insert(hlt_offbeam_ts.end(), hlt_type_ts[3].begin(), hlt_type_ts[3].end());
+          hlt_offbeam_ts.insert(hlt_offbeam_ts.end(), hlt_type_ts[4].begin(), hlt_type_ts[4].end());
+          std::sort(hlt_offbeam_ts.begin(), hlt_offbeam_ts.end());
+          for(size_t k=0; k<hlt_type_ts[21].size(); k++){
+              sbndaq::sendMetric("BEAM_CRT_DIFF","0","OFFBEAM_HLT_T1RESET", (hlt_offbeam_ts[k] - hlt_type_ts[21][k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+              //std::cout << "OFFBEAM HLT - OFFBEAM T1 RESET: " << (event_trigger_ob_ts[k] - crt_t1reset_ob_ts[k])*0.001 << " microseconds" << std::endl;
+          }
+      }else {
+          sbndaq::sendMetric("BEAM_CRT_DIFF","1","NUMBER_OFFBEAM_HLT", hlt_type_ts[3].size()+hlt_type_ts[4].size(), fReportingLevel, artdaq::MetricMode::Average);
+          //std::cout << "NUMBER_OFFBEAM_HLT: " << event_trigger_ob_ts.size() << std::endl;
+
+          sbndaq::sendMetric("BEAM_CRT_DIFF","2","NUMBER_OFFBEAM_T1RESET", hlt_type_ts[21].size(), fReportingLevel, artdaq::MetricMode::Average);
+          //std::cout << "NUMBER_OFFBEAM_T1RESET: " << crt_t1reset_ob_ts.size() << std::endl;
       }
 
 /**************************************************************************************************************************************/
@@ -356,98 +437,173 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
       // Calculate PTB - TDC timestamp differences
       // Note that only positive metrics are being sent. 
       // Flash triggers and TDC channel 4.
-      std::cout << "size TDC 4: " << ftdc_ch3_utc.size() << " size flash trig " << flash_trigger_ts.size() << std::endl;
+      //std::cout << "size TDC 4: " << ftdc_ch3_utc.size() << " size flash trig " << flash_trigger_ts.size() << std::endl;
       if(ftdc_ch3_utc.size() == flash_trigger_ts.size()) {
-         
          for(size_t k=0; k<flash_trigger_ts.size(); k++){
-
-            if(flash_trigger_ts[k]>=ftdc_ch3_utc[k]){
-               sbndaq::sendMetric("FLASH_TDC_4", (flash_trigger_ts[k] - ftdc_ch3_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|FLASH - TDC channel 4|: " << (flash_trigger_ts[k] - ftdc_ch3_utc[k])*0.001 << " microseconds" << std::endl;
-            }
-            else{
-               sbndaq::sendMetric("FLASH_TDC_4", (ftdc_ch3_utc[k]-flash_trigger_ts[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|FLASH - TDC channel 4|: " << (ftdc_ch3_utc[k]-flash_trigger_ts[k])*0.001 << " microseconds" << std::endl;
-            }
-
+            sbndaq::sendMetric("PTB_TDC_DIFF","0","FLASH_TDC_4", (flash_trigger_ts[k] - ftdc_ch3_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
          }
-      }
-      else {sbndaq::sendMetric("NUMBER_TDC_4", ftdc_ch3_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_TDC_4: " << ftdc_ch3_utc.size() << std::endl;
-            
-            sbndaq::sendMetric("NUMBER_FLASH", flash_trigger_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_FLASH: " << flash_trigger_ts.size() << std::endl;
+      }else {
+         bool match_found = false;
+         size_t a = 0;
+         size_t i_diff = 0;
+         for(; a < flash_trigger_ts.size(); a++){
+            for(size_t b = 0; b < ftdc_ch3_utc.size(); b++){
+               double diff = flash_trigger_ts[a] - ftdc_ch3_utc[b];
+               double diff_us = diff*0.001;
+               if(diff_us < 1000){
+                  i_diff = a - b;
+                  match_found = true;
+                  break;
+               }
+            }
+            if(match_found) break;
+         }
+         if(match_found){
+            for(size_t i = a; i < flash_trigger_ts.size(); i++){
+               sbndaq::sendMetric("PTB_TDC_DIFF","0","EVENT_TDC_4", (flash_trigger_ts[i] - ftdc_ch3_utc[i-i_diff])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+            }
+         }else{
+            sbndaq::sendMetric("PTB_TDC_DIFF","2","NUMBER_TDC_4", ftdc_ch3_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
+            sbndaq::sendMetric("PTB_TDC_DIFF","1","NUMBER_FLASH", flash_trigger_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
+         }
       }
 
       // Event triggers and TDC channel 5.
       if(ftdc_ch4_utc.size() == event_trigger_ts.size()) {
-         
          for(size_t k=0; k<event_trigger_ts.size(); k++){
-
-            if(event_trigger_ts[k]>=ftdc_ch4_utc[k]){
-               sbndaq::sendMetric("EVENT_TDC_5", (event_trigger_ts[k] - ftdc_ch4_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|EVENT - TDC channel 5|: " << (event_trigger_ts[k] - ftdc_ch4_utc[k])*0.001 << " microseconds" << std::endl;
-            }
-            else{
-               sbndaq::sendMetric("EVENT_TDC_5", (ftdc_ch4_utc[k] - event_trigger_ts[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|EVENT - TDC channel 5|: " << (ftdc_ch4_utc[k] - event_trigger_ts[k])*0.001 << " microseconds" << std::endl;
-            }
-
+            sbndaq::sendMetric("PTB_TDC_DIFF","0","EVENT_TDC_5", (event_trigger_ts[k] - ftdc_ch4_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
          }
-      }
-      else {sbndaq::sendMetric("NUMBER_TDC_5", ftdc_ch4_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_TDC_5: " << ftdc_ch4_utc.size() << std::endl;
-            
-            sbndaq::sendMetric("NUMBER_EVENT", event_trigger_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_EVENT: " << event_trigger_ts.size() << std::endl;
+      }else {
+         bool match_found = false;
+         size_t a = 0;
+         size_t i_diff = 0;
+         for(; a < event_trigger_ts.size(); a++){
+            for(size_t b = 0; b < ftdc_ch4_utc.size(); b++){
+               double diff = event_trigger_ts[a] - ftdc_ch4_utc[b];
+               double diff_us = diff*0.001;
+               if(diff_us < 1000){
+                  i_diff = a - b;
+                  match_found = true;
+		  std::cout << "Found matching index for event-TDC5 with a = " << a << ", and b = " << b <<std::endl;
+		  std::cout << "Event TS = " << event_trigger_ts[a] << ", and TDC5 TS = " << ftdc_ch4_utc[b] <<std::endl;
+                  break;
+               }
+            }
+            if(match_found) break;
+         }
+         if(match_found){
+            for(size_t i = a; i < event_trigger_ts.size(); i++){
+               if(i-i_diff > ftdc_ch4_utc.size()) break;
+               uint64_t diff;
+               double diff_us;
+               if(event_trigger_ts[i] < ftdc_ch4_utc[i-i_diff]){
+	          diff = ftdc_ch4_utc[i-i_diff] - event_trigger_ts[i];
+                  diff_us = diff*-0.001;
+               } else{
+                  diff = event_trigger_ts[i] - ftdc_ch4_utc[i-i_diff];
+                  diff_us = diff*0.001;
+               }
+               //sbndaq::sendMetric("PTB_TDC_DIFF","0","EVENT_TDC_5", (event_trigger_ts[i] - ftdc_ch4_utc[i-i_diff])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+               sbndaq::sendMetric("PTB_TDC_DIFF","0","EVENT_TDC_5", diff_us, fReportingLevel, artdaq::MetricMode::Average);
+	       std::cout << "Event TS = " << event_trigger_ts[i] << ", and TDC5 TS = " << ftdc_ch4_utc[i-i_diff] <<std::endl;
+	       std::cout << "DIFF = " << diff_us << std::endl;
+            }
+         }else {
+            sbndaq::sendMetric("PTB_TDC_DIFF","2","NUMBER_TDC_5", ftdc_ch4_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
+            sbndaq::sendMetric("PTB_TDC_DIFF","1","NUMBER_EVENT", event_trigger_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
+         }
       }
 
 
       // CRT t1 reset and TDC channel 1.
       if(ftdc_ch0_utc.size() == crt_t1reset_ts.size()) {
-         
+         std::cout<< "#t1reset == tdc1 == "<< crt_t1reset_ts.size() <<std::endl;
          for(size_t k=0; k<crt_t1reset_ts.size(); k++){
-
-            if(crt_t1reset_ts[k]>=ftdc_ch0_utc[k]){
-               sbndaq::sendMetric("T1RESET_TDC_1", (crt_t1reset_ts[k] - ftdc_ch0_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|T1RESET-TDC_1|: " << (crt_t1reset_ts[k] - ftdc_ch0_utc[k])*0.001 << " microseconds" << std::endl;
-            }
-            else{
-               sbndaq::sendMetric("T1RESET_TDC_1", (ftdc_ch0_utc[k] - crt_t1reset_ts[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|T1RESET-TDC_1|: " << (ftdc_ch0_utc[k] - crt_t1reset_ts[k])*0.001 << " microseconds" << std::endl;
-            }
-
+	    uint64_t diff;
+	    double diff_us;
+	    if(crt_t1reset_ts[k] < ftdc_ch1_utc[k]){
+	       diff = ftdc_ch1_utc[k] - crt_t1reset_ts[k];
+	       diff_us = diff*-0.001;
+	    } else{
+	       diff = crt_t1reset_ts[k] - ftdc_ch1_utc[k];
+	       diff_us = diff*0.001;
+	    }
+	    //std::cout << "PTB T1 TS = " << crt_t1reset_ts[k] << ", and TDC1 TS = " << ftdc_ch1_utc[k] <<std::endl;
+	    //std::cout << "DIFF = " << diff_us << std::endl;
+            sbndaq::sendMetric("PTB_TDC_DIFF","0","T1RESET_TDC_1", diff_us, fReportingLevel, artdaq::MetricMode::Average);
+            //sbndaq::sendMetric("PTB_TDC_DIFF","0","T1RESET_TDC_1", (crt_t1reset_ts[k] - ftdc_ch0_utc[k])*0.001, fReportingLevel, artdaq::MetricMode::Average);
          }
-      }
-      else {sbndaq::sendMetric("NUMBER_TDC_1", ftdc_ch0_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_TDC_1: " << ftdc_ch0_utc.size() << std::endl;
-            
-            sbndaq::sendMetric("NUMBER_T1RESET", crt_t1reset_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_T1RESET: " << crt_t1reset_ts.size() << std::endl;
+      }else {
+         bool match_found = false;
+         size_t a = 0;
+         size_t i_diff = 0;
+         for(; a < crt_t1reset_ts.size(); a++){
+            for(size_t b = 0; b < ftdc_ch0_utc.size(); b++){
+               double diff = crt_t1reset_ts[a] - ftdc_ch0_utc[b];
+               double diff_us = diff*0.001;
+               if(diff_us < 1000){
+                  i_diff = a - b;
+                  match_found = true;
+		  std::cout << "Found matching index for crt_t1reset(hlt 20 or 21) - TDC1 with a = " << a << ", and b = " << b <<std::endl;
+		  std::cout << "CRT T1 Reset = " << crt_t1reset_ts[a] << ", and TDC1 TS = " << ftdc_ch1_utc[b] <<std::endl;
+                  break;
+               }
+            }
+            if(match_found) break;
+         }
+         if(match_found){
+            for(size_t i = a; i < crt_t1reset_ts.size(); i++){
+               if(i-i_diff > ftdc_ch1_utc.size()) break;
+               uint64_t diff;
+               double diff_us;
+               if(crt_t1reset_ts[i] < ftdc_ch1_utc[i-i_diff]){
+	          diff = ftdc_ch1_utc[i-i_diff] - crt_t1reset_ts[i];
+                  diff_us = diff*-0.001;
+               } else{
+                  diff = crt_t1reset_ts[i] - ftdc_ch1_utc[i-i_diff];
+                  diff_us = diff*0.001;
+               }
+	       std::cout << "PTB T1 TS = " << crt_t1reset_ts[i] << ", and TDC1 TS = " << ftdc_ch1_utc[i-i_diff] <<std::endl;
+	       std::cout << "DIFF = " << diff_us << std::endl;
+               //sbndaq::sendMetric("PTB_TDC_DIFF","0","T1RESET_TDC_1", (crt_t1reset_ts[i] - ftdc_ch0_utc[i-i_diff])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+               sbndaq::sendMetric("PTB_TDC_DIFF","0","T1RESET_TDC_1", diff_us, fReportingLevel, artdaq::MetricMode::Average);
+            }
+         }else {
+            sbndaq::sendMetric("PTB_TDC_DIFF","2","NUMBER_TDC_1", ftdc_ch0_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
+            sbndaq::sendMetric("PTB_TDC_DIFF","1","NUMBER_T1RESET", crt_t1reset_ts.size(), fReportingLevel, artdaq::MetricMode::Average);
+         }
       }
 
       // We assume the number of LLT related to BES and TDC BES is the same.
-      std::cout << "size TDC 2: " << ftdc_ch1_utc.size() << " size BES trig " << llt_type_ts[fBES].size() << std::endl;
-      if(llt_type_ts[fBES].size() == ftdc_ch1_utc.size()){
-
-         for(size_t m=0; m<llt_type_ts[fBES].size(); m++){
-
-            if(llt_type_ts[fBES][m]>=ftdc_ch1_utc[m]){
-               sbndaq::sendMetric("LLTBES_TDC_2", (llt_type_ts[fBES][m] - ftdc_ch1_utc[m])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|LLT BES - TDC channel 2|: " << (llt_type_ts[fBES][m] - ftdc_ch1_utc[m])*0.001  << " microseconds" << std::endl;
-            }
-            else{
-               sbndaq::sendMetric("LLTBES_TDC_2", (ftdc_ch1_utc[m] - llt_type_ts[fBES][m])*0.001, fReportingLevel, artdaq::MetricMode::Average);
-               std::cout << "|LLT BES - TDC channel 2|: " << (ftdc_ch1_utc[m] - llt_type_ts[fBES][m])*0.001  << " microseconds" << std::endl;
-            }
-
+      //std::cout << "size TDC 2: " << ftdc_ch1_utc.size() << " size BES trig " << llt_type_ts[fBBES].size() << std::endl;
+      if(llt_type_ts[fBBES].size() == ftdc_ch1_utc.size()){
+         for(size_t m=0; m<llt_type_ts[fBBES].size(); m++){
+            sbndaq::sendMetric("PTB_TDC_DIFF","0","LLTBES_TDC_2", (llt_type_ts[fBBES][m] - ftdc_ch1_utc[m])*0.001, fReportingLevel, artdaq::MetricMode::Average);
          }
-      }
-      else {sbndaq::sendMetric("NUMBER_TDC_2", ftdc_ch1_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_TDC_2: " << ftdc_ch1_utc.size() << std::endl;
-            
-            sbndaq::sendMetric("NUMBER_BES", llt_type_ts[fBES].size(), fReportingLevel, artdaq::MetricMode::Average);
-            std::cout << "NUMBER_BES: " << llt_type_ts[fBES].size() << std::endl;
+      }else {
+         bool match_found = false;
+         size_t a = 0;
+         size_t i_diff = 0;
+         for(; a < llt_type_ts[fBBES].size(); a++){
+            for(size_t b = 0; b < ftdc_ch1_utc.size(); b++){
+               double diff = llt_type_ts[fBBES][a] - ftdc_ch1_utc[b];
+               double diff_us = diff*0.001;
+               if(diff_us < 1000){
+                  i_diff = a - b;
+                  match_found = true;
+                  break;
+               }
+            }
+            if(match_found) break;
+         }
+         if(match_found){
+            for(size_t i = a; i < llt_type_ts[fBBES].size(); i++){
+               sbndaq::sendMetric("PTB_TDC_DIFF","0","LLTBES_TDC_2", (llt_type_ts[fBBES][i] - ftdc_ch1_utc[i-i_diff])*0.001, fReportingLevel, artdaq::MetricMode::Average);
+            }
+         }else {
+            sbndaq::sendMetric("PTB_TDC_DIFF","2","NUMBER_TDC_2", ftdc_ch1_utc.size(), fReportingLevel, artdaq::MetricMode::Average);
+            sbndaq::sendMetric("PTB_TDC_DIFF","1","NUMBER_BES", llt_type_ts[fBBES].size(), fReportingLevel, artdaq::MetricMode::Average);
+         }
       }
 
 }
@@ -466,7 +622,11 @@ void::sbndaq::PTBdqm::resetdatavectors(){
 
   flash_trigger_ts.clear();
   event_trigger_ts.clear();
+  //event_trigger_b_ts.clear();
+  //event_trigger_ob_ts.clear();
   crt_t1reset_ts.clear();
+  //crt_t1reset_b_ts.clear();
+  //crt_t1reset_ob_ts.clear();
 
   // TDC
   ftdc_ch0_utc.clear();
@@ -479,9 +639,9 @@ void::sbndaq::PTBdqm::resetdatavectors(){
 void sbndaq::PTBdqm::analyze(art::Event const & evt) {
 
   // Print run and event information
-  std::cout << "######################################################################" << std::endl;
-  std::cout << std::endl;  
-  std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event() << std::endl;
+  //std::cout << "######################################################################" << std::endl;
+  //std::cout << std::endl;  
+  //std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event() << std::endl;
 
   // Clear CAEN data in the beginning of each event
   fTicksVec.clear();
@@ -585,7 +745,7 @@ void sbndaq::PTBdqm::analyze(art::Event const & evt) {
   
   }//end loop over all handles
 
-  std::cout << eventcounter << std::endl;
+  //std::cout << eventcounter << std::endl;
 
   // Set an event counter to controll data vector resets
   eventcounter++;
@@ -595,16 +755,16 @@ void sbndaq::PTBdqm::analyze(art::Event const & evt) {
   
   // After looping over "fEventBlock" events, calculate TDC - PTB timestamp differences
   // and LLT and HLT trigger rates
-  analyze_tdc_ptb();
+      analyze_tdc_ptb();
   
-  resetdatavectors();
+      resetdatavectors();
 
-  eventcounter = 0;
+      eventcounter = 0;
   }
 
   // Include some text separation between events
-  std::cout << std::endl;  
-  std::cout << "######################################################################" << std::endl;
+  //std::cout << std::endl;  
+  //std::cout << "######################################################################" << std::endl;
 
 } // analyze
 
