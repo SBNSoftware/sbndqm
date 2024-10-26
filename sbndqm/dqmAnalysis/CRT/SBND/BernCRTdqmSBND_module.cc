@@ -144,12 +144,31 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   * From all of the hits in all of the fragments within an art event. -MK
   */
   
-  auto fragmentHandles = evt.getMany<artdaq::Fragments>();
-  for (auto  handle : fragmentHandles) {
-    if (!handle.isValid() || handle->size() == 0)
-      continue;
+  if (debug) std::cout<<"Hit vector declared. Going to getMany fragments";
 
-    auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*handle);
+  //auto fragmentHandles = evt.getMany<artdaq::Fragments>();
+  
+std::string fCRTModuleLabel = "daq";
+std::string CRTInstanceLabel = "ContainerBERNCRTV2";
+
+art::Handle<std::vector<artdaq::Fragment>> fragmentHandle;
+evt.getByLabel(fCRTModuleLabel, CRTInstanceLabel, fragmentHandle);
+
+
+if (debug) std::cout<<"evt.getByLabel successful.";
+
+if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
+        return;
+
+ // if (debug) std::cout<<"fragmentHandles gotten. Looping over fragmentHandles";
+
+  //for (auto  handle : fragmentHandles) {
+  //  if (!handle.isValid() || handle->size() == 0){
+  //    if (debug) {std::cout << "Fragment handle is not valid or handle size is 0";}
+  //    continue;}
+
+    auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
+    if (debug) std::cout<<"getCRTData satisfied";
     
     /////////////////////////////////
     // Send Fragment Level Metrics //
@@ -161,12 +180,13 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //map<int, vector<double> > sum, sumsq;
     //map<int, vector<int> > nhits;
 
-    for (auto const& frag : *handle){
+    for (auto const& frag : *fragmentHandle){
       //frag is artdaq::Fragment
 
       // if fragment is a container fragment, print # of fragments in that container fragment
-      if(frag.type() != artdaq::Fragment::ContainerFragmentType)
-        continue;
+      if(frag.type() != artdaq::Fragment::ContainerFragmentType) {
+        if (debug) std::cout<<"Fragment type is incorrect!";
+        continue;}
 
       artdaq::ContainerFragment cont_frag(frag);
     
@@ -203,14 +223,14 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
     //Concatenate hit vectors from each fragment into an event-long hit vector.
     hit_vector.insert(hit_vector.end(),this_hit_vector.begin(),this_hit_vector.end());
-  }
+  //}//loop over fragment handles ???
   
     ///////////////////////////////////////
     // Extract Information from the Hits //
     ///////////////////////////////////////
   
   //Event-level variables for art root events - basic checks unnecessary for online monitoring
-  size_t num_fragments = fragmentHandles.size();
+  size_t num_fragments = fragmentHandle->size();
   size_t num_hits = hit_vector.size();
   
   //Variables used in Grafana to be sent to DQM OM:
