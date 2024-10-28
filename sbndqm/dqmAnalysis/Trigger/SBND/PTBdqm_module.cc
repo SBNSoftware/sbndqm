@@ -133,10 +133,7 @@ sbndaq::PTBskeleton::PTBskeleton(fhicl::ParameterSet const & pset)
 {
 
   //configuration
-  std::vector<art::InputTag>  m_input_tags = { "daq:CAENV1730", "daq:ContainerCAENV1730" };
-        //std::vector<art::InputTag>{ "daq:CAENV1730", "daq:ContainerCAENV1730" }
-                  //case (sbndaq::detail::FragmentType::PTB) : 
-                  //case (sbndaq::detail::FragmentType::TDCTIMESTAMP) : 
+  std::vector<art::InputTag>  m_input_tags = { "daq:CAENV1730", "daq:ContainerCAENV1730", "daq:PTB", "daq:TDCTIMESTAMP"};
   fReportingLevel = pset.get<int>("ReportingLevel",0);
   fBoardID        = pset.get<int>("BoardID",3);
   fChannelNumber  = pset.get<int>("ChannelNumber",15);
