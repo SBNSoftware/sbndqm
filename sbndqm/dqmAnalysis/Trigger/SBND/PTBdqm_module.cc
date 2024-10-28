@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
 // 
-// PTBskeleton_module.cc 
+// PTBdqm_module.cc 
 // 
 // Beth Slater ( b.slater2@liverpool.ac.uk )
 // Gabriela Vitti Stenico ( gabriela.vittistenico@uta.edu )
@@ -58,15 +58,15 @@
 /***************************************************************************************************/
 
 namespace sbndaq {
-  class PTBskeleton;
+  class PTBdqm;
 }
 
-  class sbndaq::PTBskeleton : public art::EDAnalyzer {
+  class sbndaq::PTBdqm : public art::EDAnalyzer {
 
     public:
 
-      explicit PTBskeleton(fhicl::ParameterSet const & pset);
-      virtual ~PTBskeleton();
+      explicit PTBdqm(fhicl::ParameterSet const & pset);
+      virtual ~PTBdqm();
   
       virtual void analyze(art::Event const & evt) ;
 
@@ -128,7 +128,7 @@ namespace sbndaq {
 
  // Define the constructor
 
-sbndaq::PTBskeleton::PTBskeleton(fhicl::ParameterSet const & pset)
+sbndaq::PTBdqm::PTBdqm(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
 
@@ -160,14 +160,14 @@ sbndaq::PTBskeleton::PTBskeleton(fhicl::ParameterSet const & pset)
 //------------------------------------------------------------------------------------------------------------------
 
  // Define the destructor
- sbndaq::PTBskeleton::~PTBskeleton()
+ sbndaq::PTBdqm::~PTBdqm()
  {
  }
 
 
 //------------------------------------------------------------------------------------------------------------------
 
-std::vector<art::Handle<artdaq::Fragments>> sbndaq::PTBskeleton::readHandles( art::Event const & event ) const{
+std::vector<art::Handle<artdaq::Fragments>> sbndaq::PTBdqm::readHandles( art::Event const & event ) const{
   // Normally or the CAENV1730 or the ContainerCAENV1730 are full
   // We return all the non-empty ones
   std::vector<art::Handle<artdaq::Fragments>> handles;
@@ -184,7 +184,7 @@ std::vector<art::Handle<artdaq::Fragments>> sbndaq::PTBskeleton::readHandles( ar
 
 
 
-void sbndaq::PTBskeleton::analyze_caen_fragment(artdaq::Fragment frag) {
+void sbndaq::PTBdqm::analyze_caen_fragment(artdaq::Fragment frag) {
           
        // GET WAVEFORM FROM CAEN CHANNEL "fChannelNumber", BOARD "fBoardID"
        // First, define the structure of a CAEN fragment
@@ -244,7 +244,7 @@ void sbndaq::PTBskeleton::analyze_caen_fragment(artdaq::Fragment frag) {
 
 }
 
-void sbndaq::PTBskeleton::analyze_ptb_fragment(artdaq::Fragment frag) {
+void sbndaq::PTBdqm::analyze_ptb_fragment(artdaq::Fragment frag) {
 
       CTBFragment ptb_fragment(frag);
 
@@ -286,7 +286,7 @@ void sbndaq::PTBskeleton::analyze_ptb_fragment(artdaq::Fragment frag) {
 
 }
 
-void sbndaq::PTBskeleton::analyze_tdc_fragment(artdaq::Fragment frag) {
+void sbndaq::PTBdqm::analyze_tdc_fragment(artdaq::Fragment frag) {
 
       TDCTimestampFragment tsfrag = TDCTimestampFragment(frag);
       const TDCTimestamp* ts = tsfrag.getTDCTimestamp();
@@ -308,7 +308,7 @@ void sbndaq::PTBskeleton::analyze_tdc_fragment(artdaq::Fragment frag) {
 
 }
 
-void sbndaq::PTBskeleton::analyze_tdc_ptb() {
+void sbndaq::PTBdqm::analyze_tdc_ptb() {
 
 /**************************************************************************************************************************************/
 /************************************** TRIGER RATES **********************************************************************************/
@@ -629,7 +629,7 @@ void sbndaq::PTBskeleton::analyze_tdc_ptb() {
 
 }
 
-void::sbndaq::PTBskeleton::resetdatavectors(){
+void::sbndaq::PTBdqm::resetdatavectors(){
   
   // Reset data vectors
   // PTB
@@ -657,7 +657,7 @@ void::sbndaq::PTBskeleton::resetdatavectors(){
   ftdc_ch4_utc.clear();
 }
 
-void sbndaq::PTBskeleton::analyze(art::Event const & evt) {
+void sbndaq::PTBdqm::analyze(art::Event const & evt) {
 
   // Print run and event information
   //std::cout << "######################################################################" << std::endl;
@@ -798,4 +798,4 @@ void sbndaq::PTBskeleton::analyze(art::Event const & evt) {
 
   
 
-DEFINE_ART_MODULE(sbndaq::PTBskeleton)
+DEFINE_ART_MODULE(sbndaq::PTBdqm)
