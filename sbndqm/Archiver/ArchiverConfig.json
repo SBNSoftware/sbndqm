@@ -1,19 +1,20 @@
 {
     "postgresql": {
-        "database": "sbnteststand", 
-        "hostname": "cdpgsdev", 
-        "port": 5488, 
-        "user": "mueller",
-	"metric_config": "example_monitor_map"
+        "database": "sbnd_online_prd", 
+        "hostname": "sbnd-db01.fnal.gov", 
+        "port": 5434, 
+        "user": "runcon_admin",
+	"metric_config": "runcon_prd.monitor_map",
+        "password": "xqr98CEm"
     }, 
     "redis": {
-        "hostname": "sbnd-daq33", 
+        "hostname": "sbnd-db01.fnal.gov", 
         "monitor_time": 3, 
         "port": 6379, 
         "timeout": 30
     },
     "logging": {
-	"directory": "/home/nfs/mueller/Archiver/srcs/sbndqm/sbndqm/Archiver",
+	"directory": "/home/nfs/sbnddqm/",
 	"name": "archiver.log",
 	"overwrite": true
     }

@@ -39,7 +39,7 @@ def main(args):
     logging.info('Connection to the Redis database has been successfully established on server (%s) port (%i)' % (Config['redis']['hostname'], Config['redis']['port']))
     
     #Connect to the PostgreSQL database.
-    p = psycopg2.connect(host=Config['postgresql']['hostname'], database=Config['postgresql']['database'], user=Config['postgresql']['user'], port=Config['postgresql']['port'])
+    p = psycopg2.connect(host=Config['postgresql']['hostname'], database=Config['postgresql']['database'], user=Config['postgresql']['user'], password=Config['postgresql']['password'], port=Config['postgresql']['port'])
     try:
         cur = p.cursor()
         cur.execute('SELECT 1')
