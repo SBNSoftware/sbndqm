@@ -1,0 +1,13 @@
+BEGIN_PROLOG
+
+decodePMTOnline: {
+  module_type: DaqDecoderIcarusPMT
+  FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+}
+  
+decodeTriggerOnline: {
+  module_type: DaqDecoderIcarusTrigger
+  FragmentsLabel: "daq:ICARUSTriggerV3"
+}  
+
+END_PROLOG

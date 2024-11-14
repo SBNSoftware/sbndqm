@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash +x
 
 if [ $# -ne 5 ]; then
   echo " "
@@ -15,7 +15,7 @@ fi
 #
 # Modify the following psql parameters to suit your own datbase
 #
-psql -U runcon_admin -h icarus-db01 -p 5434 -d icarus_online_prd \
-   --set=GROUP_NAME=\'$1\' --set=METRIC=\'$2\' --set=MONITOR_TYPE=$3 \
+psql -U runcon_admin -h sbnd-db -p 5434 -d sbnd_online_prd \
+   --set=GROUP_NAME=\'$1\' --set=METRIC=\'$2\' --set=MONITOR_TYPE=\'$3\' \
    --set=CH1=$4 --set=CHN=$5 -c "\i channelMonitor.sql"
 

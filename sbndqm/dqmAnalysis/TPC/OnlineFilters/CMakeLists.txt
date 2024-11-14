@@ -1,12 +1,14 @@
-simple_plugin( SnapshotFilter module 
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
+cet_build_plugin( SnapshotFilter art::module 
+  LIBRARIES
+  lardataobj::RawData
+  art::Utilities
+  canvas::canvas  
+  art::Framework_Core
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  ROOT::Core
+  cetlib::cetlib
+  cetlib_except::cetlib_except
 )
 
 install_headers()

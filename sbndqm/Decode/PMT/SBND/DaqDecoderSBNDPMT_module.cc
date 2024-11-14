@@ -221,7 +221,7 @@ void daq::DaqDecoderSBNDPMT::processFragment( const artdaq::Fragment &artdaqFrag
   const uint16_t* data_begin = reinterpret_cast<const uint16_t*>(artdaqFragment.dataBeginBytes() + sizeof(sbndaq::CAENV1730EventHeader));
 
   std::vector<uint16_t> wvfm(nSamplesPerChannel);
-  float temperature = 0;
+  std::vector<float> temperatures;
 
 
   for( size_t digitizerChannel=0; digitizerChannel<nChannelsPerBoard; digitizerChannel++ ) {
@@ -236,14 +236,13 @@ void daq::DaqDecoderSBNDPMT::processFragment( const artdaq::Fragment &artdaqFrag
 
     fOpDetWaveformCollection->emplace_back(fragmentTimestamp, pmtID, wvfm);
 
-    temperature += float( metafrag.chTemps[digitizerChannel] );
+    temperatures.push_back( float( metafrag.chTemps[digitizerChannel]) );
 
   }
 
-  if (nEnabledChannels > 0) temperature /= nEnabledChannels;
-  else temperature = -1.0f; // invalid temperature
+  if (nEnabledChannels < 1) temperatures = {-1.0f}; // invalid temperature
 
-  fPMTDigitizerInfoCollection->emplace_back( eff_fragment_id, time_tag, fragmentTimestamp, temperature );
+  fPMTDigitizerInfoCollection->emplace_back( eff_fragment_id, time_tag, fragmentTimestamp, temperatures );
 
 }
 
