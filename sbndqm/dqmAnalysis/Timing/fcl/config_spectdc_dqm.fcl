@@ -1,12 +1,13 @@
 #BEGIN_PROLOG
 
-dqmSPECTDC: {
+streamSPECTDC: {
 
   module_type: SPECTDCStreams
 
-  DAQTimestampLabel: "SPECTDCDecoder"
+  DAQTimestampLabel: "daqSPECTDC"
   DAQLabel: "daq"
   PTBContainerInstance: "ContainerPTB"
+  Verbose: true
 
   SPECTDCMetricConfig: {
 

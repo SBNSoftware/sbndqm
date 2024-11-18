@@ -5,18 +5,18 @@ process_name: SPECTDCDQM
 
 physics: {
   producers: {
-    daqTDC: {
+    daqSPECTDC: {
       module_type: "SPECTDCDecoder"
       SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
     }
   }
 
   analyzers: {
-    dqmTDC: @local::dqmSPECTDC
-  } 
- 
-  prod: [ daqTDC ]
-  ana: [ dqmTDC ]
+    dqmSPECTDC: @local::streamSPECTDC
+  }
+
+  prod: [ daqSPECTDC ]
+  ana: [ dqmSPECTDC ]
 
   trigger_paths: [ prod ]
   end_paths: [ ana ]
