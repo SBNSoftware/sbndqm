@@ -25,10 +25,10 @@ analysis_config: {
   n_smoothing_samples: 1
   baseline_calc: 2
   n_mode_skip: 3
-  use_planes: false
+  use_planes: true
   // n_max_noise_samples: 100
   refine_baseline: false
-  find_signal: false
+  find_signal: true
   
   // turn on for analysis information printed out on stdin
   verbose: false
@@ -607,26 +607,16 @@ physics:
           }
           next_channel_dnoise: {
             #title: "TPC wire %(instance)s next channel dnoise"
-            display_range: [0.2, 1.2]
+            #display_range: [0.2, 1.2]
           }
           mean_peak_height: {
             units: ADC
             #title: "TPC wire %(instance)s mean peak height"
-            display_range: [0, 50]
+            #display_range: [0, 50]
           }
           occupancy: {
             #title: "TPC wire %(instance)s occupancy"
-            display_range: [0., 1.]
-          }
-          baseline_femb: {
-            format: "0x#"
-          }
-          baseline_asic: {
-            format: "0x#"
-          }
-          baseline_chan: {
-            format: "0x#"
-            units: "ADC"
+            #display_range: [0., 1.]
           }
       	}
       }
