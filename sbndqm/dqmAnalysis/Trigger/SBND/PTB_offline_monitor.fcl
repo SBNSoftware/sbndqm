@@ -6,8 +6,10 @@ ReportingLevel:1
 BoardID:3
 ChannelNumber:15
 
-EventBlock:40
-BESGate:28
+EventBlock: 50
+BeamBESGate: 30
+OffBeamBESGate: 26
+LightGate: 20
 }
 
 physics: {
@@ -20,83 +22,136 @@ physics: {
 
       module_type: PTBdqm
 
-      metric_trigger_rate: {
-
+      metric_llt_trigger_rate: {
         hostname: "sbnd-db01.fnal.gov"
-    
         groups: {
-          
           LLT_ID: [ [0, 32] ]
-          HLT_ID: [ [0, 32] ]
-
         }
-
         streams: ["slow","fast","archiving"]
-        
         metrics: {
 
-          LLT_periodicity:{            
-            units: seconds 
-            title: "PTB LLT %(instance)s periodicity" 
-            display_range: [ 0, 6 ]
-            }
+          LLT_periodicity:{
+            units: seconds
+            title: "PTB LLT %(instance)s periodicity"
+            #display_range: [ 0, 6 ]
+
+          }
+        }
+      }
+
+      metric_hlt_trigger_rate: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          HLT_ID: [ [0, 32] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
 
           HLT_periodicity:{
-            units: seconds 
-            title: "PTB HLT %(instance)s periodicity" 
-            display_range: [ 0, 6 ]
-            }
-        }   
+            units: seconds
+            title: "PTB HLT %(instance)s periodicity"
+            #display_range: [ 0, 6 ]
+
+          }
+        }
       }
-      
-      metric_ptb_tdc_diff: {
 
+      metric_beam_light_diff: {
         hostname: "sbnd-db01.fnal.gov"
-    
-        ## groups: {}
-
-        streams: ["slow","fast","archiving","30s"]
-        
+        groups: {
+          BEAM_LIGHT_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
         metrics: {
 
-          FLASH_TDC_4:{
-            units: microseconds 
-            title: "|PTB - TDC| flash trigger timestamps"
-            }
+          BEAM_LIGHT:{
+            units: microseconds
+            title: "LIGHT - BEAM BES"
+            display_range: [-10, 10]
+          }
 
-          EVENT_TDC_5:{
-            units: microseconds 
-            title: "|PTB - TDC| event trigger timestamps"
-            }
+          OFFBEAM_LIGHT:{
+            units: microseconds
+            title: "LIGHT - OFFBEAM BES"
+            display_range: [-10, 10]
 
-          T1RESET_TDC_1:{
-            units: microseconds 
-            title: "|PTB - TDC| CRT t1 reset timestamps"
-            }
-
-          LLTBES_TDC_2:{
-            units: microseconds 
-            title: "|PTB - TDC| BES timestamps"
-            }
-
-          NUMBER_BES:{}
-
-          NUMBER_TDC_2:{}
-
-          NUMBER_T1RESET:{}
-
-          NUMBER_TDC_1:{}
-
-          NUMBER_TDC_5:{}
-
-          NUMBER_EVENT:{}
-
-          NUMBER_FLASH:{}
-
-          NUMBER_TDC_4:{}
-
-        }   
+          }
+        }
       }
+
+      metric_beam_crt_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          BEAM_CRT_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          BEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "BEAM HLT - BEAM T1 RESET"
+          }
+
+          OFFBEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "OFFBEAM HLT - OFFBEAM T1 RESET"
+          }
+
+          NUMBER_OFFBEAM_T1RESET:{}
+
+          NUMBER_BEAM_T1RESET:{}
+
+          NUMBER_OFFBEAM_HLT:{}
+
+          NUMBER_BEAM_HLT:{}
+
+        }
+      }
+
+      metric_ptb_tdc_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          PTB_TDC_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+          TDC_HLT_FLASH:{
+            units: microseconds
+            title: "|PTB - TDC| flash trigger timestamps"
+          }
+
+          TDC_HLT_EVENT:{
+            units: microseconds
+            title: "|PTB - TDC| event trigger timestamps"
+          }
+
+          TDC_HLT_T1:{
+            units: microseconds
+            title: "|PTB - TDC| CRT t1 reset timestamps"
+          }
+
+          TDC_LLT_BES:{
+            units: microseconds
+            title: "|PTB - TDC| BES timestamps"
+          }
+
+          NUMBER_TDC_T1:{}
+
+          NUMBER_TDC_BES:{}
+
+          NUMBER_TDC_FLASH:{}
+
+          NUMBER_TDC_EVENT:{}
+
+          NUMBER_PTB_T1:{}
+
+          NUMBER_PTB_BES:{}
+
+          NUMBER_PTB_FLASH:{}
+
+          NUMBER_PTB_EVENT:{}
+        }
+      }      
     }
   }
   
