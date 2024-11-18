@@ -125,6 +125,12 @@ physics:
 		
 		#num_fragments:{}
 		#num_hits:{}
+
+		Flag3Hit:{}
+          	Deadtime:{}
+          	MissingT0:{}
+          	MissingT1:{}
+
 }
 }
     metric_channel_config: {
@@ -141,6 +147,7 @@ physics:
 		pedestalMean:{}
 		pedestalRMS:{}
 		pedestalRMS2:{}
+		ChFlag3Rate:{}
 		}	
 	}
 	

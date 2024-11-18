@@ -71,18 +71,23 @@ physics:
 
                 #lastbighit:{ alarmrange: [0,100000000] }
 		
-		CRT_hits_beam_plane_0:{}
-		CRT_hits_beam_plane_1:{}
-		CRT_hits_beam_plane_2:{}
-		CRT_hits_beam_plane_3:{}
-		CRT_hits_beam_plane_4:{}
-		CRT_hits_beam_plane_5:{}
-		CRT_hits_beam_plane_6:{}
+		#CRT_hits_beam_plane_0:{}
+		#CRT_hits_beam_plane_1:{}
+		#CRT_hits_beam_plane_2:{}
+		#CRT_hits_beam_plane_3:{}
+		#CRT_hits_beam_plane_4:{}
+		#CRT_hits_beam_plane_5:{}
+		#CRT_hits_beam_plane_6:{}
 		
-		T1_resets_per_event:{}
+		#T1_resets_per_event:{}
 		
-		num_fragments:{}
-		num_hits:{}
+		#num_fragments:{}
+		#num_hits:{}
+
+		Flag3Hit:{}
+          	Deadtime:{}
+          	MissingT0:{}
+          	MissingT1:{}
 }
 }
     metric_channel_config: {
@@ -99,6 +104,7 @@ physics:
 		pedestalMean:{}
 		pedestalRMS:{}
 		pedestalRMS2:{}
+		ChFlag3Rate:{}
 		}	
 	}
 	
