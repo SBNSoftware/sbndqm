@@ -493,6 +493,11 @@ physics:
           baseline:{}     
           earlysynch: { alarmrange: [-100000,100000] }
           latesynch: { alarmrange: [-100000,100000] }
+          Flag3Hit:{}
+          Deadtime:{}
+          MissingT0:{}
+          MissingT1:{}
+
         }
       }
       metric_channel_config: {
@@ -503,7 +508,7 @@ physics:
 		  pedestalMean:{}
 	          pedestalRMS:{}
         	  pedestalRMS2:{}
-
+                  ChFlag3Rate:{}
         }       
       }
       metric_event_config: {
