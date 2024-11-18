@@ -25,6 +25,10 @@
 #include "sbndaq-online/helpers/Utilities.h"
 #include "sbndaq-online/helpers/EventMeta.h"
 #include "sbnobj/SBND/Timing/DAQTimestamp.hh"
+#include "sbndaq-artdaq-core/Overlays/SBND/PTBFragment.hh"
+
+#include "artdaq-core/Data/ContainerFragment.hh"
+#include "artdaq-core/Data/Fragment.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -34,7 +38,6 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
-
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -48,21 +51,21 @@ namespace sbndaq {
    
         virtual void analyze(art::Event const & evt); 
   
-        // Define your function 
-  
-    private: 
+        // Define your function
+	std::vector<uint64_t> GetAllHLTs(artdaq::ContainerFragment *trigfrag);
  
-        // Redis Variables (TODO: UnComment) 
-         std::string m_redis_hostname; 
-         int m_redis_port; 
-         fhicl::ParameterSet m_metric_config; 
+    private: 
          
         //Label 
-        std::string m_DAQTimestamp_label; 
+        std::string fDAQTimestampLabel;
+	std::string fDAQLabel;
+	std::string fPTBContainerInstance;
  
-        //Define your variables         
+        //Define your variables   
+        bool _debug = false;      
         int _event; 
-        int run_num = 0; 
+        int _run = 0; 
+
         double GLOB_RWM_BES_diff = 1e20; 
         double GLOB_CRT_BES_diff = 1e20; 
         double GLOB_ETRIG_BES_diff = 1e20; 
@@ -104,12 +107,9 @@ namespace sbndaq {
 
 sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset) 
   : EDAnalyzer(pset) 
-  // Redis Variables (TODO: UnComment) 
-   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "sbnd-db") } 
-   , m_redis_port{ pset.get<int>("RedisPort", 6379) } 
-   , m_metric_config{ pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig") } 
-  , m_DAQTimestamp_label{ pset.get<std::string>("DAQTimestampLabel") } 
-
+  , fDAQTimestampLabel(pset.get<std::string>("DAQTimestampLabel", "SPECTDCDecoder")) 
+  , fDAQLabel(pset.get<std::string>("DAQLabel", "daq"))
+  , fPTBContainerInstance(pset.get<std::string>("PTBContainerInstance", "ContainerPTB")) 
 {
   
   if (pset.has_key("metrics")) {
@@ -118,14 +118,24 @@ sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig"));
 
 } 
+
+std::vector<uint64_t> sbndaq::SPECTDCStreams::GetAllHLTs(artdaq::ContainerFragment*  ptb_container_fragment){
+  std::vector<uint64_t> triggers;    
+
+  for (size_t f=0; f<ptb_container_fragment->block_count(); ++f){//loop over container of fragments
+    std::cout << "hello" << std::endl;
+    //artdaq::Fragment frag=*ptb_container_fragment->at(f).get();
+    //sbndaq::CTBFragment ptb_fragment(frag);
+    ////==============
+    //std::vector fragTriggers=GetHLT(ptb_fragment); //Not sure that there could really be multiple HLTs in a single fragment but just in case I'll make it vector
+    //triggers.insert(triggers.end(), fragTriggers.begin(), fragTriggers.end() );//append list of triggers in this fragment to all of the HLTs in the container
+  }//end loop over fragments
+  
+  return triggers;
+}
+
  
 void sbndaq::SPECTDCStreams::analyze(art::Event const & e) { 
-
-  //Define metric for Redis (TODO: UnComment)  
-//  int level = 3;  
-//  artdaq::MetricMode mode = artdaq::MetricMode::Average; 
-//  artdaq::MetricMode rate = artdaq::MetricMode::Rate; 
-  std::string groupName = "SPECTDC"; 
 
   //------------------------------------------------------------------------------// 
   //Get event number 
@@ -133,18 +143,35 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
 
   // Get DAQTimestamps 
   art::Handle<std::vector<sbnd::timing::DAQTimestamp>> DAQTimestampHandle; 
-  e.getByLabel(m_DAQTimestamp_label, DAQTimestampHandle); 
-  if(!DAQTimestampHandle.isValid()){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze")  
-         << "Data product '" << m_DAQTimestamp_label << "' has no timing::DAQTimestamp in it!\n"; 
-    //std::cout 
-       // << "Data product '" << m_DAQTimestamp_label << "' has no timing::DAQTimestamp in it!\n"; 
-     
-    //TODO: Should be some check here for DQM if an event has no timestamps from SPECTDC  
+  e.getByLabel(fDAQTimestampLabel, DAQTimestampHandle); 
+
+  if( !DAQTimestampHandle.isValid() || DAQTimestampHandle->empty() ){
+    mf::LogError("sbndaq::SPECTDCStreams::analyze") << "Data product '" << fDAQTimestampLabel << "' has no timing::DAQTimestamp in it!\n"; 
+
+    //skip this event
+    return;
   } 
+
   std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> DAQTimestampVec; 
   art::fill_ptr_vector(DAQTimestampVec, DAQTimestampHandle); 
 
+  //Get PTB fragment container
+  art::InputTag itag(fDAQLabel, fPTBContainerInstance);
+  auto cont_frags = e.getHandle<artdaq::Fragments>(itag);
+
+  if(cont_frags) 
+  {
+    //Are these always container fragments? 
+    for(auto const& cont : *cont_frags){
+      artdaq::ContainerFragment contf(cont);                                           
+    
+      //if (_debug) std::cout << "Event << " << _event << "has PTB container fragment size = " << *contf->block_count() << std::endl;
+
+      std::vector hlts=GetAllHLTs(&contf);
+      //filter_result = ApplyGateFilter(hlts);//&contf);//<artdaq::ContainerFragment>(contf);
+    }
+  }
+  //------------------------------------------------------------------------------// 
   // Fill SPECTDC variables to local vector for doing metric maths 
   unsigned nDAQTimestamps = DAQTimestampVec.size(); 
   unsigned nch0 = 0; 
@@ -185,17 +212,19 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
         _tdc_timestamp4.push_back(ts->Timestamp() + ts->Offset()); 
         _tdc_name4.push_back(ts->Name()); 
         nch4++;  
-      }  
-//      std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl; 
+      }
+      if (_debug)  std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl; 
+   }
+ 
+  if (_debug){
+    std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl; 
+    std::cout << "nCRTT1 = " << nch0 << std::endl; 
+    std::cout << "nBES = " << nch1 << std::endl; 
+    std::cout << "nRWM = " << nch2 << std::endl; 
+    std::cout << "nFTRIG = " << nch3 << std::endl; 
+    std::cout << "nETRIG = " << nch4 << std::endl; 
    }
 
-//  std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl; 
-//  std::cout << "nCRTT1 = " << nch0 << std::endl; 
-//  std::cout << "nBES = " << nch1 << std::endl; 
-//  std::cout << "nRWM = " << nch2 << std::endl; 
-//  std::cout << "nFTRIG = " << nch3 << std::endl; 
-//  std::cout << "nETRIG = " << nch4 << std::endl; 
-   
   bool ch0exists = (nch0>0); 
   bool ch1exists = (nch1>0); 
   bool ch2exists = (nch2>0); 
@@ -217,154 +246,132 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   // Metric 1: Exact 1 ETRIG 
   bool oneETRIG = false; 
   if (nch4 == 1) oneETRIG = true; 
-//  std::cout << "Is there 1 ETRIG? " << oneETRIG << std::endl; 
+  if (_debug) std::cout << "Is there 1 ETRIG? " << oneETRIG << std::endl; 
   if(nch4 != 1){ 
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch4 << " ETRIG in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch4 << " ETRIG in it!\n"; 
   }   
  
   // Metric 2: Exact 1 CRT T1 Reset (different number of CRT T1 for different streams) 
   bool oneCRT = false; 
   if (nch0 == 1) oneCRT = true; 
-//  std::cout << "Is there 1 CRT T1 reset? " << oneCRT << std::endl;   
+  if (_debug)  std::cout << "Is there 1 CRT T1 reset? " << oneCRT << std::endl;   
   if(nch0 != 1){ 
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch0 << " CRT T1 reset in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch0 << " CRT T1 resst in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch0 << " CRT T1 reset in it!\n"; 
   } 
  
   // Metric 3: ~10 FTRIG 
   bool manyFTRIG = false; 
   if (nch3 > 20) manyFTRIG = true; 
-//  std::cout << "Are there many (~10) FTRIGs? " << manyFTRIG  << std::endl; 
- // if(nch3 <= 20) std::cout << " Number of FTRIG is "<< nch3 << std::endl; 
+  if (_debug)  std::cout << "Are there many (>20) FTRIGs? " << manyFTRIG  << std::endl; 
 
   // Metric 4: Exact 1 BES 
   bool oneBES = false; 
   if (nch1 == 1) oneBES = true; 
-//  std::cout << "Is there 1 BES? " << oneBES << std::endl; 
-  if(nch1 == 0) std::cout << " How many BES?  "<< nch1 << std::endl; 
+  if (_debug)  std::cout << "Is there 1 BES? " << oneBES << std::endl; 
   if (nch1 == 0 and nch2 > 0){ 
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has 0 BES, but " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has 0 BES, but " << nch2 << " RWM in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has 0 BES, but " << nch2 << " RWM in it!\n"; 
   } 
   if (nch1 > 1 ){ 
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES in it!\n";  
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch1 << " BES in it!\n"; 
   } 
  
   // Metric 5: Exact 1 RWM 
   bool oneRWM = false; 
   if (nch2 == 1) oneRWM = true; 
-//  std::cout << "Is there 1 RWM? " << oneRWM << std::endl; 
- // if(nch2 == 0) std::cout << " How many RWM? "<< nch2 << std::endl; 
+  if (_debug)  std::cout << "Is there 1 RWM? " << oneRWM << std::endl; 
   if (nch2 > 1 ){ 
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch2 << " RWM in it!\n"; 
   } 
 
   // Metric 6: RWM - BES diff constant 
-  double RWM_BES_diff = 1e20; 
+  long double RWM_BES_diff = 1e20; 
   bool RWM_BES_const = false;   
   if (!(ch1exists and ch2exists)){ 
-//    std::cout << "RWM_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
+    if(_debug)    std::cout << "RWM_BES_diff filled with dummy value : 1e20" << std::endl; 
+    if(_debug)    std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
     RWM_BES_const = true; 
   } 
   else if(oneBES == true && oneRWM == true) { 
-    RWM_BES_diff = _tdc_timestamp2.back() - _tdc_timestamp1.back();   
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl;  
- //   std::cout << " difference is " << RWM_BES_diff << std::endl; 
+    long double time2 = _tdc_timestamp2.back();
+    long double time1 = _tdc_timestamp1.back();
+    RWM_BES_diff = time2 - time1;
+    if (_debug) std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
+    if (_debug) std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl;  
+    if (_debug) std::cout << " difference is " << RWM_BES_diff << std::endl; 
     RWM_BES_const = (abs(GLOB_RWM_BES_diff -  RWM_BES_diff) < 3); 
   } 
   else { 
-    RWM_BES_diff = _tdc_timestamp2.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << " difference between last RWM and last BES is " << RWM_BES_diff << std::endl; 
+    long double time2 = _tdc_timestamp2.back();
+    long double time1 = _tdc_timestamp1.back();
+    RWM_BES_diff = time2 - time1;
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << "RWM in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch1 << " BES and " << nch2 << " RWM in it!\n"; 
     RWM_BES_const = (abs(GLOB_RWM_BES_diff - RWM_BES_diff) < 3); 
   
   }
   GLOB_RWM_BES_diff = RWM_BES_diff; 
-//  std::cout << "RWM - BES constant? " << RWM_BES_const << std::endl;  
+  if (_debug) std::cout << "RWM - BES constant? " << RWM_BES_const << std::endl;  
   GLOB_RWM_BES_diff_vec.push_back(RWM_BES_diff);   
 
 
 
   // Metric 7: CRT T1 - BES diff constant 
-  double CRT_BES_diff = 1e20; 
+  long double CRT_BES_diff = 1e20; 
   bool CRT_BES_const = false; 
   if (!(ch0exists and ch1exists)){ 
-//    std::cout << "CRT_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 0 populated? " << ch0exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
+    if (_debug)    std::cout << "CRT_BES_diff filled with dummy value : 1e20" << std::endl; 
+    if (_debug)    std::cout << " Channel 0 populated? " << ch0exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
     CRT_BES_const = true; 
   } 
   else if(oneCRT == true && oneBES == true) { 
-    CRT_BES_diff = _tdc_timestamp0.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference is " << CRT_BES_diff << std::endl; 
+    long double time0 = _tdc_timestamp0.back();
+    long double time1 = _tdc_timestamp1.back();
+    CRT_BES_diff = time1 - time0;
+    if (_debug) std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
+    if (_debug) std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
+    if (_debug) std::cout << " difference is " << CRT_BES_diff << std::endl; 
     CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
   } 
   else { 
-    CRT_BES_diff = _tdc_timestamp0.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference between last CRT T1 reset and last BES is " << CRT_BES_diff << std::endl; 
+    long double time0 = _tdc_timestamp0.back();
+    long double time1 = _tdc_timestamp1.back();
+    CRT_BES_diff = time1 - time0;    
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
     CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
   } 
   GLOB_CRT_BES_diff = CRT_BES_diff; 
-//  std::cout << "CRT T1 reset - BES constant? " << CRT_BES_const << std::endl; 
+  if (_debug)  std::cout << "CRT T1 reset - BES constant? " << CRT_BES_const << std::endl; 
   GLOB_CRT_BES_diff_vec.push_back(CRT_BES_diff); 
 
   // Metric 8: ETRIG - BES diff ~1.6us + jitter 
-  //make 1.6 hardcoded for now, but put into the fcl file later 
 //  double ETRIG_BES_jitter = 20;
   double ETRIG_BES_diff = 1e20; 
-//  bool ETRIG_BES_const = false; 
   if (!(ch4exists and ch1exists)){ 
-//    std::cout << "ETRIG_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
-//    ETRIG_BES_const = true; 
+    if (_debug)  std::cout << "ETRIG_BES_diff filled with dummy value : 1e20" << std::endl; 
+    if (_debug)   std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
   } 
   else if(oneETRIG == true && oneBES == true) { 
-    ETRIG_BES_diff = _tdc_timestamp4.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference is " << ETRIG_BES_diff << std::endl; 
-//    ETRIG_BES_const =  (abs(ETRIG_BES_diff - 1600) < ETRIG_BES_jitter ); 
+    long double time4 = _tdc_timestamp4.back();
+    long double time1 = _tdc_timestamp1.back();
+    ETRIG_BES_diff = double(time4 - time1); 
+    if (_debug) std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
+    if (_debug) std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
+    if (_debug) std::cout << " difference is " << ETRIG_BES_diff << std::endl; 
   } 
   else { 
-    ETRIG_BES_diff = _tdc_timestamp4.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and last BES is " << ETRIG_BES_diff << std::endl; 
+    long double time4 = _tdc_timestamp4.back();
+    long double time1 = _tdc_timestamp1.back();
+    ETRIG_BES_diff = double(time4 - time1);
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch4 << " ETRIG in it!\n"; 
-//    ETRIG_BES_const = (abs(ETRIG_BES_diff - 1600) < ETRIG_BES_jitter) ; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch1 << " BES and " << nch4 << " ETRIG in it!\n"; 
   }
   GLOB_ETRIG_BES_diff = ETRIG_BES_diff; 
-//  std::cout << "ETRIG - BES constant difference of 1.6us + jitter? " << ETRIG_BES_const << std::endl; 
   GLOB_ETRIG_BES_diff_vec.push_back(ETRIG_BES_diff); 
 
 
@@ -372,52 +379,44 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   // Metric 9: ETRIG - RWM diff ~1.6us + jitter
 //  double ETRIG_RWM_jitter = 20;  
   double ETRIG_RWM_diff = 1e20; 
-//  bool ETRIG_RWM_const = false; 
   if (!(ch4exists and ch2exists)){ 
-//    std::cout << "ETRIG_RWM_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
-//    ETRIG_RWM_const = true; 
+    if (_debug) std::cout << "ETRIG_RWM_diff filled with dummy value : 1e20" << std::endl; 
+    if (_debug) std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
   } 
   else if(oneETRIG == true && oneRWM == true) { 
-    ETRIG_RWM_diff = _tdc_timestamp2.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
- //   std::cout << " difference is " << ETRIG_RWM_diff << std::endl; 
-//    ETRIG_RWM_const =  (abs(ETRIG_RWM_diff - 1600) < ETRIG_RWM_jitter ); 
+    long double time4 = _tdc_timestamp4.back();
+    long double time2 = _tdc_timestamp2.back();
+    ETRIG_RWM_diff = double(time2 - time4);
+    if (_debug) std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
+    if (_debug) std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
+    if (_debug) std::cout << " difference is " << ETRIG_RWM_diff << std::endl; 
   } 
   else { 
-    ETRIG_RWM_diff = _tdc_timestamp2.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and RWM is " << ETRIG_RWM_diff << std::endl; 
+    long double time4 = _tdc_timestamp4.back();
+    long double time2 = _tdc_timestamp2.back();
+    ETRIG_RWM_diff = double(time2 - time4);
     mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM and " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM and " << nch4 << " ETRIG in it!\n"; 
-//    ETRIG_RWM_const = (abs(ETRIG_RWM_diff - 1600) < ETRIG_RWM_jitter) ; 
+         << "Data product '" << fDAQTimestampLabel << "' has " << nch2 << " RWM and " << nch4 << " ETRIG in it!\n"; 
   }
   GLOB_ETRIG_RWM_diff = ETRIG_RWM_diff; 
-//  std::cout << "ETRIG - RWM constant difference of 1.6us + jitter? " << ETRIG_RWM_const << std::endl; 
   GLOB_ETRIG_RWM_diff_vec.push_back(ETRIG_RWM_diff); 
 
   // Metric 10: ETRIG - FTRIG diff ~3ms + jitter
 //  double ETRIG_FTRIG_jitter = 2000;  
   double ETRIG_FTRIG_diff = 1e20; 
-//  bool ETRIG_FTRIG_const = false; 
   if (!(ch4exists and ch3exists)){ 
-//    std::cout << "ETRIG_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
-//    ETRIG_FTRIG_const = true; 
+    if (_debug) std::cout << "ETRIG_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
+    if (_debug) std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
   } 
   else { 
-    ETRIG_FTRIG_diff = _tdc_timestamp3.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and last FTRIG is " << ETRIG_FTRIG_diff << std::endl; 
-//    ETRIG_FTRIG_const = (abs(ETRIG_FTRIG_diff - 3000000) < ETRIG_FTRIG_jitter) ; 
+    long double time4 = _tdc_timestamp4.back();
+    long double time3 = _tdc_timestamp3.back();
+    ETRIG_FTRIG_diff = double(time3 - time4);    
+    if (_debug) std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
+    if (_debug) std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
+    if (_debug) std::cout << " difference between ETRIG and last FTRIG is " << ETRIG_FTRIG_diff << std::endl; 
   } 
   GLOB_ETRIG_FTRIG_diff = ETRIG_FTRIG_diff;
-//  std::cout << "ETRIG - FTRIG constant difference of 3ms + jitter? " << ETRIG_FTRIG_const << std::endl; 
   GLOB_ETRIG_FTRIG_diff_vec.push_back(ETRIG_FTRIG_diff); 
 
 
@@ -425,21 +424,19 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   // Metric 11: BES - FTRIG diff ~3ms + jitter
 //  double BES_FTRIG_jitter = 2000;    
   double BES_FTRIG_diff = 1e20; 
-//  bool BES_FTRIG_const = false; 
   if (!(ch1exists and ch3exists)){ 
-//    std::cout << "BES_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
-//    BES_FTRIG_const = true; 
+    if (_debug)   std::cout << "BES_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
+    if (_debug)   std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
   } 
   else { 
-    BES_FTRIG_diff = _tdc_timestamp3.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference between BES and last FTRIG is " << BES_FTRIG_diff << std::endl; 
-//    BES_FTRIG_const = (abs(BES_FTRIG_diff - 3000000) < BES_FTRIG_jitter) ; 
+    long double time3 = _tdc_timestamp3.back();
+    long double time1 = _tdc_timestamp1.back();
+    BES_FTRIG_diff = double(time3 - time1);    
+    if (_debug) std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
+    if (_debug) std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
+    if (_debug) std::cout << " difference between BES and last FTRIG is " << BES_FTRIG_diff << std::endl; 
   } 
   GLOB_BES_FTRIG_diff = BES_FTRIG_diff;
-//  std::cout << "BES - FTRIG constant difference of 3ms + jitter? " << BES_FTRIG_const << std::endl; 
   GLOB_BES_FTRIG_diff_vec.push_back(BES_FTRIG_diff); 
 
 
@@ -529,9 +526,9 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
 //  std::cout << "Channel 3 is populated? " << ch3exists << std::endl; 
 //  std::cout << "Channel 4 is populated? " << ch4exists << std::endl; 
 
-  //Clearing vectors after run_num = 100 
-  run_num++; 
-  if (run_num % 100 == 0){ 
+  //Clearing vectors after _run = 100 
+  _run++; 
+  if (_run % 100 == 0){ 
     GLOB_RWM_BES_diff_vec.clear(); 
     GLOB_CRT_BES_diff_vec.clear(); 
     GLOB_ETRIG_BES_diff_vec.clear();
@@ -542,6 +539,13 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
 
 
   //------------------------------------------------------------------------------// 
+
+  //Define metric for Redis (TODO: UnComment)  
+  //int level = 3;  
+  //artdaq::MetricMode mode = artdaq::MetricMode::Average; 
+  //artdaq::MetricMode rate = artdaq::MetricMode::Rate; 
+  //std::string groupName = "SPECTDC"; 
+
   // TODO: Then send metrics 
   // Example: change metric_ID (i.e. channel ID), metric_name (i.e. channel name), metric_value (i.e. channel timestamp) 
   // sbndaq::sendMetric(groupName, metric_ID, "metric_name", metric_value , level, mode);  
@@ -563,6 +567,6 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch4exists", ch4exists, 0, artdaq::MetricMode::LastPoint);  
 
 
-//  std::cout << "--------------Finish event " << _event << std::endl << std::endl; 
+  if (_debug) std::cout << "--------------Finish event " << _event << std::endl << std::endl; 
 } 
 DEFINE_ART_MODULE(sbndaq::SPECTDCStreams) 

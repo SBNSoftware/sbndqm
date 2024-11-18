@@ -1,0 +1,84 @@
+#include "redis_connection.fcl"
+#include "config_spectdc_dqm.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+  producers: {
+    daqTDC: {
+      module_type: "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+    }
+  }
+
+  analyzers: {
+    dqmTDC: @local::dqmSPECTDC
+  }
+
+  prod: [ daqTDC ]
+  ana: [ dqmTDC ]
+  
+  trigger_paths: [ prod ]
+  end_paths: [ ana ]
+}
+
+services: {
+  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
+ 
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqSharedMemoryService"
+}
+
+source: {
+   commanderPluginType: "xmlrpc"
+   dispatcherHost: "localhost"
+   dispatcherPort: 6028
+   dispatcher_config: {
+      outputs: {
+         out: {
+            module_type: "TransferOutput"
+            transfer_plugin: {
+               destination_rank: 6
+               first_event_builder_rank: 0
+               max_fragment_size_words: 1e8
+               shm_key: 1.078400085e9 #b3f9f34b85bc
+               transferPluginType: "Shmem"
+               unique_label: "SPECTDCStreams_OnlineMonitor"
+            }
+         }
+      }
+      path: [
+         "out"
+      ]
+      physics: {}
+      unique_label: "SPECTDCStreams_OnlineMonitor"
+   }
+
+   module_type: "TransferInput"
+   register_fragment_types: false
+   timeoutInUsecs: 5e7
+   transfer_plugin: {
+      destination_rank: 6
+      first_event_builder_rank: 0
+      max_fragment_size_words: 1e8
+      shm_key: 1.078400085e9 #b3f9f34b85bc
+      source_rank: 5
+      transferPluginType: "Shmem"
+      unique_label: "SPECTDCStreams_OnlineMonitor"
+   }
+}
