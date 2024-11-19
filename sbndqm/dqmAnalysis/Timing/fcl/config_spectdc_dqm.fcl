@@ -7,7 +7,20 @@ streamSPECTDC: {
   DAQTimestampLabel: "daqSPECTDC"
   DAQLabel: "daq"
   PTBContainerInstance: "ContainerPTB"
-  Verbose: true
+  Verbose: 1
+  
+  HLT_beam: [1, 2] #bnb zero bias + bnb light
+  HLT_beam_excluded: [3, 4, 14, 15] 
+  HLT_offbeam: [3, 4] #offbeam zero bias + offbeam light
+  HLT_offbeam_excluded: [1, 2, 14, 15] 
+  HLT_crossingmuon: [14, 15] #ns + ew 
+  HLT_crossingmuon_excluded: [1, 2, 3, 4]  
+
+  CRTT1_ch: 0
+  BES_ch: 1
+  RWM_ch: 2
+  FTRIG_ch: 3
+  ETRIG_ch: 4
 
   SPECTDCMetricConfig: {
 

@@ -38,7 +38,6 @@ services: {
 
 services.RedisConnection.host: "sbnd-db.fnal.gov"
 services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
-
 services.ArtdaqSharedMemoryServiceInterface:
 {
   service_provider: "ArtdaqSharedMemoryService"
