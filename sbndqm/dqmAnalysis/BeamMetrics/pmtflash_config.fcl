@@ -1,3 +1,4 @@
+BEGIN_PROLOG
 
 physics: {
     producers: {}
@@ -29,3 +30,5 @@ physics: {
     ana: [flashmetrics]
     end_paths: [ana]
 }
+
+END_PROLOG
