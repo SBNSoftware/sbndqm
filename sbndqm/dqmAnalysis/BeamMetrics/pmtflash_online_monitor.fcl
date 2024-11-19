@@ -20,13 +20,18 @@ services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC40
 source:
 {
   module_type: TransferInput
-  commanderPluginType: "xmlrpc"
-  dispatcherHost: "localhost"
-  dispatcherPort: 6024 # just chose a random number!
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
 
   transfer_plugin: {
     unique_label: "FlashOnlineMonitor"
-    transferPluginType: "Shmem"
+    transferPluginType: Shmem
     shm_key: 0x40470830 
     max_fragment_size_words: 100000000 
     first_event_builder_rank: 0
@@ -43,7 +48,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
           unique_label: "FlashOnlineMonitor"
-          transferPluginType: "Shmem"
+          transferPluginType: Shmem
           shm_key: 0x40470830
           max_fragment_size_words: 100000000 
           first_event_builder_rank: 0
