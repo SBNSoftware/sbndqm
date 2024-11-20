@@ -23,7 +23,6 @@ physics: {
 }
 
 services: {
-  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
  
   RedisConnection: @local::redis_connection
 
@@ -41,4 +40,5 @@ services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC40
 
 source: {
   module_type: RootInput
+  maxEvents: -1
 }
