@@ -23,7 +23,6 @@ physics: {
 }
 
 services: {
-  TFileService: { fileName: "spectdc_dqm_%p-%tc.root"}
  
   RedisConnection: @local::redis_connection
 
@@ -46,7 +45,7 @@ services.ArtdaqSharedMemoryServiceInterface:
 source: {
    commanderPluginType: "xmlrpc"
    dispatcherHost: "localhost"
-   dispatcherPort: 6028
+   dispatcherPort: 6021
    dispatcher_config: {
       outputs: {
          out: {

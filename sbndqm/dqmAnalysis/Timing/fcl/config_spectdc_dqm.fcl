@@ -26,109 +26,59 @@ streamSPECTDC: {
 
     hostname: "sbnd-db.fnal.gov"
 
-    streams: ["30s"]
+    streams: ["fast", "slow", "archiving"]
 
     groups: {
-        SPECTDC_Streams_Timing: [0]
+        SPECTDC_Streams_Timing: [0, 1, 2]
     }
 
     metrics: {
 
-      oneETRIG: {
-        units: True_False
-        title: "SPECTDC Streams Timing 1 ETRIG"
-        display_range: [0., 2.]
+      nCRTT1: {
+        title: "Number of CRT T1 in an event"
+        display_range: [0., 10.]
       }
 
-      oneCRT: {
-        units: True_False
-        title: "SPECTDC Streams Timing 1 CRT T1 Reset"
-        display_range: [0., 2.]
+      nBES: {
+        title: "Number of BES in an event"
+        display_range: [0., 10.]
       }
 
-      manyFTRIG: {
-        units: True_False
-        title: "SPECTDC Streams Timing ~10 FTRIG"
-        display_range: [0., 2.]
+      nRWM: {
+        title: "Number of RWM in an event"
+        display_range: [0., 10.]
       }
 
-      oneBES: {
-        units: True_False
-        title: "SPECTDC Streams Timing 1 BES"
-        display_range: [0., 2.]
+      nFTRIG: {
+        title: "Number of FTRIG in an event"
+        display_range: [0., 10.]
       }
 
-      oneRWM: {
-        units: True_False
-        title: "SPECTDC Streams Timing 1 RWM"
-        display_range: [0., 2.]
-      }                                             
+      nETRIG: {
+        title: "Number of ETRIG in an event"
+        display_range: [0., 10.]
+      }
 
-      RWM_BES_const: {
-        units: True_False
-        title: "RWM BES Timing Difference Constant"
-        display_range: [0., 2.]
+      BES_CRTT1_diff: {
+        title: "Difference of BES - CRT T1 in an event"
+        display_range: [-5.0, 5.0] #ms
       }
-      
-      CRT_BES_const: {
-        units: True_False
-        title: "CRT T1 Reset BES Timing Difference Constant"
-        display_range: [0., 2.]
+
+      RWM_BES_diff: {
+        title: "Difference of RWM - BES in an event"
+        display_range: [-1.0, 3.0] #us
       }
-      
+
       ETRIG_BES_diff: {
-        units: ns
-        title: "ETRIG BES Timing Difference"
-        display_range: [-40., 40.]
-      }
-      
-      ETRIG_RWM_diff: {
-        units: ns
-        title: "ETRIG RWM Timing Difference"
-        display_range: [-40., 40.]
-      }
-      
-      ETRIG_FTRIG_diff: {
-        units: ns
-        title: "ETRIG FTRIG Timing Difference"
-        display_range: [-4000., 4000.]
-      }
-      
-      BES_FTRIG_diff: {
-        units: ns
-        title: "BES FTRIG Timing Difference"
-        display_range: [-4000., 4000.]
+        title: "Difference of ETRIG - BES in an event"
+        display_range: [0.0, 350.0] #us
       }
 
-      ch0exists: {
-        units: True_False
-        title: "Channel 0 exists"
-        display_range: [0., 2.]
+      FTRIG_ETRIG_diff: {
+        title: "Difference of FTRIG - ETRIG in an event"
+        display_range: [-5.0, 5.0] #ms
       }
 
-      ch1exists: {
-        units: True_False
-        title: "Channel 1 exists"
-        display_range: [0., 2.]
-      }
-
-      ch2exists: {
-        units: True_False
-        title: "Channel 2 exists"
-        display_range: [0., 2.]
-      }
-
-      ch3exists: {
-        units: True_False
-        title: "Channel 3 exists"
-        display_range: [0., 2.]
-      }
-
-      ch4exists: {
-        units: True_False
-        title: "Channel 4 exists"
-        display_range: [0., 2.]
-      }
     } #End of metrics
   } #End of Config
 }  

@@ -547,11 +547,11 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     }
 
     //Send metrics
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nBES", nBES, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nRWM", nRWM, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nBES", nBES, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nRWM", nRWM, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
   
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_CRTT1_diff", BES_CRTT1_diff, 0, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_diff", RWM_BES_diff, 0, artdaq::MetricMode::LastPoint);  
@@ -591,9 +591,9 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     } 
 
     //Send metrics
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "1", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "1", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "1", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
 
     for (auto const ts: FTRIG_ETRIG_diff){
       sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
@@ -629,8 +629,8 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     } 
 
     //Send metrics
-    sbndaq::sendMetric("spectdc_streams_timing", "2", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "2", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
 
     for (auto const ts: FTRIG_ETRIG_diff){
       sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
