@@ -57,6 +57,19 @@ namespace sbndaq {
         bool ApplyGateFilter(std::vector<uint64_t> triggers, std::vector<uint64_t> ftrigger_type, std::vector<uint64_t> fexcluded_trigger);
 	void ResetVars();	
         double OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts);
+        std::vector<double> ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts);
+	bool CheckSecondRollOver(std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> ts_vec);	
+
+	void Check_nCRTT1();
+	void Check_nBES();
+	void Check_nRWM();
+	void Check_nFTRIG();
+	void Check_nETRIG();
+
+	void Check_BES_CRTT1_diff();
+	void Check_RWM_BES_diff();
+	void Check_ETRIG_BES_diff();
+	void Check_FTRIG_ETRIG_diff();
 
     private: 
          
@@ -64,19 +77,35 @@ namespace sbndaq {
         std::string fDAQTimestampLabel;
 	std::string fDAQLabel;
 	std::string fPTBContainerInstance;
-        int fVerbose;
+	
+	int fVerbose;
+
 	std::vector<uint64_t> fHLT_beam;
 	std::vector<uint64_t> fHLT_beam_excluded;
 	std::vector<uint64_t> fHLT_offbeam;
 	std::vector<uint64_t> fHLT_offbeam_excluded;
 	std::vector<uint64_t> fHLT_crossingmuon;
 	std::vector<uint64_t> fHLT_crossingmuon_excluded;
+
         uint32_t fCRTT1_ch;
         uint32_t fBES_ch;
         uint32_t fRWM_ch;
         uint32_t fFTRIG_ch;
         uint32_t fETRIG_ch;
-      
+
+        double fExpected_BES_CRTT1_diff;
+        double fExpected_BES_CRTT1_jitter;
+
+        double fExpected_RWM_BES_diff;
+        double fExpected_RWM_BES_jitter;
+
+        double fExpected_ETRIG_BES_diff;
+        double fExpected_ETRIG_BES_jitter;
+
+        double fExpected_FTRIG_ETRIG_diff;
+        double fExpected_FTRIG_ETRIG_jitter;
+
+        //Class variables 
         int _event; 
 	
 	std::vector<uint64_t> hlt_vec;
@@ -92,6 +121,11 @@ namespace sbndaq {
         int nRWM = 0; 
         int nFTRIG = 0; 
         int nETRIG = 0; 
+
+	double BES_CRTT1_diff; 
+	double RWM_BES_diff;  
+	double ETRIG_BES_diff;
+	std::vector<double> FTRIG_ETRIG_diff;
        
     }; 
 } 
@@ -113,6 +147,14 @@ sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
   , fRWM_ch(pset.get<uint32_t>("RWM_ch", 2))
   , fFTRIG_ch(pset.get<uint32_t>("FTRIG_ch", 3))
   , fETRIG_ch(pset.get<uint32_t>("ETRIG_ch", 4))
+  , fExpected_BES_CRTT1_diff(pset.get<double>("Expected_BES_CRTT1_diff", 2.5)) //ms
+  , fExpected_BES_CRTT1_jitter(pset.get<double>("Expected_BES_CRTT1_jitter", 0.1)) //ms
+  , fExpected_RWM_BES_diff(pset.get<double>("Expected_RWM_BES_diff", 2)) //us
+  , fExpected_RWM_BES_jitter(pset.get<double>("Expected_RWM_BES_jitter", 1)) //us
+  , fExpected_ETRIG_BES_diff(pset.get<double>("Expected_ETRIG_BES_diff", 332)) //us
+  , fExpected_ETRIG_BES_jitter(pset.get<double>("Expected_ETRIG_BES_jitter", 1)) //us
+  , fExpected_FTRIG_ETRIG_diff(pset.get<double>("Expected_FTRIG_ETRIG_diff", 2)) //ms
+  , fExpected_FTRIG_ETRIG_jitter(pset.get<double>("Expected_FTRIG_ETRIG_jitter", 0.5)) //ms
 {
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
@@ -211,12 +253,110 @@ void sbndaq::SPECTDCStreams::ResetVars() {
   nRWM = 0; 
   nFTRIG = 0; 
   nETRIG = 0; 
+
+  BES_CRTT1_diff = DBL_MAX; 
+  RWM_BES_diff = DBL_MAX;  
+  ETRIG_BES_diff = DBL_MAX;
+  FTRIG_ETRIG_diff.clear();
+}
+
+bool sbndaq::SPECTDCStreams::CheckSecondRollOver(std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> ts_vec){
+
+  uint64_t earliest_ts = std::numeric_limits<uint64_t>::max();
+  uint64_t latest_ts = std::numeric_limits<uint64_t>::max();
+
+  for(unsigned int i = 0; i < ts_vec.size(); i++) { 
+    uint64_t ts = ts_vec[i]->Timestamp() + ts_vec[i]->Offset();
+
+    if(i == 0){
+      earliest_ts = ts;
+      latest_ts = ts;
+    }else{
+      if (ts < earliest_ts) earliest_ts = ts;
+      if (ts > latest_ts) latest_ts = ts;
+    }
+  }
+
+  //Get the second part
+  earliest_ts /= uint64_t(1e9);
+  latest_ts /= uint64_t(1e9);
+  
+  if ((latest_ts - earliest_ts) > 1) return true; 
+ 
+  return false;  
+}	
+
+void sbndaq::SPECTDCStreams::Check_nCRTT1() {
+  if (nCRTT1 == 1) std::cout << "Good event has one CRT T1 Reset." << std::endl; 
+  if (nCRTT1 != 1) std::cout << "BAD!! n CRT T1 = " << nCRTT1 << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nBES() {
+  if (nBES == 1) std::cout << "Good event has one BES." << std::endl; 
+  if (nBES != 1) std::cout << "BAD!! n BES = " << nBES << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nRWM() {
+  if (nRWM == 1) std::cout << "Good event has one RWM." << std::endl; 
+  if (nRWM != 1) std::cout << "BAD!! n RWM = " << nRWM << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nFTRIG() {
+  if (nFTRIG > 0 ) std::cout << "Good event has " << nFTRIG << " FTRIG." << std::endl; 
+  if (nFTRIG == 0) std::cout << "BAD!! n FTRIG = " << nFTRIG << ". Expected 10~20 FTRIG!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nETRIG() {
+  if (nETRIG == 1 ) std::cout << "Good event has one ETRIG." << std::endl; 
+  if (nETRIG != 1) std::cout << "BAD!! n ETRIG = " << nETRIG << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_BES_CRTT1_diff() {
+  if ( (BES_CRTT1_diff < (fExpected_BES_CRTT1_diff + fExpected_BES_CRTT1_jitter)) 
+    && (BES_CRTT1_diff > (fExpected_BES_CRTT1_diff - fExpected_BES_CRTT1_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! BES - CRT T1 = " << BES_CRTT1_diff << " ms." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! BES - CRT T1 = " << BES_CRTT1_diff << " ms out of expectation of " << fExpected_BES_CRTT1_diff;
+    std::cout << "+-" << fExpected_BES_CRTT1_jitter << " ms" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_RWM_BES_diff() {
+  if ( (RWM_BES_diff < (fExpected_RWM_BES_diff + fExpected_RWM_BES_jitter)) 
+    && (RWM_BES_diff > (fExpected_RWM_BES_diff - fExpected_RWM_BES_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! RWM - BES = " << RWM_BES_diff << " us." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! RWM - BES = " << RWM_BES_diff << " us out of expectation of " << fExpected_RWM_BES_diff;
+    std::cout << "+-" << fExpected_RWM_BES_jitter << " us" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_ETRIG_BES_diff() {
+  if ( (ETRIG_BES_diff < ( fExpected_ETRIG_BES_diff + fExpected_ETRIG_BES_jitter)) 
+    && (ETRIG_BES_diff > ( fExpected_ETRIG_BES_diff - fExpected_ETRIG_BES_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! ETRIG - BES = " << ETRIG_BES_diff << " us." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! RWM - BES = " << ETRIG_BES_diff << " us out of expectation of " << fExpected_ETRIG_BES_diff;
+    std::cout << "+-" << fExpected_ETRIG_BES_jitter << " us" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_FTRIG_ETRIG_diff() {
+  std::cout << "Checking " << nFTRIG << " FTRIGs agreement with ETRIG." << std::endl;
+  for (auto const ts: FTRIG_ETRIG_diff){
+    if ( (ts < (fExpected_FTRIG_ETRIG_diff + fExpected_FTRIG_ETRIG_jitter)) 
+    && (ts > (fExpected_FTRIG_ETRIG_diff*-1 - fExpected_FTRIG_ETRIG_jitter)) ){
+      std::cout << std::setprecision(3) << "   Good! FTRIG - ETRIG = " << ts << " ms." << std::endl;
+    }else{
+      std::cout << std::setprecision(3) << "BAD!! FTRIG - ETRIG = " << ts << " ms out of expectation of " << "[-" << fExpected_FTRIG_ETRIG_diff << ", " << fExpected_FTRIG_ETRIG_diff <<"]";
+      std::cout << "+-" << fExpected_FTRIG_ETRIG_jitter << " ms" << std::endl;
+    } 
+  }
 }
 
 double sbndaq::SPECTDCStreams::OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts){
 
-  //TODO: Handle timestamp difference when there's a second roll over
-  double diff = -999999;
+  double diff = DBL_MAX;
 
   if ((early_ts.size() == 1)  && (late_ts.size() == 1)){
 
@@ -225,6 +365,25 @@ double sbndaq::SPECTDCStreams::OneToOneDiff(std::vector<uint64_t> early_ts, std:
     double late_ts_nspart = late_ts.back()%uint64_t(1e9);
     
     diff = late_ts_nspart - early_ts_nspart;
+  }
+  return diff;
+}
+
+std::vector<double> sbndaq::SPECTDCStreams::ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts){
+
+  std::vector<double> diff;
+
+  if ((one_ts.size() == 1)  && (many_ts.size() > 1)){
+    
+    //get the ns part so it's only 9 digits for double
+    double one_ts_nspart = one_ts.back()%uint64_t(1e9);
+    
+    for (auto const ts: many_ts){
+
+      //get the ns part so it's only 9 digits for double
+      double ts_nspart = ts%uint64_t(1e9);
+      diff.push_back(ts_nspart - one_ts_nspart);
+    }  
   }
   return diff;
 }
@@ -263,6 +422,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
 
   //------------------------------------------------------------------------------// 
   //Apply Filter based on HLT, copy from SBNDGayeFilter: https://github.com/SBNSoftware/sbndaq-artdaq/blob/v1_10_03/sbndaq-artdaq/ArtModules/SBND/SBNDGateFilter_module.cc
+  //Hardcoded for 3 main streams: beam, offbeam and crossing muons
 
   bool passBeam = false;
   bool passOffbeam = false;
@@ -299,7 +459,11 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> DAQTimestampVec; 
   art::fill_ptr_vector(DAQTimestampVec, DAQTimestampHandle); 
   if (fVerbose > 1) std::cout << "timing::DAQTimestamp size = " << DAQTimestampVec.size() << std::endl;
-
+  
+  if (CheckSecondRollOver(DAQTimestampVec)){
+    if (fVerbose > 0) std::cout << "Event has the second roll over. Skip this event." << std::endl;
+    return;
+  }	
   //------------------------------------------------------------------------------// 
   // Fill SPECTDC variables  
   
@@ -343,7 +507,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
    }
 
   //------------------------------------------------------------------------------// 
-  // Send metrics based on HLT
+  // Send metrics based on HLT. Currently there are 3 main streams: beam, offbeam and crossing muons
 
   /*BNBZeroBias + BNBLight Stream
   ch0: CRT T1 reset (from PTB)  -- once per event 
@@ -354,118 +518,125 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
   */
   if (passBeam) {
 
-    double BES_CRTT1_diff = OneToOneDiff(crtt1_vec, bes_vec);
-
-    //Expect +2 us
-    double RWM_BES_diff = OneToOneDiff(bes_vec, rwm_vec);
-
-    //Expect +332 us
-    double ETRIG_BES_diff = OneToOneDiff(bes_vec, etrig_vec);
-
-    // ETRIG - FTRIG 
-    //uint64_t ETRIG_RWM_diff = 0;
-    //if ((nRWM == 1)  && (nETRIG == 1)){
-    //  std::cout << "ETRIG - RWM = ";
-    //  std::cout << etrig_vec.back() - rwm_vec.back() << std::endl;
-    //}
+    BES_CRTT1_diff = OneToOneDiff(crtt1_vec, bes_vec)/1'000'000; //ns to ms
+    RWM_BES_diff = OneToOneDiff(bes_vec, rwm_vec)/1'000; //ns to us
+    ETRIG_BES_diff = OneToOneDiff(bes_vec, etrig_vec)/1'000; //ns to us
+    
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
+    } 
 
     if (fVerbose > 0){
-      if (nCRTT1 == 1) std::cout << "Good event has one CRT T1 Reset." << std::endl; 
-      if (nCRTT1 != 1) std::cout << "BAD!! n CRT T1 = " << nCRTT1 << ". Expected one!!" << std::endl;
+      std::cout << std::endl;
 
-      if (nBES == 1) std::cout << "Good event has one BES." << std::endl; 
-      if (nBES != 1) std::cout << "BAD!! n BES = " << nBES << ". Expected one!!" << std::endl;
-
-      if (nRWM == 1) std::cout << "Good event has one RWM." << std::endl; 
-      if (nRWM != 1) std::cout << "BAD!! n RWM = " << nRWM << ". Expected one!!" << std::endl;
-
-      if (nFTRIG > 0 ) std::cout << "Good event has " << nFTRIG << " FTRIG." << std::endl; 
-      if (nFTRIG == 0) std::cout << "BAD!! n FTRIG = " << nFTRIG << ". Expected 10~20 FTRIG!!" << std::endl;
-             
-      if (nETRIG == 1 ) std::cout << "Good event has one ETRIG." << std::endl; 
-      if (nETRIG != 1) std::cout << "BAD!! n ETRIG = " << nETRIG << ". Expected one!!" << std::endl;
+      Check_nCRTT1();
+      Check_nBES();
+      Check_nRWM();
+      Check_nFTRIG();
+      Check_nETRIG();
       
       std::cout << std::endl;
-      
-      //Expect +2.5 ms
-      int jitter = 0.5;
-      if ( (BES_CRTT1_diff < 2.5 + jitter) && (BES_CRTT1_diff > 2.5 - jitter)){
-        std::cout << "Good! BES - CRT T1 = " << BES_CRTT1_diff/1'000'000 << " ms." << std::endl;
-      }else{
-        std::cout << "BAD!! BES - CRT T1 = " << BES_CRTT1_diff/1'000'000 << " ms out of expectation of 2.5 ms +- jitter." << std::endl;
-      } 
 
-      std::cout << std::setprecision(9) << "RWM - BES = " << RWM_BES_diff/1'000 << " us." << std::endl;
-    
-      std::cout << std::setprecision(9) << "ETRIG - BES = " << ETRIG_BES_diff/1'000 << " us." << std::endl;
-    
+      Check_BES_CRTT1_diff();
+      Check_RWM_BES_diff();
+      Check_ETRIG_BES_diff();
+      Check_FTRIG_ETRIG_diff();
+      
       std::cout << std::endl;
     }
 
+    //Send metrics
     sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nBES", nBES, 0, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nRWM", nRWM, 0, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_CRTT1_diff", BES_CRTT1_diff, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_diff", RWM_BES_diff, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
   }
 
   /*OffbeamZeroBias + OffbeamLight Stream
   ch0: CRT T1 reset (from PTB) -- once per event 
-  ch1: BES (Beam Early Signal) -- once per event 
+  ch1: BES (Beam Early Signal) -- no (TDC does not see offbeam BES) 
   ch2: RWM (Resistor Wall Monitor) -- no 
   ch3: FTRIG (Flash trigger from PTB)  -- multiple per event 
   ch4: ETRIG (Event trigger from PTB)  -- once per event 
   */
   if (passOffbeam) {
-
-    if (fVerbose){
-      if (nCRTT1 == 1) std::cout << "Good event has one CRT T1 Reset." << std::endl; 
-      if (nCRTT1 != 1) std::cout << "BAD!! n CRT T1 = " << nCRTT1 << ". Expected one!!" << std::endl;
-
-      if (nBES == 1) std::cout << "Good event has one BES." << std::endl; 
-      if (nBES != 1) std::cout << "BAD!! n BES = " << nBES << ". Expected one!!" << std::endl;
-
-      if (nFTRIG > 0 ) std::cout << "Good event has " << nFTRIG << " FTRIG." << std::endl; 
-      if (nFTRIG == 0) std::cout << "BAD!! n FTRIG = " << nFTRIG << ". Expected 10~20 FTRIG!!" << std::endl;
-             
-      if (nETRIG > 0 ) std::cout << "Good event has " << nETRIG << " ETRIG." << std::endl; 
-      if (nETRIG == 0) std::cout << "BAD!! n ETRIG = " << nETRIG << ". Expected 1~2 ETRIG!!" << std::endl;
+    
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
     } 
 
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "0", "nBES", nBES, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+    if (fVerbose){
+      std::cout << std::endl;
+
+      Check_nCRTT1();
+      Check_nFTRIG();
+      Check_nETRIG();
+      
+      std::cout << std::endl;
+
+      Check_FTRIG_ETRIG_diff();
+
+      std::cout << std::endl;
+    } 
+
+    //Send metrics
+    sbndaq::sendMetric("SPECTDC_STREAMS_Timing", "1", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("spectdc_streams_timing", "1", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("spectdc_streams_timing", "1", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
   }
 
   /*CrossingMuon Stream
   ch0: CRT T1 reset (from PTB) -- maybe 
   ch1: BES (Beam Early Signal) -- maybe 
   ch2: RWM (Resistor Wall Monitor) -- no 
-  ch3: FTRIG (Flash trigger from PTB)  -- multiple per event 
+  ch3: FTRIG (Flash trigger from PTB)  -- multiple per event, although should half compared to beam/offbeam streams
   ch4: ETRIG (Event trigger from PTB)  -- once per event 
   */
   if (passXmuon) {
 
-    if (fVerbose){
-      if (nFTRIG > 0 ) std::cout << "Good event has " << nFTRIG << " FTRIG." << std::endl; 
-      if (nFTRIG == 0) std::cout << "BAD!! n FTRIG = " << nFTRIG << ". Expected 10~20 FTRIG!!" << std::endl;
-             
-      if (nETRIG > 0 ) std::cout << "Good event has " << nETRIG << " ETRIG." << std::endl; 
-      if (nETRIG == 0) std::cout << "BAD!! n ETRIG = " << nETRIG << ". Expected 1~2 ETRIG!!" << std::endl;
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
     } 
 
-    sbndaq::sendMetric("spectdc_streams_timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("spectdc_streams_timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
-  }
-  
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_const", RWM_BES_const, 0, artdaq::MetricMode::LastPoint);  
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "CRT_BES_const", CRT_BES_const, 0, artdaq::MetricMode::LastPoint);  
+    if (fVerbose){
+      std::cout << std::endl;
 
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_RWM_diff", ETRIG_RWM_diff, 0, artdaq::MetricMode::LastPoint);  
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_FTRIG_diff", ETRIG_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
-  //sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_FTRIG_diff", BES_FTRIG_diff, 0, artdaq::MetricMode::LastPoint); 
+      Check_nFTRIG();
+      Check_nETRIG();
+      
+      std::cout << std::endl;
+
+      Check_FTRIG_ETRIG_diff();
+
+      std::cout << std::endl;
+    } 
+
+    //Send metrics
+    sbndaq::sendMetric("spectdc_streams_timing", "2", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("spectdc_streams_timing", "2", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
+  }
  
   if (fVerbose > 0) std::cout << "===============================================" << std::endl; 
 
