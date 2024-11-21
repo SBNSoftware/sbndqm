@@ -147,7 +147,7 @@ sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
   , fRWM_ch(pset.get<uint32_t>("RWM_ch", 2))
   , fFTRIG_ch(pset.get<uint32_t>("FTRIG_ch", 3))
   , fETRIG_ch(pset.get<uint32_t>("ETRIG_ch", 4))
-  , fExpected_BES_CRTT1_diff(pset.get<double>("Expected_BES_CRTT1_diff", 2.5)) //ms
+  , fExpected_BES_CRTT1_diff(pset.get<double>("Expected_BES_CRTT1_diff", 1.5)) //ms
   , fExpected_BES_CRTT1_jitter(pset.get<double>("Expected_BES_CRTT1_jitter", 0.1)) //ms
   , fExpected_RWM_BES_diff(pset.get<double>("Expected_RWM_BES_diff", 2)) //us
   , fExpected_RWM_BES_jitter(pset.get<double>("Expected_RWM_BES_jitter", 1)) //us
@@ -530,11 +530,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     if (fVerbose > 0){
       std::cout << std::endl;
 
-      Check_nCRTT1();
-      Check_nBES();
-      Check_nRWM();
-      Check_nFTRIG();
-      Check_nETRIG();
+      Check_nCRTT1(); Check_nBES(); Check_nRWM(); Check_nFTRIG(); Check_nETRIG();
       
       std::cout << std::endl;
 
@@ -579,9 +575,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     if (fVerbose){
       std::cout << std::endl;
 
-      Check_nCRTT1();
-      Check_nFTRIG();
-      Check_nETRIG();
+      Check_nCRTT1(); Check_nFTRIG(); Check_nETRIG();
       
       std::cout << std::endl;
 
@@ -618,8 +612,7 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     if (fVerbose){
       std::cout << std::endl;
 
-      Check_nFTRIG();
-      Check_nETRIG();
+      Check_nFTRIG(); Check_nETRIG();
       
       std::cout << std::endl;
 
