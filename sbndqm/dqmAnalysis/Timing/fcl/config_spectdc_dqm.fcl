@@ -22,6 +22,18 @@ streamSPECTDC: {
   FTRIG_ch: 3
   ETRIG_ch: 4
 
+  fExpected_BES_CRTT1_diff: 1.5 #ms
+  fExpected_BES_CRTT1_jitter: 0.1 #ms
+  
+  fExpected_RWM_BES_diff: 2 #us
+  fExpected_RWM_BES_jitter: 0.5 #us
+  
+  fExpected_ETRIG_BES_diff: 332 #us
+  fExpected_ETRIG_BES_jitter: 1 #us
+  
+  fExpected_FTRIG_ETRIG_diff: 2 #+- 2ms
+  fExpected_FTRIG_ETRIG_jitter: 0.5 #ms
+
   SPECTDCMetricConfig: {
 
     hostname: "sbnd-db.fnal.gov"
