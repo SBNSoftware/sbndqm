@@ -488,7 +488,7 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
               continue;
          }  
          //std::cout << "Found LLT " << lt_id <<std::endl;
-         std::cout << "Found LLT " << lt_id << " entries = " << llt_type_ts[q].size() << std::endl;
+         //std::cout << "Found LLT " << lt_id << " entries = " << llt_type_ts[q].size() << std::endl;
 
          sort(llt_type_ts[q].begin(), llt_type_ts[q].end());
 
@@ -557,7 +557,7 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
             sbndaq::sendMetric("HLT_ID", ht_id, "HLT_periodicity", 0, fReportingLevel, artdaq::MetricMode::Average);
             continue;
          }
-         std::cout << "Found HLT " << ht_id << " entries = " << hlt_type_ts[q].size() << std::endl;
+         //std::cout << "Found HLT " << ht_id << " entries = " << hlt_type_ts[q].size() << std::endl;
          sort(hlt_type_ts[q].begin(), hlt_type_ts[q].end());
          //std::cout << "Sorted timestamps for HLT" << ht_id <<std::endl;
 	 std::vector<size_t> skip_index;
@@ -595,7 +595,7 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
                continue;
             }
             sbndaq::sendMetric("HLT_ID", ht_id, "HLT_periodicity", diff_s, fReportingLevel, artdaq::MetricMode::Average);
-            if(diff_s > 1 || diff_s<=0) {
+            /*if(diff_s > 1 || diff_s<=0) {
                std::cout << std::endl;
                std::cout << "Odd periodicity: HLT " << ht_id << " = " << diff_s << " s" << std::endl;
                std::cout << "All HLT " << ht_id << " TSs : " << std::endl;
@@ -603,7 +603,7 @@ void sbndaq::PTBdqm::analyze_tdc_ptb() {
                   std::cout << hlt_type_ts[q][i] << "   ";
                }
                std::cout << std::endl;
-            }
+            }*/
          }
       }
 

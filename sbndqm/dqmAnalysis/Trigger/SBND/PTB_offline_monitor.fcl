@@ -59,7 +59,7 @@ physics: {
       metric_beam_light_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          BEAM_LIGHT_DIFF: [ [0, 1] ]
+          BEAM_LIGHT_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
@@ -82,7 +82,7 @@ physics: {
       metric_beam_crt_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          BEAM_CRT_DIFF: [ [0, 1] ]
+          BEAM_CRT_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
@@ -111,7 +111,7 @@ physics: {
       metric_ptb_tdc_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          PTB_TDC_DIFF: [ [0, 1] ]
+          PTB_TDC_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
