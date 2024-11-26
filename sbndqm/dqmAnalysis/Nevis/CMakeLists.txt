@@ -2,7 +2,7 @@ cet_build_plugin( NevisProductionTest art::module
   LIBRARIES
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
-  sbndaq_online_hiredis
+  sbndaq_online::hiredis
   lardataobj::RawData
   art::Utilities
   canvas::canvas  
