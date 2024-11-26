@@ -1,0 +1,44 @@
+#include "redis_connection.fcl"
+#include "config_spectdc_dqm.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+  producers: {
+    daqSPECTDC: {
+      module_type: "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+    }
+  }
+
+  analyzers: {
+    dqmSPECTDC: @local::streamSPECTDC
+  }
+
+  prod: [ daqSPECTDC ]
+  ana: [ dqmSPECTDC ]
+
+  trigger_paths: [ prod ]
+  end_paths: [ ana ]
+}
+
+services: {
+ 
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+source: {
+  module_type: RootInput
+  maxEvents: -1
+}

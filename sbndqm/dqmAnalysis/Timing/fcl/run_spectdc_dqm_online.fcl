@@ -1,0 +1,81 @@
+#include "redis_connection.fcl"
+#include "config_spectdc_dqm.fcl"
+
+process_name: SPECTDCDQM
+
+physics: {
+  producers: {
+    daqSPECTDC: {
+      module_type: "SPECTDCDecoder"
+      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+    }
+  }
+
+  analyzers: {
+    dqmSPECTDC: @local::streamSPECTDC
+  }
+
+  prod: [ daqSPECTDC ]
+  ana: [ dqmSPECTDC ]
+
+  trigger_paths: [ prod ]
+  end_paths: [ ana ]
+}
+
+services: {
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
+
+  transfer_plugin: {
+    unique_label: "SPECTDCOnlineMonitor"
+    transferPluginType: Shmem
+    shm_key: 0x34913041 #can change to another unique
+    max_fragment_size_words: 100000000
+    first_event_builder_rank: 0
+    source_rank: 5
+    destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "SPECTDCOnlineMonitor"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "SPECTDCOnlineMonitor"
+          transferPluginType: Shmem
+          shm_key: 0x34913041 #can change to another unique
+          max_fragment_size_words: 100000000
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}
+

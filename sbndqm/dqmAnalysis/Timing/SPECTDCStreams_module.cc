@@ -25,6 +25,10 @@
 #include "sbndaq-online/helpers/Utilities.h"
 #include "sbndaq-online/helpers/EventMeta.h"
 #include "sbnobj/SBND/Timing/DAQTimestamp.hh"
+#include "sbndaq-artdaq-core/Overlays/SBND/PTBFragment.hh"
+
+#include "artdaq-core/Data/ContainerFragment.hh"
+#include "artdaq-core/Data/Fragment.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -34,7 +38,6 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
-
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -48,521 +51,588 @@ namespace sbndaq {
    
         virtual void analyze(art::Event const & evt); 
   
-        // Define your function 
-  
+        // Define your function
+	std::vector<uint64_t> GetAllHLTs(artdaq::ContainerFragment *trigfrag);
+	std::vector<uint64_t> GetHLT(sbndaq::CTBFragment ptb_fragment);
+        bool ApplyGateFilter(std::vector<uint64_t> triggers, std::vector<uint64_t> ftrigger_type, std::vector<uint64_t> fexcluded_trigger);
+	void ResetVars();	
+        double OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts);
+        std::vector<double> ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts);
+	bool CheckSecondRollOver(std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> ts_vec);	
+
+	void Check_nCRTT1();
+	void Check_nBES();
+	void Check_nRWM();
+	void Check_nFTRIG();
+	void Check_nETRIG();
+
+	void Check_BES_CRTT1_diff();
+	void Check_RWM_BES_diff();
+	void Check_ETRIG_BES_diff();
+	void Check_FTRIG_ETRIG_diff();
+
     private: 
- 
-        // Redis Variables (TODO: UnComment) 
-         std::string m_redis_hostname; 
-         int m_redis_port; 
-         fhicl::ParameterSet m_metric_config; 
          
-        //Label 
-        std::string m_DAQTimestamp_label; 
- 
-        //Define your variables         
+        //Fcl Config 
+        std::string fDAQTimestampLabel;
+	std::string fDAQLabel;
+	std::string fPTBContainerInstance;
+	
+	int fVerbose;
+
+	std::vector<uint64_t> fHLT_beam;
+	std::vector<uint64_t> fHLT_beam_excluded;
+	std::vector<uint64_t> fHLT_offbeam;
+	std::vector<uint64_t> fHLT_offbeam_excluded;
+	std::vector<uint64_t> fHLT_crossingmuon;
+	std::vector<uint64_t> fHLT_crossingmuon_excluded;
+
+        uint32_t fCRTT1_ch;
+        uint32_t fBES_ch;
+        uint32_t fRWM_ch;
+        uint32_t fFTRIG_ch;
+        uint32_t fETRIG_ch;
+
+        double fExpected_BES_CRTT1_diff;
+        double fExpected_BES_CRTT1_jitter;
+
+        double fExpected_RWM_BES_diff;
+        double fExpected_RWM_BES_jitter;
+
+        double fExpected_ETRIG_BES_diff;
+        double fExpected_ETRIG_BES_jitter;
+
+        double fExpected_FTRIG_ETRIG_diff;
+        double fExpected_FTRIG_ETRIG_jitter;
+
+        //Class variables 
         int _event; 
-        int run_num = 0; 
-        double GLOB_RWM_BES_diff = 1e20; 
-        double GLOB_CRT_BES_diff = 1e20; 
-        double GLOB_ETRIG_BES_diff = 1e20; 
-        double GLOB_ETRIG_RWM_diff = 1e20;
-        double GLOB_ETRIG_FTRIG_diff = 1e20;
-        double GLOB_BES_FTRIG_diff = 1e20;
+	
+	std::vector<uint64_t> hlt_vec;
 
+        std::vector<uint64_t> crtt1_vec; 
+        std::vector<uint64_t> bes_vec; 
+        std::vector<uint64_t> rwm_vec; 
+        std::vector<uint64_t> ftrig_vec; 
+        std::vector<uint64_t> etrig_vec; 
 
-        std::vector<uint64_t>    GLOB_RWM_BES_diff_vec; 
-        std::vector<uint64_t>    GLOB_CRT_BES_diff_vec; 
-        std::vector<uint64_t>    GLOB_ETRIG_BES_diff_vec;
-        std::vector<uint64_t>    GLOB_ETRIG_RWM_diff_vec;
-        std::vector<uint64_t>    GLOB_ETRIG_FTRIG_diff_vec;
-        std::vector<uint64_t>    GLOB_BES_FTRIG_diff_vec;
- 
-        //Group by channel 0 
-        std::vector<uint64_t>    _tdc_timestamp0; 
-        std::vector<std::string> _tdc_name0; 
-         
-        //Group by channel 1  
-        std::vector<uint64_t>    _tdc_timestamp1; 
-        std::vector<std::string> _tdc_name1; 
-         
-        //Group by channel 2  
-        std::vector<uint64_t>    _tdc_timestamp2; 
-        std::vector<std::string> _tdc_name2; 
-         
-        //Group by channel 3  
-        std::vector<uint64_t>    _tdc_timestamp3; 
-        std::vector<std::string> _tdc_name3; 
-         
-        //Group by channel 4  
-        std::vector<uint64_t>    _tdc_timestamp4; 
-        std::vector<std::string> _tdc_name4; 
+        int nCRTT1 = 0; 
+        int nBES = 0; 
+        int nRWM = 0; 
+        int nFTRIG = 0; 
+        int nETRIG = 0; 
+
+	double BES_CRTT1_diff; 
+	double RWM_BES_diff;  
+	double ETRIG_BES_diff;
+	std::vector<double> FTRIG_ETRIG_diff;
        
     }; 
 } 
 
-
 sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset) 
   : EDAnalyzer(pset) 
-  // Redis Variables (TODO: UnComment) 
-   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "sbnd-db") } 
-   , m_redis_port{ pset.get<int>("RedisPort", 6379) } 
-   , m_metric_config{ pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig") } 
-  , m_DAQTimestamp_label{ pset.get<std::string>("DAQTimestampLabel") } 
-
+  , fDAQTimestampLabel(pset.get<std::string>("DAQTimestampLabel", "daqSPECTDC")) 
+  , fDAQLabel(pset.get<std::string>("DAQLabel", "daq"))
+  , fPTBContainerInstance(pset.get<std::string>("PTBContainerInstance", "ContainerPTB")) 
+  , fVerbose(pset.get<int>("Verbose", 0))
+  , fHLT_beam(pset.get<std::vector<uint64_t>>("HLT_beam"))
+  , fHLT_beam_excluded(pset.get<std::vector<uint64_t>>("HLT_beam_excluded"))
+  , fHLT_offbeam(pset.get<std::vector<uint64_t>>("HLT_offbeam"))
+  , fHLT_offbeam_excluded(pset.get<std::vector<uint64_t>>("HLT_offbeam_excluded"))
+  , fHLT_crossingmuon(pset.get<std::vector<uint64_t>>("HLT_crossingmuon"))
+  , fHLT_crossingmuon_excluded(pset.get<std::vector<uint64_t>>("HLT_crossingmuon_excluded"))
+  , fCRTT1_ch(pset.get<uint32_t>("CRTT1_ch", 0))
+  , fBES_ch(pset.get<uint32_t>("BES_ch", 1))
+  , fRWM_ch(pset.get<uint32_t>("RWM_ch", 2))
+  , fFTRIG_ch(pset.get<uint32_t>("FTRIG_ch", 3))
+  , fETRIG_ch(pset.get<uint32_t>("ETRIG_ch", 4))
+  , fExpected_BES_CRTT1_diff(pset.get<double>("Expected_BES_CRTT1_diff", 1.5)) //ms
+  , fExpected_BES_CRTT1_jitter(pset.get<double>("Expected_BES_CRTT1_jitter", 0.1)) //ms
+  , fExpected_RWM_BES_diff(pset.get<double>("Expected_RWM_BES_diff", 2)) //us
+  , fExpected_RWM_BES_jitter(pset.get<double>("Expected_RWM_BES_jitter", 1)) //us
+  , fExpected_ETRIG_BES_diff(pset.get<double>("Expected_ETRIG_BES_diff", 332)) //us
+  , fExpected_ETRIG_BES_jitter(pset.get<double>("Expected_ETRIG_BES_jitter", 1)) //us
+  , fExpected_FTRIG_ETRIG_diff(pset.get<double>("Expected_FTRIG_ETRIG_diff", 2)) //ms
+  , fExpected_FTRIG_ETRIG_jitter(pset.get<double>("Expected_FTRIG_ETRIG_jitter", 0.5)) //ms
 {
-  
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   }
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("SPECTDCMetricConfig"));
-
 } 
- 
-void sbndaq::SPECTDCStreams::analyze(art::Event const & e) { 
 
-  //Define metric for Redis (TODO: UnComment)  
-//  int level = 3;  
-//  artdaq::MetricMode mode = artdaq::MetricMode::Average; 
-//  artdaq::MetricMode rate = artdaq::MetricMode::Rate; 
-  std::string groupName = "SPECTDC"; 
+std::vector<uint64_t> sbndaq::SPECTDCStreams::GetAllHLTs(artdaq::ContainerFragment*  ptb_container_fragment){
+  std::vector<uint64_t> triggers;    
+
+  for (size_t f=0; f<ptb_container_fragment->block_count(); ++f){//loop over container of fragments
+    //std::cout << "hello" << std::endl;
+    artdaq::Fragment frag=*ptb_container_fragment->at(f).get();
+    sbndaq::CTBFragment ptb_fragment(frag);
+    //==============
+    std::vector fragTriggers=GetHLT(ptb_fragment); //Not sure that there could really be multiple HLTs in a single fragment but just in case I'll make it vector
+    triggers.insert(triggers.end(), fragTriggers.begin(), fragTriggers.end() );//append list of triggers in this fragment to all of the HLTs in the container
+  }//end loop over fragments
+  
+  return triggers;
+}
+
+std::vector<uint64_t> sbndaq::SPECTDCStreams::GetHLT(sbndaq::CTBFragment ptb_fragment){
+  std::vector<uint64_t> triggers;  
+
+  for ( size_t i = 0; i < ptb_fragment.NWords(); i++ ) {//loop over words in fragment       
+    if  (ptb_fragment.Word(i)->word_type !=0x2 ) continue; //0x2 is the type for an HLT (0x1 for LLT) 
+    uint64_t hlt_mask = ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF;
+    // Process each set bit in hlt_mask as a separate HLT trigger
+    while (hlt_mask) {
+            uint64_t hlttrigger = __builtin_ctzll(hlt_mask); // Find the least significant set bit
+            hlt_mask &= (hlt_mask - 1); // Clear the least significant set bit
+            if (hlttrigger >= 20) continue;  //HLT triggers greater then 20 are reserved for non event triggers
+            triggers.emplace_back(hlttrigger);
+    }
+  }
+  
+  return triggers;
+}
+
+bool sbndaq::SPECTDCStreams::ApplyGateFilter(std::vector<uint64_t> triggers, std::vector<uint64_t> ftrigger_type, std::vector<uint64_t> fexcluded_triggers)
+{
+
+  std::string trigTypeList="{";//create list of the selected trigger types
+  for ( auto const trigger_type: ftrigger_type ){//get a string with the list of all the trigger types we're looking for 
+    trigTypeList+=std::to_string(trigger_type)+",";
+  }
+  trigTypeList+="}";
+
+  if ( triggers.size() > 0 )  if ( fVerbose > 1 ) std::cout << "This event has " << triggers.size() << " HLTs in it. Filter will pass if any are trigger type == "<< trigTypeList.c_str() << ".\n";
+
+  std::string trigstring="";
+  bool passesFilter=false;
+
+  for(auto const hlttrigger: triggers){//Loop over the HLTs found in the fragment
+    if(fexcluded_triggers.size()>0){//Need to loop through all of the excluded trigger types to check for them for each present HLT 
+      for(auto const excluded_trigger : fexcluded_triggers){//loop over the list of triggers to exclude from the fcl
+	if (hlttrigger==excluded_trigger){
+	
+	  if(fVerbose > 1 ) std::cout << "This Event contains an excluded trigger type " << hlttrigger << " == " << excluded_trigger<< " so fails the filter.\n";
+	  return false;
+	}
+      }
+    }//end loop over excluded triggers
+    for(auto const trigger_type: ftrigger_type){//loop over the list of triggers to include from the fcl
+      if( hlttrigger==trigger_type){
+
+	if (fVerbose > 1) std::cout << "This Event has trigger type " << hlttrigger << "==" << trigger_type << "  and passes filter.\n";
+
+        passesFilter=true;
+
+	if(fexcluded_triggers.size()==0) break;//no need to keep looking through the triggers if none are excluded
+      }
+      trigstring+= std::to_string(hlttrigger)+", ";
+    }
+  }//end loop hlts 
+
+  if (passesFilter) return true;
+  
+  
+  if (fVerbose > 1) std::cout << "This Event has trigger type { " << trigstring  << "} == " << trigTypeList.c_str() << " and fails filter.\n";
+  return false;
+
+}
+
+void sbndaq::SPECTDCStreams::ResetVars() {
+  hlt_vec.clear();
+  crtt1_vec.clear();
+  bes_vec.clear();
+  rwm_vec.clear();
+  ftrig_vec.clear();
+  etrig_vec.clear();
+
+  nCRTT1 = 0; 
+  nBES = 0; 
+  nRWM = 0; 
+  nFTRIG = 0; 
+  nETRIG = 0; 
+
+  BES_CRTT1_diff = DBL_MAX; 
+  RWM_BES_diff = DBL_MAX;  
+  ETRIG_BES_diff = DBL_MAX;
+  FTRIG_ETRIG_diff.clear();
+}
+
+bool sbndaq::SPECTDCStreams::CheckSecondRollOver(std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> ts_vec){
+
+  uint64_t earliest_ts = std::numeric_limits<uint64_t>::max();
+  uint64_t latest_ts = std::numeric_limits<uint64_t>::max();
+
+  for(unsigned int i = 0; i < ts_vec.size(); i++) { 
+    uint64_t ts = ts_vec[i]->Timestamp() + ts_vec[i]->Offset();
+
+    if(i == 0){
+      earliest_ts = ts;
+      latest_ts = ts;
+    }else{
+      if (ts < earliest_ts) earliest_ts = ts;
+      if (ts > latest_ts) latest_ts = ts;
+    }
+  }
+
+  //Get the second part
+  earliest_ts /= uint64_t(1e9);
+  latest_ts /= uint64_t(1e9);
+  
+  if ((latest_ts - earliest_ts) > 1) return true; 
+ 
+  return false;  
+}	
+
+void sbndaq::SPECTDCStreams::Check_nCRTT1() {
+  if (nCRTT1 == 1) std::cout << "Good event has one CRT T1 Reset." << std::endl; 
+  if (nCRTT1 != 1) std::cout << "BAD!! n CRT T1 = " << nCRTT1 << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nBES() {
+  if (nBES == 1) std::cout << "Good event has one BES." << std::endl; 
+  if (nBES != 1) std::cout << "BAD!! n BES = " << nBES << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nRWM() {
+  if (nRWM == 1) std::cout << "Good event has one RWM." << std::endl; 
+  if (nRWM != 1) std::cout << "BAD!! n RWM = " << nRWM << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nFTRIG() {
+  if (nFTRIG > 0 ) std::cout << "Good event has " << nFTRIG << " FTRIG." << std::endl; 
+  if (nFTRIG == 0) std::cout << "BAD!! n FTRIG = " << nFTRIG << ". Expected 10~20 FTRIG!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_nETRIG() {
+  if (nETRIG == 1 ) std::cout << "Good event has one ETRIG." << std::endl; 
+  if (nETRIG != 1) std::cout << "BAD!! n ETRIG = " << nETRIG << ". Expected one!!" << std::endl;
+}
+
+void sbndaq::SPECTDCStreams::Check_BES_CRTT1_diff() {
+  if ( (BES_CRTT1_diff < (fExpected_BES_CRTT1_diff + fExpected_BES_CRTT1_jitter)) 
+    && (BES_CRTT1_diff > (fExpected_BES_CRTT1_diff - fExpected_BES_CRTT1_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! BES - CRT T1 = " << BES_CRTT1_diff << " ms." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! BES - CRT T1 = " << BES_CRTT1_diff << " ms out of expectation of " << fExpected_BES_CRTT1_diff;
+    std::cout << "+-" << fExpected_BES_CRTT1_jitter << " ms" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_RWM_BES_diff() {
+  if ( (RWM_BES_diff < (fExpected_RWM_BES_diff + fExpected_RWM_BES_jitter)) 
+    && (RWM_BES_diff > (fExpected_RWM_BES_diff - fExpected_RWM_BES_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! RWM - BES = " << RWM_BES_diff << " us." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! RWM - BES = " << RWM_BES_diff << " us out of expectation of " << fExpected_RWM_BES_diff;
+    std::cout << "+-" << fExpected_RWM_BES_jitter << " us" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_ETRIG_BES_diff() {
+  if ( (ETRIG_BES_diff < ( fExpected_ETRIG_BES_diff + fExpected_ETRIG_BES_jitter)) 
+    && (ETRIG_BES_diff > ( fExpected_ETRIG_BES_diff - fExpected_ETRIG_BES_jitter)) ){
+    std::cout << std::setprecision(3) << "Good! ETRIG - BES = " << ETRIG_BES_diff << " us." << std::endl;
+  }else{
+    std::cout << std::setprecision(3) << "BAD!! RWM - BES = " << ETRIG_BES_diff << " us out of expectation of " << fExpected_ETRIG_BES_diff;
+    std::cout << "+-" << fExpected_ETRIG_BES_jitter << " us" << std::endl;
+  } 
+}
+
+void sbndaq::SPECTDCStreams::Check_FTRIG_ETRIG_diff() {
+  std::cout << "Checking " << nFTRIG << " FTRIGs agreement with ETRIG." << std::endl;
+  for (auto const ts: FTRIG_ETRIG_diff){
+    if ( (ts < (fExpected_FTRIG_ETRIG_diff + fExpected_FTRIG_ETRIG_jitter)) 
+    && (ts > (fExpected_FTRIG_ETRIG_diff*-1 - fExpected_FTRIG_ETRIG_jitter)) ){
+      std::cout << std::setprecision(3) << "   Good! FTRIG - ETRIG = " << ts << " ms." << std::endl;
+    }else{
+      std::cout << std::setprecision(3) << "BAD!! FTRIG - ETRIG = " << ts << " ms out of expectation of " << "[-" << fExpected_FTRIG_ETRIG_diff << ", " << fExpected_FTRIG_ETRIG_diff <<"]";
+      std::cout << "+-" << fExpected_FTRIG_ETRIG_jitter << " ms" << std::endl;
+    } 
+  }
+}
+
+double sbndaq::SPECTDCStreams::OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts){
+
+  double diff = DBL_MAX;
+
+  if ((early_ts.size() == 1)  && (late_ts.size() == 1)){
+
+    //get the ns part so it's only 9 digits for double
+    double early_ts_nspart = early_ts.back()%uint64_t(1e9);
+    double late_ts_nspart = late_ts.back()%uint64_t(1e9);
+    
+    diff = late_ts_nspart - early_ts_nspart;
+  }
+  return diff;
+}
+
+std::vector<double> sbndaq::SPECTDCStreams::ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts){
+
+  std::vector<double> diff;
+
+  if ((one_ts.size() == 1)  && (many_ts.size() > 1)){
+    
+    //get the ns part so it's only 9 digits for double
+    double one_ts_nspart = one_ts.back()%uint64_t(1e9);
+    
+    for (auto const ts: many_ts){
+
+      //get the ns part so it's only 9 digits for double
+      double ts_nspart = ts%uint64_t(1e9);
+      diff.push_back(ts_nspart - one_ts_nspart);
+    }  
+  }
+  return diff;
+}
+
+void sbndaq::SPECTDCStreams::analyze(art::Event const & e) { 
 
   //------------------------------------------------------------------------------// 
   //Get event number 
   _event = e.id().event(); 
 
-  // Get DAQTimestamps 
-  art::Handle<std::vector<sbnd::timing::DAQTimestamp>> DAQTimestampHandle; 
-  e.getByLabel(m_DAQTimestamp_label, DAQTimestampHandle); 
-  if(!DAQTimestampHandle.isValid()){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze")  
-         << "Data product '" << m_DAQTimestamp_label << "' has no timing::DAQTimestamp in it!\n"; 
-    //std::cout 
-       // << "Data product '" << m_DAQTimestamp_label << "' has no timing::DAQTimestamp in it!\n"; 
-     
-    //TODO: Should be some check here for DQM if an event has no timestamps from SPECTDC  
+  if (fVerbose > 0) std::cout << "================= EVENT " << _event << " =================" << std::endl; 
+
+  //------------------------------------------------------------------------------// 
+  //Get PTB fragment container
+  art::InputTag itag(fDAQLabel, fPTBContainerInstance);
+  auto cont_frags = e.getHandle<artdaq::Fragments>(itag);
+  
+  if(!cont_frags){
+    mf::LogError("sbndaq::SPECTDCStreams::analyze") << "Data product '" << fDAQLabel << "' has no " << fPTBContainerInstance << " in it! Skip this event.\n";
+    return; 
+  }
+  else{
+    for(auto const& cont : *cont_frags){
+      artdaq::ContainerFragment contf(cont);                                           
+      hlt_vec=GetAllHLTs(&contf);
+
+      if (fVerbose > 1) {
+	std::cout << "HLT size = " << hlt_vec.size() << ", contains HLT = ";
+	for (auto const hlt: hlt_vec){
+          std::cout << hlt << " ";
+        }
+	std::cout << std::endl;
+      }
+    }
+  }
+
+  //------------------------------------------------------------------------------// 
+  //Apply Filter based on HLT, copy from SBNDGayeFilter: https://github.com/SBNSoftware/sbndaq-artdaq/blob/v1_10_03/sbndaq-artdaq/ArtModules/SBND/SBNDGateFilter_module.cc
+  //Hardcoded for 3 main streams: beam, offbeam and crossing muons
+
+  bool passBeam = false;
+  bool passOffbeam = false;
+  bool passXmuon = false;
+
+  passBeam = ApplyGateFilter(hlt_vec, fHLT_beam, fHLT_beam_excluded);
+  passOffbeam = ApplyGateFilter(hlt_vec, fHLT_offbeam, fHLT_offbeam_excluded);
+  passXmuon = ApplyGateFilter(hlt_vec, fHLT_crossingmuon, fHLT_crossingmuon_excluded);
+
+  if ((passBeam + passOffbeam + passXmuon) == 0){
+    if (fVerbose > 0) std::cout << "No filter passes! Something went wrong. Skip this event." << std::endl;
+    return;
   } 
+  else if ((passBeam + passOffbeam + passXmuon) != 1) {
+    if (fVerbose > 0) std::cout << "More than 1 filter pass! Something went wrong. Skip this event." << std::endl;
+    return;
+  }
+  else{
+    std::cout << "One filter passes! ";
+    if (passBeam) std::cout << "Event is beam stream." << std::endl;
+    if (passOffbeam) std::cout << "Event is offbeam stream." << std::endl;
+    if (passXmuon) std::cout << "Event is crossing muon stream." << std::endl;
+  }
+  //------------------------------------------------------------------------------// 
+  // Get DAQTimestamps products 
+  art::Handle<std::vector<sbnd::timing::DAQTimestamp>> DAQTimestampHandle; 
+  e.getByLabel(fDAQTimestampLabel, DAQTimestampHandle); 
+
+  if( !DAQTimestampHandle.isValid() || DAQTimestampHandle->empty() ){
+    mf::LogError("sbndaq::SPECTDCStreams::analyze") << "Data product '" << fDAQTimestampLabel << "' has no timing::DAQTimestamp in it! Skip this event.\n"; 
+    return; 
+  } 
+
   std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> DAQTimestampVec; 
   art::fill_ptr_vector(DAQTimestampVec, DAQTimestampHandle); 
-
-  // Fill SPECTDC variables to local vector for doing metric maths 
-  unsigned nDAQTimestamps = DAQTimestampVec.size(); 
-  unsigned nch0 = 0; 
-  unsigned nch1 = 0; 
-  unsigned nch2 = 0; 
-  unsigned nch3 = 0; 
-  unsigned nch4 = 0; 
+  if (fVerbose > 1) std::cout << "timing::DAQTimestamp size = " << DAQTimestampVec.size() << std::endl;
+  
+  if (CheckSecondRollOver(DAQTimestampVec)){
+    if (fVerbose > 0) std::cout << "Event has the second roll over. Skip this event." << std::endl;
+    return;
+  }	
+  //------------------------------------------------------------------------------// 
+  // Fill SPECTDC variables  
   
   // Populate local vectors and count channels  
-  for(unsigned i = 0; i < nDAQTimestamps; ++i) { 
-      auto ts = DAQTimestampVec[i]; 
+  for(auto const ts: DAQTimestampVec) { 
        
-      if (ts->Channel() == 0) { 
-        _tdc_timestamp0.push_back(ts->Timestamp() + ts->Offset()); 
-        _tdc_name0.push_back(ts->Name()); 
-        nch0++; 
+      if (ts->Channel() == fCRTT1_ch) { 
+        crtt1_vec.push_back(ts->Timestamp() + ts->Offset()); 
+        nCRTT1++; 
       }  
        
-      if (ts->Channel() == 1) { 
-        _tdc_timestamp1.push_back(ts->Timestamp() + ts->Offset()); 
-        _tdc_name1.push_back(ts->Name()); 
-        nch1++; 
+      if (ts->Channel() == fBES_ch) { 
+        bes_vec.push_back(ts->Timestamp() + ts->Offset()); 
+        nBES++; 
       }  
        
-      if (ts->Channel() == 2) { 
-        _tdc_timestamp2.push_back(ts->Timestamp() + ts->Offset()); 
-        _tdc_name2.push_back(ts->Name()); 
-        nch2++; 
+      if (ts->Channel() == fRWM_ch) { 
+        rwm_vec.push_back(ts->Timestamp() + ts->Offset()); 
+        nRWM++; 
       }  
        
-      if (ts->Channel() == 3) { 
-        _tdc_timestamp3.push_back(ts->Timestamp() + ts->Offset()); 
-        _tdc_name3.push_back(ts->Name()); 
-        nch3++; 
+      if (ts->Channel() == fFTRIG_ch) { 
+        ftrig_vec.push_back(ts->Timestamp() + ts->Offset()); 
+        nFTRIG++; 
       }  
        
-      if (ts->Channel() == 4) { 
-        _tdc_timestamp4.push_back(ts->Timestamp() + ts->Offset()); 
-        _tdc_name4.push_back(ts->Name()); 
-        nch4++;  
-      }  
-//      std::cout << " Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl; 
+      if (ts->Channel() == fETRIG_ch) { 
+        etrig_vec.push_back(ts->Timestamp() + ts->Offset()); 
+        nETRIG++;  
+      }
+
+      if (fVerbose > 2)  std::cout << "   Chan" << ts->Channel() << " " << ts->Name() << " has timestamp " << ts->Timestamp() << " ns and offset " << ts->Offset() << " ns " << std::endl; 
+  }
+ 
+  if (fVerbose > 1){
+    std::cout << "nCRTT1 = " << nCRTT1; 
+    std::cout << ", nBES = " << nBES; 
+    std::cout << ", nRWM = " << nRWM; 
+    std::cout << ", nFTRIG = " << nFTRIG; 
+    std::cout << ", nETRIG = " << nETRIG << std::endl; 
    }
 
-//  std::cout << "Event " << _event << " has " << nDAQTimestamps << " timestamps." << std::endl; 
-//  std::cout << "nCRTT1 = " << nch0 << std::endl; 
-//  std::cout << "nBES = " << nch1 << std::endl; 
-//  std::cout << "nRWM = " << nch2 << std::endl; 
-//  std::cout << "nFTRIG = " << nch3 << std::endl; 
-//  std::cout << "nETRIG = " << nch4 << std::endl; 
-   
-  bool ch0exists = (nch0>0); 
-  bool ch1exists = (nch1>0); 
-  bool ch2exists = (nch2>0); 
-  bool ch3exists = (nch3>0); 
-  bool ch4exists = (nch4>0); 
- 
   //------------------------------------------------------------------------------// 
-  // TODO: Do math metrics here 
-   
-  /* Reminder: SPEC TDC channel inputs 
-     ch0: CRT T1 reset (from PTB)  -- once per event 
-     ch1: BES (Beam Early Signal) -- once per event 
-     ch2: RWM (Resistor Wall Monitor) -- once per event 
-     ch3: FTRIG (Flash trigger from PTB)  -- multiple per event 
-     ch4: ETRIG (Event trigger from PTB)  -- once per event 
-  */ 
+  // Send metrics based on HLT. Currently there are 3 main streams: beam, offbeam and crossing muons
 
+  /*BNBZeroBias + BNBLight Stream
+  ch0: CRT T1 reset (from PTB)  -- once per event 
+  ch1: BES (Beam Early Signal) -- once per event 
+  ch2: RWM (Resistor Wall Monitor) -- once per event 
+  ch3: FTRIG (Flash trigger from PTB)  -- multiple per event 
+  ch4: ETRIG (Event trigger from PTB)  -- once per event 
+  */
+  if (passBeam) {
 
-  // Metric 1: Exact 1 ETRIG 
-  bool oneETRIG = false; 
-  if (nch4 == 1) oneETRIG = true; 
-//  std::cout << "Is there 1 ETRIG? " << oneETRIG << std::endl; 
-  if(nch4 != 1){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch4 << " ETRIG in it!\n"; 
-  }   
- 
-  // Metric 2: Exact 1 CRT T1 Reset (different number of CRT T1 for different streams) 
-  bool oneCRT = false; 
-  if (nch0 == 1) oneCRT = true; 
-//  std::cout << "Is there 1 CRT T1 reset? " << oneCRT << std::endl;   
-  if(nch0 != 1){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch0 << " CRT T1 reset in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch0 << " CRT T1 resst in it!\n"; 
-  } 
- 
-  // Metric 3: ~10 FTRIG 
-  bool manyFTRIG = false; 
-  if (nch3 > 20) manyFTRIG = true; 
-//  std::cout << "Are there many (~10) FTRIGs? " << manyFTRIG  << std::endl; 
- // if(nch3 <= 20) std::cout << " Number of FTRIG is "<< nch3 << std::endl; 
+    BES_CRTT1_diff = OneToOneDiff(crtt1_vec, bes_vec)/1'000'000; //ns to ms
+    RWM_BES_diff = OneToOneDiff(bes_vec, rwm_vec)/1'000; //ns to us
+    ETRIG_BES_diff = OneToOneDiff(bes_vec, etrig_vec)/1'000; //ns to us
+    
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
+    } 
 
-  // Metric 4: Exact 1 BES 
-  bool oneBES = false; 
-  if (nch1 == 1) oneBES = true; 
-//  std::cout << "Is there 1 BES? " << oneBES << std::endl; 
-  if(nch1 == 0) std::cout << " How many BES?  "<< nch1 << std::endl; 
-  if (nch1 == 0 and nch2 > 0){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has 0 BES, but " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has 0 BES, but " << nch2 << " RWM in it!\n"; 
-  } 
-  if (nch1 > 1 ){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES in it!\n";  
-  } 
- 
-  // Metric 5: Exact 1 RWM 
-  bool oneRWM = false; 
-  if (nch2 == 1) oneRWM = true; 
-//  std::cout << "Is there 1 RWM? " << oneRWM << std::endl; 
- // if(nch2 == 0) std::cout << " How many RWM? "<< nch2 << std::endl; 
-  if (nch2 > 1 ){ 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM in it!\n"; 
-  } 
+    if (fVerbose > 0){
+      std::cout << std::endl;
 
-  // Metric 6: RWM - BES diff constant 
-  double RWM_BES_diff = 1e20; 
-  bool RWM_BES_const = false;   
-  if (!(ch1exists and ch2exists)){ 
-//    std::cout << "RWM_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
-    RWM_BES_const = true; 
-  } 
-  else if(oneBES == true && oneRWM == true) { 
-    RWM_BES_diff = _tdc_timestamp2.back() - _tdc_timestamp1.back();   
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl;  
- //   std::cout << " difference is " << RWM_BES_diff << std::endl; 
-    RWM_BES_const = (abs(GLOB_RWM_BES_diff -  RWM_BES_diff) < 3); 
-  } 
-  else { 
-    RWM_BES_diff = _tdc_timestamp2.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << " difference between last RWM and last BES is " << RWM_BES_diff << std::endl; 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << " RWM in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch2 << "RWM in it!\n"; 
-    RWM_BES_const = (abs(GLOB_RWM_BES_diff - RWM_BES_diff) < 3); 
+      Check_nCRTT1(); Check_nBES(); Check_nRWM(); Check_nFTRIG(); Check_nETRIG();
+      
+      std::cout << std::endl;
+
+      Check_BES_CRTT1_diff();
+      Check_RWM_BES_diff();
+      Check_ETRIG_BES_diff();
+      Check_FTRIG_ETRIG_diff();
+      
+      std::cout << std::endl;
+    }
+
+    //Send metrics
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nBES", nBES, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nRWM", nRWM, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
   
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_CRTT1_diff", BES_CRTT1_diff, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_diff", RWM_BES_diff, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
   }
-  GLOB_RWM_BES_diff = RWM_BES_diff; 
-//  std::cout << "RWM - BES constant? " << RWM_BES_const << std::endl;  
-  GLOB_RWM_BES_diff_vec.push_back(RWM_BES_diff);   
 
+  /*OffbeamZeroBias + OffbeamLight Stream
+  ch0: CRT T1 reset (from PTB) -- once per event 
+  ch1: BES (Beam Early Signal) -- no (TDC does not see offbeam BES) 
+  ch2: RWM (Resistor Wall Monitor) -- no 
+  ch3: FTRIG (Flash trigger from PTB)  -- multiple per event 
+  ch4: ETRIG (Event trigger from PTB)  -- once per event 
+  */
+  if (passOffbeam) {
+    
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
+    } 
 
+    if (fVerbose){
+      std::cout << std::endl;
 
-  // Metric 7: CRT T1 - BES diff constant 
-  double CRT_BES_diff = 1e20; 
-  bool CRT_BES_const = false; 
-  if (!(ch0exists and ch1exists)){ 
-//    std::cout << "CRT_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 0 populated? " << ch0exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
-    CRT_BES_const = true; 
-  } 
-  else if(oneCRT == true && oneBES == true) { 
-    CRT_BES_diff = _tdc_timestamp0.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference is " << CRT_BES_diff << std::endl; 
-    CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
-  } 
-  else { 
-    CRT_BES_diff = _tdc_timestamp0.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch0 = " << _tdc_timestamp0.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference between last CRT T1 reset and last BES is " << CRT_BES_diff << std::endl; 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch0 << " CRT T1 reset in it!\n"; 
-    CRT_BES_const = (abs(GLOB_CRT_BES_diff - CRT_BES_diff) < 3); 
-  } 
-  GLOB_CRT_BES_diff = CRT_BES_diff; 
-//  std::cout << "CRT T1 reset - BES constant? " << CRT_BES_const << std::endl; 
-  GLOB_CRT_BES_diff_vec.push_back(CRT_BES_diff); 
+      Check_nCRTT1(); Check_nFTRIG(); Check_nETRIG();
+      
+      std::cout << std::endl;
 
-  // Metric 8: ETRIG - BES diff ~1.6us + jitter 
-  //make 1.6 hardcoded for now, but put into the fcl file later 
-//  double ETRIG_BES_jitter = 20;
-  double ETRIG_BES_diff = 1e20; 
-//  bool ETRIG_BES_const = false; 
-  if (!(ch4exists and ch1exists)){ 
-//    std::cout << "ETRIG_BES_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 1 populated? " << ch1exists << std::endl; 
-//    ETRIG_BES_const = true; 
-  } 
-  else if(oneETRIG == true && oneBES == true) { 
-    ETRIG_BES_diff = _tdc_timestamp4.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference is " << ETRIG_BES_diff << std::endl; 
-//    ETRIG_BES_const =  (abs(ETRIG_BES_diff - 1600) < ETRIG_BES_jitter ); 
-  } 
-  else { 
-    ETRIG_BES_diff = _tdc_timestamp4.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and last BES is " << ETRIG_BES_diff << std::endl; 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch1 << " BES and " << nch4 << " ETRIG in it!\n"; 
-//    ETRIG_BES_const = (abs(ETRIG_BES_diff - 1600) < ETRIG_BES_jitter) ; 
+      Check_FTRIG_ETRIG_diff();
+
+      std::cout << std::endl;
+    } 
+
+    //Send metrics
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nCRTT1", nCRTT1, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
   }
-  GLOB_ETRIG_BES_diff = ETRIG_BES_diff; 
-//  std::cout << "ETRIG - BES constant difference of 1.6us + jitter? " << ETRIG_BES_const << std::endl; 
-  GLOB_ETRIG_BES_diff_vec.push_back(ETRIG_BES_diff); 
 
+  /*CrossingMuon Stream
+  ch0: CRT T1 reset (from PTB) -- maybe 
+  ch1: BES (Beam Early Signal) -- maybe 
+  ch2: RWM (Resistor Wall Monitor) -- no 
+  ch3: FTRIG (Flash trigger from PTB)  -- multiple per event, although should half compared to beam/offbeam streams
+  ch4: ETRIG (Event trigger from PTB)  -- once per event 
+  */
+  if (passXmuon) {
 
+    FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
+    for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
+      FTRIG_ETRIG_diff[i] /= 1'000'000; //ns to ms
+    } 
 
-  // Metric 9: ETRIG - RWM diff ~1.6us + jitter
-//  double ETRIG_RWM_jitter = 20;  
-  double ETRIG_RWM_diff = 1e20; 
-//  bool ETRIG_RWM_const = false; 
-  if (!(ch4exists and ch2exists)){ 
-//    std::cout << "ETRIG_RWM_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 2 populated? " << ch2exists << std::endl; 
-//    ETRIG_RWM_const = true; 
-  } 
-  else if(oneETRIG == true && oneRWM == true) { 
-    ETRIG_RWM_diff = _tdc_timestamp2.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
- //   std::cout << " difference is " << ETRIG_RWM_diff << std::endl; 
-//    ETRIG_RWM_const =  (abs(ETRIG_RWM_diff - 1600) < ETRIG_RWM_jitter ); 
-  } 
-  else { 
-    ETRIG_RWM_diff = _tdc_timestamp2.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch2 = " << _tdc_timestamp2.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and RWM is " << ETRIG_RWM_diff << std::endl; 
-    mf::LogError("sbndaq::SPECTDCStreams::analyze") 
-         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM and " << nch4 << " ETRIG in it!\n"; 
-//    std::cout 
-//         << "Data product '" << m_DAQTimestamp_label << "' has " << nch2 << " RWM and " << nch4 << " ETRIG in it!\n"; 
-//    ETRIG_RWM_const = (abs(ETRIG_RWM_diff - 1600) < ETRIG_RWM_jitter) ; 
+    if (fVerbose){
+      std::cout << std::endl;
+
+      Check_nFTRIG(); Check_nETRIG();
+      
+      std::cout << std::endl;
+
+      Check_FTRIG_ETRIG_diff();
+
+      std::cout << std::endl;
+    } 
+
+    //Send metrics
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nFTRIG", nFTRIG, 0, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nETRIG", nETRIG, 0, artdaq::MetricMode::LastPoint);  
+
+    for (auto const ts: FTRIG_ETRIG_diff){
+      sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "FTRIG_ETRIG_diff", ts, 0, artdaq::MetricMode::LastPoint); 
+    }
+    //End of Send metrics
   }
-  GLOB_ETRIG_RWM_diff = ETRIG_RWM_diff; 
-//  std::cout << "ETRIG - RWM constant difference of 1.6us + jitter? " << ETRIG_RWM_const << std::endl; 
-  GLOB_ETRIG_RWM_diff_vec.push_back(ETRIG_RWM_diff); 
+ 
+  if (fVerbose > 0) std::cout << "===============================================" << std::endl; 
 
-  // Metric 10: ETRIG - FTRIG diff ~3ms + jitter
-//  double ETRIG_FTRIG_jitter = 2000;  
-  double ETRIG_FTRIG_diff = 1e20; 
-//  bool ETRIG_FTRIG_const = false; 
-  if (!(ch4exists and ch3exists)){ 
-//    std::cout << "ETRIG_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 4 populated? " << ch4exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
-//    ETRIG_FTRIG_const = true; 
-  } 
-  else { 
-    ETRIG_FTRIG_diff = _tdc_timestamp3.back() - _tdc_timestamp4.back(); 
-//    std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
-//    std::cout << "ts ch4 = " << _tdc_timestamp4.back() << std::endl; 
-//    std::cout << " difference between ETRIG and last FTRIG is " << ETRIG_FTRIG_diff << std::endl; 
-//    ETRIG_FTRIG_const = (abs(ETRIG_FTRIG_diff - 3000000) < ETRIG_FTRIG_jitter) ; 
-  } 
-  GLOB_ETRIG_FTRIG_diff = ETRIG_FTRIG_diff;
-//  std::cout << "ETRIG - FTRIG constant difference of 3ms + jitter? " << ETRIG_FTRIG_const << std::endl; 
-  GLOB_ETRIG_FTRIG_diff_vec.push_back(ETRIG_FTRIG_diff); 
-
-
-
-  // Metric 11: BES - FTRIG diff ~3ms + jitter
-//  double BES_FTRIG_jitter = 2000;    
-  double BES_FTRIG_diff = 1e20; 
-//  bool BES_FTRIG_const = false; 
-  if (!(ch1exists and ch3exists)){ 
-//    std::cout << "BES_FTRIG_diff filled with dummy value : 1e20" << std::endl; 
-//    std::cout << " Channel 1 populated? " << ch1exists << ",   Channel 3 populated? " << ch3exists << std::endl; 
-//    BES_FTRIG_const = true; 
-  } 
-  else { 
-    BES_FTRIG_diff = _tdc_timestamp3.back() - _tdc_timestamp1.back(); 
-//    std::cout << "ts ch3 = " << _tdc_timestamp3.back() << std::endl; 
-//    std::cout << "ts ch1 = " << _tdc_timestamp1.back() << std::endl; 
-//    std::cout << " difference between BES and last FTRIG is " << BES_FTRIG_diff << std::endl; 
-//    BES_FTRIG_const = (abs(BES_FTRIG_diff - 3000000) < BES_FTRIG_jitter) ; 
-  } 
-  GLOB_BES_FTRIG_diff = BES_FTRIG_diff;
-//  std::cout << "BES - FTRIG constant difference of 3ms + jitter? " << BES_FTRIG_const << std::endl; 
-  GLOB_BES_FTRIG_diff_vec.push_back(BES_FTRIG_diff); 
-
-
-//  //Metric 12: Channels numbers agree with Channel names 
-//  //not sent out in testing stage as people rename things differently in their test data
-//  bool same_name0 = false; 
-//  bool same_name1 = false; 
-//  bool same_name2 = false; 
-//  bool same_name3 = false;
-//  bool same_name4 = false; 
-//   
-//  std::string str_inp0("crt"); 
-//  std::string str_inp1("bes"); 
-//  std::string str_inp2("rwm"); 
-//  std::string str_inp3("ftrig"); 
-//  std::string str_inp4("etrig");
-//
-//  if (ch0exists == true){ 
-//    for(unsigned i = 0; i < _tdc_name0.size(); ++i) { 
-//       std::string name0 = _tdc_name0[i]+ ""; 
-//       bool same_name = strcasecmp(name0.c_str(),str_inp0.c_str());       
-//      if (same_name == 0) same_name0 = true; 
-//      else{ 
-//         same_name0 = false; 
-//       } 
-//    } 
-////    std::cout << "Channel 0 name is correct? " << same_name0 << std::endl; 
-//  } 
-////  else std::cout << "Channel 0 is empty" << std::endl; 
-//
-//  if (ch1exists == true){  
-//    for(unsigned i = 0; i < _tdc_name1.size(); ++i) { 
-//       std::string name1 = _tdc_name1[i]+ ""; 
-//       bool same_name = strcasecmp(name1.c_str(),str_inp1.c_str()); 
-//       if (same_name == 0) same_name1 = true; 
-//       else{ 
-//         same_name1 = false; 
-//       } 
-//    } 
-////    std::cout << "Channel 1 name is correct? " << same_name1 << std::endl; 
-//  } 
-////  else std::cout << "Channel 1 is empty" << std::endl; 
-//
-//  if (ch2exists == true){ 
-//    for(unsigned i = 0; i < _tdc_name2.size(); ++i) { 
-//       std::string name2 = _tdc_name2[i]+ ""; 
-//       bool same_name = strcasecmp(name2.c_str(),str_inp2.c_str()); 
-//       if (same_name == 0) same_name2 = true; 
-//       else{ 
-//         same_name2 = false; 
-//       } 
-//    } 
-////    std::cout << "Channel 2 name is correct? " << same_name2 << std::endl; 
-//  } 
-////  else std::cout << "Channel 2 is empty" << std::endl; 
-//   
-//  if (ch3exists == true){ 
-//    for(unsigned i = 0; i < _tdc_name3.size(); ++i) { 
-//       std::string name3 = _tdc_name3[i]+ ""; 
-//       bool same_name = strcasecmp(name3.c_str(),str_inp3.c_str()); 
-//       if (same_name == 0) same_name3 = true; 
-//       else{ 
-//         same_name3 = false; 
-//       } 
-//    } 
-////    std::cout << "Channel 3 name is correct? " << same_name3 << std::endl; 
-//  } 
-////  else std::cout << "Channel 3 is empty" << std::endl; 
-//
-//  if(ch4exists == true){ 
-//    for(unsigned i = 0; i < _tdc_name4.size(); ++i) { 
-//       std::string name4 = _tdc_name4[i]+ ""; 
-//       bool same_name = strcasecmp(name4.c_str(),str_inp4.c_str()); 
-//       if (same_name == 0) same_name4 = true; 
-//       else{ 
-//         same_name4 = false; 
-//       } 
-//    } 
-////    std::cout << "Channel 4 name is correct? " << same_name4 << std::endl; 
-//  } 
-////  else std::cout << "Channel 4 is empty" << std::endl; 
-
-  //Metric 13: Channels are populated? 
-//  std::cout << "Channel 0 is populated? " << ch0exists << std::endl; 
-//  std::cout << "Channel 1 is populated? " << ch1exists << std::endl; 
-//  std::cout << "Channel 2 is populated? " << ch2exists << std::endl; 
-//  std::cout << "Channel 3 is populated? " << ch3exists << std::endl; 
-//  std::cout << "Channel 4 is populated? " << ch4exists << std::endl; 
-
-  //Clearing vectors after run_num = 100 
-  run_num++; 
-  if (run_num % 100 == 0){ 
-    GLOB_RWM_BES_diff_vec.clear(); 
-    GLOB_CRT_BES_diff_vec.clear(); 
-    GLOB_ETRIG_BES_diff_vec.clear();
-    GLOB_ETRIG_RWM_diff_vec.clear();
-    GLOB_ETRIG_FTRIG_diff_vec.clear(); 
-    GLOB_BES_FTRIG_diff_vec.clear();
-  } 
-
-
-  //------------------------------------------------------------------------------// 
-  // TODO: Then send metrics 
-  // Example: change metric_ID (i.e. channel ID), metric_name (i.e. channel name), metric_value (i.e. channel timestamp) 
-  // sbndaq::sendMetric(groupName, metric_ID, "metric_name", metric_value , level, mode);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneETRIG", oneETRIG, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneCRT", oneCRT, 0, artdaq::MetricMode::LastPoint);   
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "manyFTRIG", manyFTRIG, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneBES", oneBES, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "oneRWM", oneRWM, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_const", RWM_BES_const, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "CRT_BES_const", CRT_BES_const, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_RWM_diff", ETRIG_RWM_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_FTRIG_diff", ETRIG_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_FTRIG_diff", BES_FTRIG_diff, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch0exists", ch0exists, 0, artdaq::MetricMode::LastPoint);  
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch1exists", ch1exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch2exists", ch2exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch3exists", ch3exists, 0, artdaq::MetricMode::LastPoint); 
-  sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ch4exists", ch4exists, 0, artdaq::MetricMode::LastPoint);  
-
-
-//  std::cout << "--------------Finish event " << _event << std::endl << std::endl; 
+  ResetVars();
 } 
 DEFINE_ART_MODULE(sbndaq::SPECTDCStreams) 
