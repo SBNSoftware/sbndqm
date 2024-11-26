@@ -1,6 +1,7 @@
 #include "canvas/Persistency/Common/Wrapper.h"
 #include <vector>
 #include "sbndqm/dqmAnalysis/TPC/ChannelData.hh"
+#include "sbndqm/dqmAnalysis/TPC/ChannelDataSBND.hh"
 
 namespace {
   struct dictionary {

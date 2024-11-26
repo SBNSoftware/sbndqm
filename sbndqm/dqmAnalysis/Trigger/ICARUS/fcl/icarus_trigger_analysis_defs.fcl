@@ -1,0 +1,31 @@
+BEGIN_PROLOG
+
+    triggerAnalysis: {
+
+      module_type: TriggerStreams
+      SelectEvents: [] 
+      
+      TriggerLabel: "daqTrigger"      
+      
+      TriggerMetricConfig: {
+
+        hostname: "icarus-db02.fnal.gov"
+      
+        groups: {
+          TriggerRates: [ [0, 6] ]
+        }
+  
+        streams: ["archiving"]
+        
+        metrics: {
+
+	    trigger_rate: {
+		units: Hz 
+		title: "Trigger source %(instance)s rate"
+		display_range:[0, 0.25]
+	    }
+	 }   
+      }
+    }
+
+END_PROLOG  

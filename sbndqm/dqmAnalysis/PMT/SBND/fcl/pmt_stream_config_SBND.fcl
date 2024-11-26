@@ -1,0 +1,30 @@
+BEGIN_PROLOG
+
+sbnd_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
+sbnd_opreco_pedestal_rmsslider.BeamGateSamples:   1
+sbnd_opreco_pedestal_rmsslider.SampleSize:        30
+sbnd_opreco_pedestal_rmsslider.Threshold:         2.3
+sbnd_opreco_pedestal_rmsslider.Verbose:           false
+sbnd_opreco_pedestal_rmsslider.NWaveformsToFile:  0
+sbnd_opreco_pedestal_rmsslider.MaxSigma:          2.3
+sbnd_opreco_pedestal_rmsslider.PedRangeMax:       15000
+sbnd_opreco_pedestal_rmsslider.PedRangeMin:       14000
+sbnd_opreco_pedestal_rmsslider.NumPreSample:      10
+sbnd_opreco_pedestal_rmsslider.NumPostSample:     20
+
+sbnd_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
+sbnd_opreco_hit_slidingwindow.PositivePolarity:    false
+sbnd_opreco_hit_slidingwindow.NumPreSample:        5
+sbnd_opreco_hit_slidingwindow.NumPostSample:       10
+sbnd_opreco_hit_slidingwindow.ADCThreshold:        13 # ADC threshold (absolute) above pedestal mean to fire a pulse
+sbnd_opreco_hit_slidingwindow.NSigmaThreshold:     3 # ADC threshold (N*pedestal sigma) above pedestal mean to fire a pulse
+sbnd_opreco_hit_slidingwindow.TailADCThreshold:    6 # ADC threshold (absolute) below which next pulse is allowed to fire
+sbnd_opreco_hit_slidingwindow.TailNSigmaThreshold: 2 # ADC threshold (N*pedestal sigma) below which next pulse is allowed to fire
+sbnd_opreco_hit_slidingwindow.EndADCThreshold:     3 # ADC threshold (absolute) at which the pulse ends
+sbnd_opreco_hit_slidingwindow.EndNSigmaThreshold:  1 # ADC threshold (N*pedetal sigma) at which the pulse ends
+sbnd_opreco_hit_slidingwindow.MinPulseWidth:       5 # The width of a pulse needs to be equal or larger than this to be recorded
+sbnd_opreco_hit_slidingwindow.Verbosity:           false
+
+END_PROLOG
+
+

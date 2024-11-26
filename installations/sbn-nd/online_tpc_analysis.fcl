@@ -1,17 +1,21 @@
 #include "simple_channel_info.fcl"
 #include "redis_connection.fcl"
+#include "TPCChannelMapService.fcl"
+#include "SBNDTPCDecoderDefaults.fcl"
+
+
 
 BEGIN_PROLOG
 analysis_config: {
   // producer of digits and header info
   raw_digit_producers: [daq]
-  header_producer: ""
+  header_producer: "daq"
   
   // channel info
   channel_info: {
-    n_channels: 1024 # 16 crates
-    collection_channels: [[0,1014]] # no signal -- plane is arbitrary
-    induction_channels: []
+    n_channels: 11264 # 16 crates
+    collection_channels: [[0,3327]] # no signal -- plane is arbitrary
+    induction_channels: [[3328,11263]]
   }
   
   // standard analysis config
@@ -40,13 +44,23 @@ analysis_config: {
   
   // number of headers per event provided by input (will be ignored if value is negative)
   // 10 for SBND
-  n_headers: -1
+  n_headers: 16
 }
 END_PROLOG
+
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
 
 physics:
 {
   // now also have something produce the digits and headers
+
+
   producers:
   {
     daq: {
@@ -54,7 +68,7 @@ physics:
       // for debugging -- time (in s) to wait in between analyzing events
       wait_time: -1
       // make the header
-      produce_header: false
+      produce_header: true
       baseline_calc: false
       // parameters for timestamps
       timesize: 2559
@@ -76,7 +90,7 @@ physics:
       module_type: OnlineAnalysis
       @table::analysis_config
       send_metrics: false
-      send_waveforms: true
+      send_waveforms: false
       send_ffts: false
       fft_name: fft
       waveform_name: waveform
@@ -94,7 +108,7 @@ physics:
      {
       module_type: OnlineAnalysis
       group_name: tpc_channel
-      send_sbnd_metrics: true
+      send_sbnd_metrics: false
       @table::analysis_config
       metrics: {
 
@@ -119,7 +133,7 @@ physics:
       metric_config: {
         streams: [archiving, 10s]
         groups: {
-	  tpc_channel:[[0,1024]] # 8 crates
+	  tpc_channel:[[0,11263]] # 8 crates
         }
         metrics: {
           rms: {
@@ -162,18 +176,24 @@ physics:
   }
 
   my_producer_modules: [daq]
-  a: [OnlineAnalysis, OnlineAnalysisRawData, Meta]
-//  end_paths: [a]
+  a: [OnlineAnalysis,OnlineAnalysisRawData, Meta]
+#  a: [Meta]
+  out1 : [dumper]
+  end_paths: [a]
 }
+
 
 services:
 {
   RedisConnection: @local::redis_connection
-  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqSharedMemoryService }
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+  #ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: SBND }
+  TPCChannelMapService: @local::SBNDTPCChannelMapServiceDefaults
 }
 
-services.RedisConnection.host: "sbnd-daq33.fnal.gov"
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
 services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile"
+
 
 source:
 {
@@ -185,21 +205,21 @@ source:
 
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
-  dispatcherPort: 6020
+  dispatcherPort: 6027
 
   transfer_plugin: {
 
-     unique_label: "OnlineMonitorTPC"
+     unique_label: "OnlineMonitorTPC4"
       transferPluginType: Shmem
-      shm_key: 0x40471454
-      max_fragment_size_words: 33554432
+      shm_key: 0x40471455
+      max_fragment_size_words: 10e7
       first_event_builder_rank: 0
           source_rank: 5
           destination_rank: 6
   }
 
   dispatcher_config: {
-    unique_label: "OnlineMonitorTPC"
+    unique_label: "OnlineMonitorTPC4"
     path: [ out ]
     physics: {}
     outputs: {
@@ -207,12 +227,12 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "OnlineMonitorTPC"
+           unique_label: "OnlineMonitorTPC4"
             transferPluginType: Shmem
 
-            shm_key: 0x40471454
+            shm_key: 0x40471455
 
-            max_fragment_size_words: 33554432
+            max_fragment_size_words: 10e7
               first_event_builder_rank: 0
               destination_rank: 6
         }

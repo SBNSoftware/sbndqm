@@ -46,6 +46,7 @@
 #include "Noise.hh"
 #include "PeakFinder.hh"
 #include "sbndqm/Decode/Mode/Mode.hh"
+#include "sbndaq-artdaq-core/Overlays/SBND/NevisTPCFragment.hh"
 
 using namespace tpcAnalysis;
 
@@ -131,7 +132,7 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // name of producer of raw::RawDigits
   //std::string producers = param.get<std::string>("producer_name");
   producers = param.get<std::vector<std::string>>("raw_digit_producers");
-  std::string header_producer = param.get<std::string>("header_producer");
+  header_producer = param.get<std::string>("header_producer");
 
   instance = param.get<std::string>("raw_digit_instance", "");  
 
@@ -235,10 +236,11 @@ void Analysis::AnalyzeEvent(art::Event const & event) {
   }
   // deal with the header
   if (_config.n_headers > 0) {
-    // get the header data
-    event.getByLabel(_config.header_producer, _header_data_handle);
-    for (const tpcAnalysis::HeaderData &header: *_header_data_handle) {
-      ProcessHeader(header);
+    art::InputTag tag1 {"daq"};
+    if (auto hdrs = event.getHandle<std::vector<tpcAnalysis::HeaderData>>(tag1)) {
+      for (auto const& hdr: *hdrs){
+        ProcessHeader(hdr);
+      }
     }
   }
   if (_config.timing) {

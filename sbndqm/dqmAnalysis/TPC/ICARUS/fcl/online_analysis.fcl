@@ -1,0 +1,104 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+physics:
+{
+  analyzers:
+  {
+    OnlineAnalysis:
+    {
+      module_type: OnlineAnalysis
+      // producer of digits and header info
+      raw_digit_producers: [daq]
+      header_producer: "daq"
+
+      // channel info
+      channel_info: @local::SBND_simple_channel_info
+
+      // standard analysis config
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      baseline_calc: 2
+      n_mode_skip: 3
+      use_planes: true
+      refine_baseline: false
+
+      // turn on for analysis information printed out on stdin
+      verbose: false
+      // turn on for timing information printed out on stdin
+      timing: false
+
+      // turn on to calculate FFT and save them in output ChannelData
+      fft_per_channel: false
+
+      // turn on to save waveform in output ChannelData
+      fill_waveforms: false
+
+      // turn on to output ReducedChannelData objects instead of 
+      // ChannelData (will throw out waveform and FFT info)
+      reduce_data: false
+
+      // number of headers per event provided by input (will be ignored if value is negative)
+      // 16 for SBND data, 1 header per FEM
+      n_headers: 16
+
+      metric_config: {
+        streams: [slow, fast]
+        groups: {
+            tpc_channel:[[0,11263]]
+        }
+        metrics: {
+          rms: {
+            units: ADC
+            title: "TPC wire %(instance)s rms"
+          }
+          baseline: {
+            units: ADC
+            title: "TPC wire %(instance)s baseline"
+          }
+          next_channel_dnoise: {
+            title: "TPC wire %(instance)s next channel dnoise"
+            display_range: [0., 1.]
+          }
+          mean_peak_height: {
+            units: ADC
+            title: "TPC wire %(instance)s mean peak height"
+          }
+          occupancy: {
+            title: "TPC wire %(instance)s occupancy"
+            display_range: [0., 1.]
+          }
+        }
+      }
+    }
+  }
+
+  a: [OnlineAnalysis]
+  end_paths: [a]
+}
+
+services:
+{
+  TFileService: { fileName: "out.root"}
+  RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+    }
+  }
+} 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/gputnam/redis_passfile" 
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/digits_and_header_data.root"]
+}
+
+process_name: TPCANALYSIS
+

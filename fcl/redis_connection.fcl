@@ -11,7 +11,7 @@ redis_metric_fast: { // can be named anything
   // period in seconds to send metric to database
   reporting_interval: 2.0
   // need to add postfix otherwise this metric sender and the other one will collide
-  redis_key_postfix: ":fast" 
+  redis_key_postfix: ":fast"
 }
 
 redis_metric_slow: { // can be named anything
