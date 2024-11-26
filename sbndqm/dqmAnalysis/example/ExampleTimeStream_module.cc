@@ -70,7 +70,7 @@ void sbndqm::ExampleTimeStream::analyze(art::Event const & evt)
 
 void sbndqm::ExampleTimeStream::SendSingleMetric() {
   // level of importance of metric
-  int level = 3;
+  int level = -1;
   // The mode to accumulate the metrics. Here, the manager will report the average of 
   // of all metrics per reporting interval
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
@@ -86,7 +86,7 @@ void sbndqm::ExampleTimeStream::SendSingleMetric() {
 
 // Same as before -- but this metric will be inverted after being stored in the database
 void sbndqm::ExampleTimeStream::SendSingleInvertedMetric() {
-  int level = 3;
+  int level = -1;
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
   // The INVERT directive instructs the front end website to invert the metric for display.
   // During averaging and storage the metric will not be altered. 
@@ -100,7 +100,7 @@ void sbndqm::ExampleTimeStream::SendGroupMetrics() {
   // send metrics for a number of "wires"
 
   // level and aggregation mode
-  int level = 3;
+  int level = -1;
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
 
   // name of the metric -- should match the name we assigned in metric_config

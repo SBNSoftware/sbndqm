@@ -1,0 +1,147 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+analysis_config: {
+ReportingLevel:1
+BoardID:3
+ChannelNumber:15
+
+EventBlock:40
+BESGate:28
+}
+
+physics: {
+  
+  producers: {}
+
+  analyzers: {
+
+   ptbAnalysis: {
+
+      module_type: PTBdqm
+
+      metric_trigger_rate: {
+
+        hostname: "sbnd-db01.fnal.gov"
+    
+        groups: {
+          
+          LLT_ID: [ [0, 32] ]
+          HLT_ID: [ [0, 32] ]
+
+        }
+
+        streams: ["slow","fast","archiving"]
+        
+        metrics: {
+
+          LLT_periodicity:{            
+            units: seconds 
+            title: "PTB LLT %(instance)s periodicity" 
+            display_range: [ 0, 6 ]
+            }
+
+          HLT_periodicity:{
+            units: seconds 
+            title: "PTB HLT %(instance)s periodicity" 
+            display_range: [ 0, 6 ]
+            }
+        }   
+      }
+      
+      metric_ptb_tdc_diff: {
+
+        hostname: "sbnd-db01.fnal.gov"
+    
+        ## groups: {}
+
+        streams: ["slow","fast","archiving","30s"]
+        
+        metrics: {
+
+          FLASH_TDC_4:{
+            units: microseconds 
+            title: "|PTB - TDC| flash trigger timestamps"
+            }
+
+          EVENT_TDC_5:{
+            units: microseconds 
+            title: "|PTB - TDC| event trigger timestamps"
+            }
+
+          T1RESET_TDC_1:{
+            units: microseconds 
+            title: "|PTB - TDC| CRT t1 reset timestamps"
+            }
+
+          LLTBES_TDC_2:{
+            units: microseconds 
+            title: "|PTB - TDC| BES timestamps"
+            }
+
+          NUMBER_BES:{}
+
+          NUMBER_TDC_2:{}
+
+          NUMBER_T1RESET:{}
+
+          NUMBER_TDC_1:{}
+
+          NUMBER_TDC_5:{}
+
+          NUMBER_EVENT:{}
+
+          NUMBER_FLASH:{}
+
+          NUMBER_TDC_4:{}
+
+        }   
+      }
+    }
+  }
+  
+  ana: [ ptbAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+  ##TFileService: { fileName: "MSUMtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+services.InitMetricManager.connections.fast.send_zeros: false
+services.InitMetricManager.connections.slow.send_zeros: false
+services.InitMetricManager.connections.archiving.send_zeros: false
+
+
+source:
+{
+  module_type: RootInput
+  
+  fileNames: ["/daq/scratch/Trigger_Online/data_evb03_run9800_1_20231117T171942.root", 
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_2_20231117T171946.root",
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_3_20231117T171950.root", 
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_4_20231117T171954.root", 
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_5_20231117T171956.root", 
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_6_20231117T172000.root", 
+              "/daq/scratch/Trigger_Online/data_evb03_run9800_7_20231117T172004.root"]
+}
+
+ 
+process_name: SBNDPTBANALYSIS

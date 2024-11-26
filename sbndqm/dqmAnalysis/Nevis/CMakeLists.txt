@@ -1,21 +1,23 @@
-simple_plugin( NevisProductionTest module
+cet_build_plugin( NevisProductionTest art::module
+  LIBRARIES
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
   sbndaq_online_hiredis
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
+  lardataobj::RawData
+  art::Utilities
+  canvas::canvas  
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  messagefacility::MF_MessageLogger
+  messagefacility::headers
+  ROOT::Core
+  cetlib::cetlib
+  cetlib_except::cetlib_except
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
+  art::Persistency_Common
+  art::Framework_IO_Sources
 )
 
 install_headers()

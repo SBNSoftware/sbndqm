@@ -116,12 +116,9 @@ def check_process(args, process):
     if retcode is not None:
         process.cleanup()
         logger.info("Process with config %s ID %i on port %s exited with code %i" % (process.name, process.ID, process.port, retcode)) 
-        if retcode != 0 and (process.n_restart < args.restart or args.restart < 0):
+        if (process.n_restart < args.restart or args.restart < 0):
             logger.info("Restarting process with config %s ID %i on port %s. Process has been restarted %i times." % (process.name, process.ID, process.port, process.n_restart))
             process.restart()
-        elif retcode == 0:
-            logger.info("Restarting process with config %s ID %i on port %s after retcode 0." % (process.name, process.ID, process.port))
-            process.restart(reset=True)
         else:
             logger.info("Removing process with config %s ID %i on port %s." % (process.name, process.ID, process.port))
             return False

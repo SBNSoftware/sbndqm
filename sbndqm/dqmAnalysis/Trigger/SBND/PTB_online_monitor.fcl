@@ -1,0 +1,243 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection.fcl"
+
+analysis_config: {
+ReportingLevel: 1
+BoardID: 3
+ChannelNumber: 15
+
+EventBlock: 10
+BeamBESGate: 30
+OffBeamBESGate: 26
+}
+
+physics: {
+  
+  producers: {}
+
+  analyzers: {
+
+   ptbAnalysis: {
+
+      module_type: PTBdqm
+
+      metric_llt_trigger_rate: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          LLT_ID: [ [0, 32] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          LLT_periodicity:{            
+            units: seconds 
+            title: "PTB LLT %(instance)s periodicity" 
+            #display_range: [ 0, 6 ]
+
+          }
+        }
+      }
+
+      metric_hlt_trigger_rate: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          HLT_ID: [ [0, 32] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          HLT_periodicity:{
+            units: seconds 
+            title: "PTB HLT %(instance)s periodicity" 
+            #display_range: [ 0, 6 ]
+
+          }
+        }
+      }
+
+      metric_beam_light_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          BEAM_LIGHT_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          BEAM_LIGHT:{
+            units: microseconds
+            title: "BEAM (BES) - LIGHT"
+            display_range: [-10000, 10000]
+          }
+
+          OFFBEAM_LIGHT:{
+            units: microseconds
+            title: "OFFBEAM (BES) - LIGHT"
+            display_range: [-10000, 10000]
+
+          }
+        }
+      }
+
+      metric_beam_crt_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          BEAM_CRT_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          BEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "BEAM HLT - BEAM T1 RESET"
+          }
+
+          OFFBEAM_HLT_T1RESET:{
+            units: microseconds
+            title: "OFFBEAM HLT - OFFBEAM T1 RESET"
+          }
+
+          NUMBER_OFFBEAM_T1RESET:{}
+
+	  NUMBER_BEAM_T1RESET:{}
+
+          NUMBER_OFFBEAM_HLT:{}
+
+	  NUMBER_BEAM_HLT:{}
+
+        }   
+      }
+      
+      metric_ptb_tdc_diff: {
+        hostname: "sbnd-db01.fnal.gov"
+        groups: {
+          PTB_TDC_DIFF: [ [0, 1] ]
+        }
+        streams: ["slow","fast","archiving"]
+        metrics: {
+
+          TDC4_HLTFLASH:{
+            units: microseconds 
+            title: "|PTB - TDC| flash trigger timestamps"
+          }
+
+          TDC5_HLTEVENT:{
+            units: microseconds 
+            title: "|PTB - TDC| event trigger timestamps"
+          }
+
+          TDC1_HLTT1:{
+            units: microseconds 
+            title: "|PTB - TDC| CRT t1 reset timestamps"
+          }
+
+          TDC2_LLTBES:{
+            units: microseconds 
+            title: "|PTB - TDC| BES timestamps"
+          }
+
+          NUMBER_TDC1:{}
+
+          NUMBER_TDC2:{}
+
+          NUMBER_TDC4:{}
+
+          NUMBER_TDC5:{}
+
+          NUMBER_T1RESET:{}
+
+          NUMBER_BES:{}
+          
+          NUMBER_FLASH:{}
+
+          NUMBER_EVENT:{}
+        }
+      }
+
+    }
+  }
+  
+  ana: [ ptbAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+
+services: {
+
+  ##TFileService: { fileName: "MSUMtest.root"}
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+} 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+
+services.InitMetricManager.connections.fast.send_zeros: false
+services.InitMetricManager.connections.slow.send_zeros: false
+services.InitMetricManager.connections.archiving.send_zeros: false
+
+
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: "ArtdaqGlobalsService"
+}
+
+services.ArtdaqFragmentNamingServiceInterface: { service_provider: ArtdaqFragmentNamingService helper_plugin: "Artdaq" }
+
+
+source:
+{
+  module_type: TransferInput
+  
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
+
+
+  transfer_plugin: {
+
+     unique_label: "TriggerOnlineMonitor4"
+      transferPluginType: Shmem
+      shm_key: 0x40471187
+      max_fragment_size_words: 100000000 #58543672 #33554432
+      #max_event_size_bytes: 468349376
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "TriggerOnlineMonitor4"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+
+           unique_label: "TriggerOnlineMonitor4"
+            transferPluginType: Shmem
+
+            shm_key: 0x40471187
+
+            max_fragment_size_words: 100000000 #58543672 #33554432
+              first_event_builder_rank: 0
+              destination_rank: 6
+        }
+      }
+    }
+  }
+
+}
+
+process_name: SBNDPTBANALYSIS

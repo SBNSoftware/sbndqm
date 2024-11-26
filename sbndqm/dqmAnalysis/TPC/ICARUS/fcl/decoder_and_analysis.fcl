@@ -1,0 +1,90 @@
+#include "simple_channel_info.fcl"
+
+physics:
+{
+  // now also have something produce the digits and headers
+  producers:
+  {
+    daq: {
+      module_type: SBNDTPCDecoder
+      // for debugging -- time (in s) to wait in between analyzing events
+      wait_time: -1
+      // make the header
+      produce_header: true
+      baseline_calc: false
+      // parameters for timestamps
+      timesize: 2559
+      // produce timestamps in units of mus
+      frame_to_dt: 0.5
+      // parameters for header index
+      min_slot_no: 3
+      channel_per_slot: 64
+    }
+  }
+
+  analyzers:
+  {
+    OfflineAnalysis:
+    {
+      module_type: OfflineAnalysis
+      // producer of digits and header info
+      raw_digit_producers: [daq]
+      header_producer: "daq"
+
+      // channel info
+      channel_info: {
+      n_channels: 11264 # 16 crates
+      collection_channels: [[0,3327]] # no signal -- plane is arbitrary
+      induction_channels: [[3328,11263]]
+    }
+
+
+      // standard analysis config
+      threshold_calc: 3
+      threshold_sigma: 5
+      noise_range_sampling: 1
+      n_smoothing_samples: 1
+      baseline_calc: 2
+      n_mode_skip: 3
+      use_planes: true
+      refine_baseline: false
+
+      // turn on for analysis information printed out on stdin
+      verbose: false
+      // turn on for timing information printed out on stdin
+      timing: false
+
+      // turn on to calculate FFT and save them in output ChannelData
+      fft_per_channel: false
+
+      // turn on to save waveform in output ChannelData
+      fill_waveforms: false
+
+      // turn on to output ReducedChannelData objects instead of 
+      // ChannelData (will throw out waveform and FFT info)
+      reduce_data: false
+
+      // number of headers per event provided by input (will be ignored if value is negative)
+      // 16 for SBND 
+      n_headers: 16
+    }
+  }
+
+  my_producer_modules: [daq]
+  a: [OfflineAnalysis]
+  end_paths: [a]
+}
+
+services:
+{
+  TFileService: { fileName: "out.root"}
+} 
+
+source:
+{
+  module_type: RootInput
+  fileNames: ["/sbnd/data/users/gputnam/VST/nevis_test_stand_data/integration/fragments.root"]
+}
+
+process_name: TPCANALYSIS
+
