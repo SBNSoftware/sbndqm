@@ -1,0 +1,138 @@
+#include "simple_channel_info.fcl"
+#include "TPCDQMChannelMapService.fcl"
+#include "SBNDDQMTPCDecoderDefaults.fcl"
+#include "services_sbnd.fcl"
+#include "simulationservices_sbnd.fcl"
+
+BEGIN_PROLOG 
+
+analysis_config: {
+  raw_digit_producers: [daq]
+  header_producer: "daq"
+
+  channel_info: {
+    n_channels: 11264 # 16 crates
+    collection_channels: [[3968,5631],[9600,11263]]  # no signal -- plane is arbitrary
+    induction_channels: [[0,3967],[5632,9599]]
+  }
+
+  threshold_calc: 3
+  threshold_sigma: 5
+  noise_range_sampling: 1
+  n_smoothing_samples: 1
+  baseline_calc: 2
+  n_mode_skip: 3
+  use_planes: true
+  // n_max_noise_samples: 100
+  refine_baseline: false
+  find_signal: true
+
+  // turn on for analysis information printed out on stdin
+  verbose: false
+  // turn on for timing information printed out on stdin
+  timing: false
+
+  // turn on to save waveform in output DQMChannelData
+  fill_waveforms: false
+
+  // turn on to output ReducedChannelData objects instead of
+  // ChannelData (will throw out waveform and FFT info)
+  reduce_data: false
+
+  // number of headers per event provided by input (will be ignored if value is negative)
+  // 10 for SBND
+  n_headers: 16
+}
+
+
+
+streamTPCraw: {
+  module_type: OnlineAnalysisSBND
+  @table::analysis_config
+  send_metrics: false
+  send_waveforms: false
+  send_ffts: false
+  fft_name: fft
+  waveform_name: waveform
+  fft_per_channel: false # don't calculate FFT's
+  wait_period: 10 # s 
+  send_time_avg_ffts: false
+  n_evt_fft_avg: 50
+  n_evt_send_rawdata: 1
+  broken_th: 1
+  # send_correlation_matrix: true
+  # correlation_matrix_name: correlation
+  # n_correlation_matrix_samples: 100
+}
+
+streamTPC: {
+  module_type: OnlineAnalysisSBND
+  group_name: tpc_channel
+  send_sbnd_metrics: false
+  broken_th: 1
+  @table::analysis_config
+  metrics: {
+    redis_metric_5m: {    
+      level: 3
+      metricPluginType: "redis"
+      reporting_interval: 600.0
+      verbose: true
+      redis_key_postfix: ":10m"
+    }
+    redis_metric_archive: {
+      level: 3
+      metricPluginType: "redis"
+      reporting_interval: 600.0 
+      verbose: true
+      redis_key_postfix: ":archiving"
+    }
+  }
+  metric_config_broken: {
+    streams: [archiving]
+    groups: {
+      tpc: [0]
+    }
+    metrics: {
+      broken: {
+        units: Broken
+        title: "Broken Events"
+        display_range: [-1, 2]
+      }
+   }
+ }
+  metric_config: {
+    streams: [archiving]
+    groups: {
+      tpc_channel:[[0,11263]] # 8 crates
+    }
+    metrics: {
+      rms: {
+        units: ADC
+        #title: "TPC wire %(instance)s rms"
+        #display_range: [0, 5]
+      }
+      baseline: {
+        units: ADC
+        format: "0x#"
+        #title: "TPC wire %(instance)s baseline"
+        #display_range: [1990, 2040]
+      }
+      next_channel_dnoise: {
+        #title: "TPC wire %(instance)s next channel dnoise"
+        #display_range: [0.2, 1.2]
+      }
+      mean_peak_height: {
+        units: ADC
+        #title: "TPC wire %(instance)s mean peak height"
+        #display_range: [0, 50]
+      }
+      occupancy: {
+        #title: "TPC wire %(instance)s occupancy"
+        #display_range: [0., 1.]
+      }
+    }
+  }
+}
+
+
+END_PROLOG

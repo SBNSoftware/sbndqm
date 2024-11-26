@@ -9,3 +9,4 @@ simple_plugin( BernCRTdqmSBND module
   sbndqm_Decode_Mode
 )
 
+add_subdirectory(fcl)

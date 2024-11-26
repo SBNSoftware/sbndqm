@@ -22,3 +22,4 @@ cet_build_plugin( PTBdqm art::module
   sbndqm_Decode_PMT_PMTDecodeData
 )
 
+add_subdirectory(fcl)
