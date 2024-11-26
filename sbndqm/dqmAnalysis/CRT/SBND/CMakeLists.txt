@@ -4,8 +4,8 @@ simple_plugin( BernCRTdqmSBND module
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
   artdaq_core::artdaq-core_Data
   artdaq_utilities::artdaq-utilities_Plugins
-  sbndaq_online_storage
-  sbndaq_online_hiredis
+  sbndaq_online::storage
+  sbndaq_online::hiredis
   sbndqm_Decode_Mode
 )
 
