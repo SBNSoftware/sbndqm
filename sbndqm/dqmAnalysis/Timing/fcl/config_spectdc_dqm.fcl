@@ -1,0 +1,98 @@
+BEGIN_PROLOG
+
+streamSPECTDC: {
+
+  module_type: SPECTDCStreams
+
+  DAQTimestampLabel: "daqSPECTDC"
+  DAQLabel: "daq"
+  PTBContainerInstance: "ContainerPTB"
+  Verbose: 0
+  
+  HLT_beam: [1, 2] #bnb zero bias + bnb light
+  HLT_beam_excluded: [3, 4, 14, 15] 
+  HLT_offbeam: [3, 4] #offbeam zero bias + offbeam light
+  HLT_offbeam_excluded: [1, 2, 14, 15] 
+  HLT_crossingmuon: [14, 15] #ns + ew 
+  HLT_crossingmuon_excluded: [1, 2, 3, 4]  
+
+  CRTT1_ch: 0
+  BES_ch: 1
+  RWM_ch: 2
+  FTRIG_ch: 3
+  ETRIG_ch: 4
+
+  fExpected_BES_CRTT1_diff: 1.5 #ms
+  fExpected_BES_CRTT1_jitter: 0.1 #ms
+  
+  fExpected_RWM_BES_diff: 2 #us
+  fExpected_RWM_BES_jitter: 0.5 #us
+  
+  fExpected_ETRIG_BES_diff: 332 #us
+  fExpected_ETRIG_BES_jitter: 1 #us
+  
+  fExpected_FTRIG_ETRIG_diff: 2 #+- 2ms
+  fExpected_FTRIG_ETRIG_jitter: 0.5 #ms
+
+  SPECTDCMetricConfig: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    streams: ["fast", "slow", "archiving"]
+
+    groups: {
+        SPECTDC_Streams_Timing: [0, 1, 2]
+    }
+
+    metrics: {
+
+      nCRTT1: {
+        title: "Number of CRT T1 in an event"
+        display_range: [0., 10.]
+      }
+
+      nBES: {
+        title: "Number of BES in an event"
+        display_range: [0., 10.]
+      }
+
+      nRWM: {
+        title: "Number of RWM in an event"
+        display_range: [0., 10.]
+      }
+
+      nFTRIG: {
+        title: "Number of FTRIG in an event"
+        display_range: [0., 10.]
+      }
+
+      nETRIG: {
+        title: "Number of ETRIG in an event"
+        display_range: [0., 10.]
+      }
+
+      BES_CRTT1_diff: {
+        title: "Difference of BES - CRT T1 in an event"
+        display_range: [-5.0, 5.0] #ms
+      }
+
+      RWM_BES_diff: {
+        title: "Difference of RWM - BES in an event"
+        display_range: [-1.0, 3.0] #us
+      }
+
+      ETRIG_BES_diff: {
+        title: "Difference of ETRIG - BES in an event"
+        display_range: [0.0, 350.0] #us
+      }
+
+      FTRIG_ETRIG_diff: {
+        title: "Difference of FTRIG - ETRIG in an event"
+        display_range: [-5.0, 5.0] #ms
+      }
+
+    } #End of metrics
+  } #End of Config
+}  
+
+END_PROLOG

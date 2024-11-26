@@ -1,0 +1,37 @@
+#include "pmt_stream_config_SBND.fcl"
+
+BEGIN_PROLOG 
+
+streamPMT: {
+  module_type: CAENV1730StreamsSBND
+  reco_man:      @local::standard_preco_manager
+  HitAlgoConfig: @local::sbnd_opreco_hit_slidingwindow
+  PedAlgoConfig: @local::sbnd_opreco_pedestal_rmsslider
+
+  PMTMetricConfig: {
+   hostname: "sbnd-db01.fnal.gov"
+    groups: {
+        PMT: [ [0, 126] ]
+    }
+    streams: ["archiving"]
+    metrics: {
+      rms: {
+        units: ADC
+        title: "PMT channel %(instance)s rms"
+        display_range: [0., 50.]
+      }
+      baseline: {
+        units: ADC
+        title: "%(group)s channel %(instance)s Pedestal"
+        display_range: [14000, 16000]
+      }
+      rate: {
+        untis: Hz
+        title: "%(group)s channel %(instance)s single PMT rate"
+        display_range: [ -50, 250 ]
+      }
+    }
+  }
+}
+
+END_PROLOG

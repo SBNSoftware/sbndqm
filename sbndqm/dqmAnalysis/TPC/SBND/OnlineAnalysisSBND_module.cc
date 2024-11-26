@@ -178,7 +178,6 @@ void tpcAnalysis::OnlineAnalysisSBND::analyze(art::Event const & e) {
     artdaq::MetricMode mode = artdaq::MetricMode::Average;
 
     bool broken;
-    std::cout << "broken_th " << broken_th << std::endl;
     if (_analysis.npeak > broken_th) {
       broken = 1;
     }

@@ -94,6 +94,7 @@ cet_build_plugin( OnlineEvdSBND art::module
         #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
+add_subdirectory(fcl)
 
 install_headers()
 install_fhicl()

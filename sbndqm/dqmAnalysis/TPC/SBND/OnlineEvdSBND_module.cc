@@ -129,12 +129,8 @@ void tpcAnalysis::OnlineEvdSBND::SendImages(art::Event const& e)
     // Write image data to Redis
     std::string image_key = Form("tpc%d:plane%d:evd:image",tpc,plane);
     art::ServiceHandle<sbndaq::RedisConnectionService> redis;
-    //std::cout << "[tpcAnalysis::OnlineEvdSBND::SendImages] " << image_path << " : " << image_data.data() << std::endl;
-    //std::cout << "[tpcAnalysis::OnlineEvdSBND::SendImages] " << image_path << " : " << image_data << std::endl;
 
     redis->Command("SET %s %b", image_key.c_str(), image_data.c_str(), image_data.size());
-    //sbndaq::SendBinary(image_key, image_data.c_str(), image_data.size());
-    //sbndaq::SendEventMeta(image_key, e); 
   }
 
   // Send event display for WIBs and FEBs png files to Redis
