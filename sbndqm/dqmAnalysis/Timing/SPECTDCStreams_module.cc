@@ -8,6 +8,7 @@
 // and sends metric to Redis
 ////////////////////////////////////////////////////////////////////////
 
+#include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -25,8 +26,8 @@
 #include "sbndaq-online/helpers/Utilities.h"
 #include "sbndaq-online/helpers/EventMeta.h"
 #include "sbnobj/SBND/Timing/DAQTimestamp.hh"
-#include "sbndaq-artdaq-core/Overlays/SBND/PTBFragment.hh"
 
+#include "sbndaq-artdaq-core/Overlays/SBND/PTBFragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
 
@@ -163,17 +164,16 @@ sbndaq::SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
 } 
 
 std::vector<uint64_t> sbndaq::SPECTDCStreams::GetAllHLTs(artdaq::ContainerFragment*  ptb_container_fragment){
-  std::vector<uint64_t> triggers;    
-
+  std::vector<uint64_t> triggers;  
+  
   for (size_t f=0; f<ptb_container_fragment->block_count(); ++f){//loop over container of fragments
-    //std::cout << "hello" << std::endl;
     artdaq::Fragment frag=*ptb_container_fragment->at(f).get();
     sbndaq::CTBFragment ptb_fragment(frag);
     //==============
     std::vector fragTriggers=GetHLT(ptb_fragment); //Not sure that there could really be multiple HLTs in a single fragment but just in case I'll make it vector
     triggers.insert(triggers.end(), fragTriggers.begin(), fragTriggers.end() );//append list of triggers in this fragment to all of the HLTs in the container
   }//end loop over fragments
-  
+
   return triggers;
 }
 
@@ -181,7 +181,9 @@ std::vector<uint64_t> sbndaq::SPECTDCStreams::GetHLT(sbndaq::CTBFragment ptb_fra
   std::vector<uint64_t> triggers;  
 
   for ( size_t i = 0; i < ptb_fragment.NWords(); i++ ) {//loop over words in fragment       
+    //if  (ptb_fragment.Word(i)->IsHLT()==false) continue;  
     if  (ptb_fragment.Word(i)->word_type !=0x2 ) continue; //0x2 is the type for an HLT (0x1 for LLT) 
+    //uint64_t hlttrigger=ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF;
     uint64_t hlt_mask = ptb_fragment.Trigger(i)->trigger_word & 0x1FFFFFFFFFFFFFFF;
     // Process each set bit in hlt_mask as a separate HLT trigger
     while (hlt_mask) {
@@ -420,6 +422,10 @@ void sbndaq::SPECTDCStreams::analyze(art::Event const & e) {
     }
   }
 
+  if(hlt_vec.size() == 0 ) {
+    if (fVerbose > 0) std::cout << "No HLTs found. Something went wrong. Skip this event." << std::endl;
+    return;
+  }
   //------------------------------------------------------------------------------// 
   //Apply Filter based on HLT, copy from SBNDGayeFilter: https://github.com/SBNSoftware/sbndaq-artdaq/blob/v1_10_03/sbndaq-artdaq/ArtModules/SBND/SBNDGateFilter_module.cc
   //Hardcoded for 3 main streams: beam, offbeam and crossing muons
