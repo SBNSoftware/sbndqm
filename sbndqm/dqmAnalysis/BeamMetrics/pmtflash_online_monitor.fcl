@@ -9,6 +9,7 @@ services: {
   InitMetricManager: {
     connections: {
       fast: @local::redis_metric_fast
+      flash: @local::redis_metric_flash
       slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
     }
@@ -33,7 +34,7 @@ source:
   transfer_plugin: {
     unique_label: "FlashOnlineMonitor"
     transferPluginType: Shmem
-    shm_key: 0x40470830 
+    shm_key: 0x34913041
     max_fragment_size_words: 100000000 
     first_event_builder_rank: 0
     source_rank: 5
@@ -50,7 +51,7 @@ source:
         transfer_plugin: {
           unique_label: "FlashOnlineMonitor"
           transferPluginType: Shmem
-          shm_key: 0x40470830
+          shm_key: 0x34913041
           max_fragment_size_words: 100000000 
           first_event_builder_rank: 0
           destination_rank: 6
@@ -58,4 +59,12 @@ source:
       }
     }
   }
-}  
+} 
+
+outputs: {
+  dumper:  {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+   }
+} 

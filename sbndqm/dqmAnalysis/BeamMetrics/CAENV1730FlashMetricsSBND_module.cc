@@ -72,8 +72,10 @@ void CAENV1730FlashMetricsSBND::analyze(art::Event const& e)
       auto pe = pmtmetric.peakPE;
       
       std::cout << "Flash ts: " << ts << " PE: " << pe << std::endl;
-      sbndaq::sendMetric("BeamMetrics","0","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("BeamMetrics","0","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      if (pe>100){
+	sbndaq::sendMetric("BeamMetrics","0","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+	sbndaq::sendMetric("BeamMetrics","0","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
     }
   }
 }
