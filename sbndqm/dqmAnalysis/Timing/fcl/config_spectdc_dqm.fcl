@@ -7,7 +7,7 @@ streamSPECTDC: {
   DAQTimestampLabel: "daqSPECTDC"
   DAQLabel: "daq"
   PTBContainerInstance: "ContainerPTB"
-  Verbose: 0
+  Verbose: 1
   
   HLT_beam: [1, 2] #bnb zero bias + bnb light
   HLT_beam_excluded: [3, 4, 14, 15] 
