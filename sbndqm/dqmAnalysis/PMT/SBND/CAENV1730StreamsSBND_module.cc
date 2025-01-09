@@ -215,11 +215,11 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       auto const& pulses = threshAlg->GetPulses();
       double npulses = (double)pulses.size();
 
-      std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
+      //std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
 
       // Send the metrics 
 //	if((pmtId+1)%16 != 0) {
-	std::cout << " sending metrics for " << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl; 
+      //std::cout << " sending metrics for " << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl; 
       sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
       sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
       sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rate information
