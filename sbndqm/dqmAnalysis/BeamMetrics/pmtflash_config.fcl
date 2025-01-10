@@ -14,7 +14,7 @@ flashmetrics: {
     HLT_crossingmuon_excluded: [1, 2, 3, 4]  
 
     metric_flashes: {
-        groups: { BeamMetrics: [0] }
+        groups: { BeamMetrics: [0,1,2,3,4,5] }
         hostname: "sbnd-db01.fnal.gov"
         streams: ["slow","fast","archiving","30s"]
 

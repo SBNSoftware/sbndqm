@@ -61,13 +61,6 @@ source:
   }
 } 
 
-outputs: {
-  dumper:  {
-    module_type: FileDumperOutput
-    wantProductFriendlyClassName: true
-    onlyIfPresent: true
-   }
-} 
 
 physics:
 {
@@ -80,10 +73,10 @@ physics:
   flashana: @local::flashmetrics
  }
 
- stream1:  [ ]
- ana: [ flashana ]
+  prod: [  ]
+  ana: [ flashana ]
 
-  out1 : [dumper]
+  trigger_paths: [ prod ]
   end_paths: [ ana ]
 }
 

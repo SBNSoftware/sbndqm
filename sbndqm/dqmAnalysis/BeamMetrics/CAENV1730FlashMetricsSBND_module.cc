@@ -64,7 +64,7 @@ private:
   std::vector<uint64_t> m_HLT_crossingmuon;
   std::vector<uint64_t> m_HLT_crossingmuon_excluded;
 
-  float         m_flashpeak_thresh;
+  float        m_flashpeak_thresh;
   int          getFileStream(art::Handle<std::vector<artdaq::Fragment> > ptb_handle);
 };
 
@@ -103,11 +103,32 @@ void CAENV1730FlashMetricsSBND::analyze(art::Event const& e)
     for (auto const & pmtmetric : *pmtmetricHandle) {
       auto ts = pmtmetric.peaktime;
       auto pe = pmtmetric.peakPE;
+      bool pass_thresh = pe > m_flashpeak_thresh;
       
       std::cout << "Flash ts: " << ts << " PE: " << pe << std::endl;
-      if (pe>100){
+      if (pass_thresh){
         sbndaq::sendMetric("BeamMetrics","0","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
         sbndaq::sendMetric("BeamMetrics","0","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
+      if (pass_thresh && (stream == 1)){
+        sbndaq::sendMetric("BeamMetrics","1","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric("BeamMetrics","1","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
+      if (pass_thresh && (stream == 2)){
+        sbndaq::sendMetric("BeamMetrics","2","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric("BeamMetrics","2","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
+      if (pass_thresh && (stream == 3)){
+        sbndaq::sendMetric("BeamMetrics","3","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric("BeamMetrics","3","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
+      if (pass_thresh && (stream == 4)){
+        sbndaq::sendMetric("BeamMetrics","4","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric("BeamMetrics","4","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
+      }
+      if (pass_thresh && (stream == 5)){
+        sbndaq::sendMetric("BeamMetrics","5","flash_ts", ts, level, artdaq::MetricMode::LastPoint);
+        sbndaq::sendMetric("BeamMetrics","5","flash_pe", pe, level, artdaq::MetricMode::LastPoint);
       }
     }
   }
