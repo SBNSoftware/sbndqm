@@ -14,6 +14,15 @@ redis_metric_fast: { // can be named anything
   redis_key_postfix: ":fast"
 }
 
+redis_metric_flash: { // can be named anything
+  level: 3
+  metricPluginType: "redis"
+  // period in seconds to send metric to database
+  reporting_interval: 1.0
+  // need to add postfix otherwise this metric sender and the other one will collide
+  redis_key_postfix: ":flash"
+}
+
 redis_metric_slow: { // can be named anything
   level: 3
   metricPluginType: "redis"

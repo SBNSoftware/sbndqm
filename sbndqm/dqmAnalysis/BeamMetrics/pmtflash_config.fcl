@@ -1,0 +1,25 @@
+BEGIN_PROLOG
+
+flashmetrics: {
+
+    module_type: CAENV1730FlashMetricsSBND
+    FlashMetricLabel: "pmtmetricproducer"
+    metric_flashes: {
+        groups: { BeamMetrics: [0] }
+        hostname: "sbnd-db01.fnal.gov"
+        streams: ["slow","fast","archiving","30s"]
+
+        metrics: {
+          flash_ts: {
+            units: microseconds
+            title: "Flash Peak Timestamp"
+          }
+          flash_pe: {
+            units: pe
+            title: "Flash Peak PE"
+          }
+        }
+    }
+}
+
+END_PROLOG

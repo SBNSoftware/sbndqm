@@ -1,0 +1,25 @@
+#include "redis_connection.fcl"
+#include "pmtflash_config.fcl"
+
+process_name: SBNDPMTFlashMetrics
+
+source:
+{
+  module_type: RootInput
+}
+
+services: {
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+} 
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876" 
+
