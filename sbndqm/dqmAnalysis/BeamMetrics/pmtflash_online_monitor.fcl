@@ -68,3 +68,22 @@ outputs: {
     onlyIfPresent: true
    }
 } 
+
+physics:
+{
+
+ producers:{}
+
+ filters:{}
+
+ analyzers:{
+  flashana: @local::flashmetrics
+ }
+
+ stream1:  [ ]
+ ana: [ flashana ]
+
+  out1 : [dumper]
+  end_paths: [ ana ]
+}
+

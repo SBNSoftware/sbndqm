@@ -11,6 +11,7 @@
 #include "config_pmt_dqm.fcl"
 #include "config_crt_dqm.fcl"
 #include "config_tpc_dqm.fcl"
+#include "pmtflash_config.fcl"
 
 services:
 {
@@ -27,6 +28,7 @@ services:
       fast: @local::redis_metric_fast
       slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
+      flash: @local::redis_metric_flash
     }
   }
 }
@@ -51,7 +53,7 @@ source:
   transfer_plugin: {
      unique_label: "SBNDOM"
       transferPluginType: Shmem
-      shm_key: 0x40470928
+      shm_key: 0x40470920
       max_fragment_size_words: 1e8
       first_event_builder_rank: 0
           source_rank: 5
@@ -68,7 +70,7 @@ source:
         transfer_plugin: {
           unique_label: "SBNDOM"
           transferPluginType: Shmem
-          shm_key: 0x40470928
+          shm_key: 0x40470920
           max_fragment_size_words: 1e8
           first_event_builder_rank: 0
           destination_rank: 6
@@ -192,6 +194,16 @@ physics:
 
     OnlineAnalysisRawData: @local::streamTPCraw
     OnlineAnalysis: @local::streamTPC
+
+    # Flash
+    MetaFlash: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaFlash
+      SelectEvents: [flash_only]
+    }
+
+    flashana: @local::flashmetrics
+
   }
 }
 
@@ -205,27 +217,32 @@ physics.analyzers.pmtAnalysis.OpDetWaveformLabel: "daqPMT"
 
 physics.analyzers.crtAnalysis.SelectEvents: [crt_only]
 
+physics.analyzers.flashAnalysis.SelectEvents: [flash_only]
+
 physics.pmt_only:     [ daqPMT ]
 physics.tpc_only:     [ daq ]
 physics.crt_only:     [ prescale1 ]
+physics.flash_only:     [ prescale1 ]
 physics.timing_only:  [ daqSPECTDC ]
 physics.trigger_only: [ prescale1 ]
 
 physics.tpc_path:     [ tpc_only ]
 physics.pmt_path:     [ pmt_only ]
 physics.crt_path:     [ crt_only ]
+physics.flash_path:     [ flash_only ]
 physics.timing_path:  [ timing_only ]
 physics.trigger_path: [ trigger_only ]
 
-physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path ]
+physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path ]
 
 physics.atpc:         [ Meta, OnlineAnalysis, OnlineAnalysisRawData, OnlineEvdSBND ]
 physics.apmt:         [ MetaPMT, pmtAnalysis ]
 physics.acrt:         [ MetaCRT, crtana ]
 physics.atiming:      [ dqmSPECTDC ]
 physics.atrigger:     [ ptbAnalysis ]
+physics.aflash:     [ flashana ]
 
-physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger ]
+physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash ]
 
 physics.decoded_stream: [ decodedout ]
 physics.end_paths: [ a ]

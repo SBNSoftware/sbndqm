@@ -1,44 +1,34 @@
 BEGIN_PROLOG
 
-physics: {
-    producers: {}
-    filters: {}
-    analyzers:{
-        flashmetrics: {
+flashmetrics: {
 
-            module_type: CAENV1730FlashMetricsSBND
-            FlashMetricLabel: "pmtmetricproducer"
+    module_type: CAENV1730FlashMetricsSBND
+    FlashMetricLabel: "pmtmetricproducer"
+    HLT_beamzero: [1]
+    HLT_beamlight: [2]
+    HLT_beam_excluded: [3, 4, 14, 15] 
+    HLT_offbeamzero: [3]
+    HLT_offbeamlight: [4]
+    HLT_offbeam_excluded: [1, 2, 14, 15] 
+    HLT_crossingmuon: [14, 15] #ns + ew 
+    HLT_crossingmuon_excluded: [1, 2, 3, 4]  
 
-            HLT_beamzero: [1]
-            HLT_beamlight: [2]
-            HLT_beam_excluded: [3, 4, 14, 15] 
-            HLT_offbeamzero: [3]
-            HLT_offbeamlight: [4]
-            HLT_offbeam_excluded: [1, 2, 14, 15] 
-            HLT_crossingmuon: [14, 15] #ns + ew 
-            HLT_crossingmuon_excluded: [1, 2, 3, 4]  
+    metric_flashes: {
+        groups: { BeamMetrics: [0] }
+        hostname: "sbnd-db01.fnal.gov"
+        streams: ["slow","fast","archiving","30s"]
 
-            metric_flashes: {
-	              groups: { BeamMetrics: [0] }
-                hostname: "sbnd-db01.fnal.gov"
-                streams: ["slow","fast","archiving","30s"]
-
-                metrics: {
-                  flash_ts: {
-                    units: microseconds
-                    title: "Flash Peak Timestamp"
-                  }
-                  flash_pe: {
-                    units: pe
-                    title: "Flash Peak PE"
-                  }
-                }
-            }
+        metrics: {
+          flash_ts: {
+            units: microseconds
+            title: "Flash Peak Timestamp"
+          }
+          flash_pe: {
+            units: pe
+            title: "Flash Peak PE"
+          }
         }
     }
-    trigger_paths: []
-    ana: [flashmetrics]
-    end_paths: [ana]
 }
 
 END_PROLOG
