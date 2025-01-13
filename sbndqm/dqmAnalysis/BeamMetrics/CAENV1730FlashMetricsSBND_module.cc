@@ -81,7 +81,7 @@ CAENV1730FlashMetricsSBND::CAENV1730FlashMetricsSBND(fhicl::ParameterSet const& 
   , m_HLT_offbeam_excluded{ p.get<std::vector<uint64_t>>("HLT_offbeam_excluded") }
   , m_HLT_crossingmuon{ p.get<std::vector<uint64_t>>("HLT_crossingmuon") }
   , m_HLT_crossingmuon_excluded{ p.get<std::vector<uint64_t>>("HLT_crossingmuon_excluded") }
-  , m_flashpeak_thresh{ p.get<float>("FlashPeakThreshold",100) }
+  , m_flashpeak_thresh{ p.get<float>("FlashPeakThreshold",50) }
 {
   if (p.has_key("metrics")) {
     sbndaq::InitializeMetricManager(p.get<fhicl::ParameterSet>("metrics"));
@@ -96,7 +96,6 @@ void CAENV1730FlashMetricsSBND::analyze(art::Event const& e)
   art::Handle<std::vector<artdaq::Fragment> > ptb_handle;
   e.getByLabel("daq", m_ptb_instance, ptb_handle);
   auto stream = getFileStream(ptb_handle);
-  std::cout << "Stream: " << stream << std::endl;
 
   art::Handle pmtmetricHandle = e.getHandle<std::vector<sbnd::trigger::pmtSoftwareTrigger>>(m_flashmetric_tag);
   if( pmtmetricHandle.isValid() && !pmtmetricHandle->empty() ) {
@@ -139,13 +138,11 @@ int CAENV1730FlashMetricsSBND::getFileStream(art::Handle<std::vector<artdaq::Fra
   std::vector<uint64_t> hlt_vec;
 
   for (auto const& cont : *ptb_handle){
-    std::cout << "Processing container" << std::endl;
     artdaq::ContainerFragment contf(cont);
     auto these_hlts = sbndqm::SBNDHLTFilterUtils::GetAllHLTs(&contf);
     hlt_vec.insert(hlt_vec.end(), these_hlts.begin(), these_hlts.end());
   }
 
-  std::cout << "HLT size = " << hlt_vec.size() << ", contains HLT = ";
   for (auto const hlt: hlt_vec){
     std::cout << hlt << " ";
   }

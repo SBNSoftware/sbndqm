@@ -4,6 +4,8 @@ flashmetrics: {
 
     module_type: CAENV1730FlashMetricsSBND
     FlashMetricLabel: "pmtmetricproducer"
+    FlashPeakThreshold: 50
+
     HLT_beamzero: [1]
     HLT_beamlight: [2]
     HLT_beam_excluded: [3, 4, 14, 15] 
