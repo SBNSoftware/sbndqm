@@ -99,12 +99,11 @@ private:
   float pedNHits[32];
   float flag3channel[32];
 
-  bool debug = false;
-
   //sample histogram
   TH1F* fSampleHist;
   
   //fhicl parameters
+  bool fDebug;
   std::string fCRTModuleLabel;
   std::string fCRTInstanceLabel;
   int fBeamWindowStart;
@@ -128,11 +127,11 @@ sbndaq::BernCRTdqmSBND::~BernCRTdqmSBND()
 {
 }
 
-void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
-
-  if (debug) std::cout << "######################################################################" << std::endl;
-  if (debug) std::cout << std::endl;  
-  if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
+{
+  if (fDebug) std::cout << "######################################################################" << std::endl;
+  if (fDebug) std::cout << std::endl;
+  if (fDebug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
   /**
@@ -141,19 +140,18 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
    * From all of the hits in all of the fragments within an art event. -MK
    */
   
-  if (debug) std::cout<<"Hit vector declared. Going to getMany fragments";
+  if (fDebug) std::cout<<"Hit vector declared. Going to getMany fragments";
   
   art::Handle<std::vector<artdaq::Fragment>> fragmentHandle;
   evt.getByLabel(fCRTModuleLabel, fCRTInstanceLabel, fragmentHandle);
 
-
-  if (debug) std::cout<<"evt.getByLabel successful.";
+  if (fDebug) std::cout<<"evt.getByLabel successful.";
 
   if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     return;
 
   auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
-  if (debug) std::cout<<"getCRTData satisfied";
+  if (fDebug) std::cout<<"getCRTData satisfied";
     
   /////////////////////////////////
   // Send Fragment Level Metrics //
@@ -166,7 +164,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
     // if fragment is a container fragment, print # of fragments in that container fragment
     if(frag.type() != artdaq::Fragment::ContainerFragmentType) {
-      if (debug) std::cout<<"Fragment type is incorrect!";
+      if (fDebug) std::cout<<"Fragment type is incorrect!";
       continue;}
 
     artdaq::ContainerFragment cont_frag(frag);
@@ -186,7 +184,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";} //this one is relevant for us
     //print out arguments of the sendMetric line
     //i.e. print out fragment_id to match to fcl
-    if (debug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
+    if (fDebug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
 
     sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
     sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
@@ -291,10 +289,10 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
     if(isTS0){
-      if (debug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+      if (fDebug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
     }
     if(isTS1){
-      if (debug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
+      if (fDebug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl;
       num_t1_resets++;
     }
     
@@ -367,9 +365,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     
     auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
     
-    if (debug) std::cout<<"Plane: "<<plane<<std::endl;
+    if (fDebug) std::cout<<"Plane: "<<plane<<std::endl;
     
-    if (plane>7) {if (debug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
+    if (plane>7) {if (fDebug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
     auto thisflag = hit.flags;
     if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
@@ -382,7 +380,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
     if (thisflag & 0x2 && !(thisflag & 0xC) ) {
       // check ts1 for beam window
-      if(debug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
+      if(fDebug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
       if ((int)ts1>fBeamWindowStart && (int)ts1<fBeamWindowEnd) hitsperplane[plane]++;
     }
     
@@ -446,14 +444,14 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   
   //"CRT hits in beam window per plane per event"
   for (int i=0;i<7;++i){
-    if(debug) {std::cout<<"hitsperplane["<<i<<"]: "<<hitsperplane[i]<<std::endl;}
+    if(fDebug) {std::cout<<"hitsperplane["<<i<<"]: "<<hitsperplane[i]<<std::endl;}
     sbndaq::sendMetric("CRT_event", std::to_string(0),
                        std::string("CRT_hits_beam_plane_")+std::to_string(i),
                        hitsperplane[i],
                        0, artdaq::MetricMode::LastPoint);
   }
   //"CRT T1 resets per event"
-  if(debug) {std::cout<<"num_t1_resets: "<<num_t1_resets<<std::endl;}
+  if(fDebug) {std::cout<<"num_t1_resets: "<<num_t1_resets<<std::endl;}
   sbndaq::sendMetric("CRT_event", std::to_string(0),
                      "T1_resets_per_event",
                      num_t1_resets,
@@ -468,6 +466,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
 {
+  fDebug            = pset.get<bool>("Debug", false);
   fCRTModuleLabel   = pset.get<std::string>("CRTModuleLabel", "daq");
   fCRTInstanceLabel = pset.get<std::string>("CRTInstanceLabel", "ContainerBERNCRTV2");
   fBeamWindowStart  = pset.get<int>("BeamWindowStart",320000);
