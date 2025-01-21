@@ -208,230 +208,229 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
     }
 
   // Initialize variables used to calculate deadtime
-  int count_hit = 0;
-  uint64_t deadtime;
-  //uint64_t & prev_fragment_timestamp = hit.timestamp;
-  uint64_t prev_fragment_timestamp;
+  int count_hit                    = 0;
+  uint64_t deadtime                = 0;
+  uint64_t prev_fragment_timestamp = 0;
 
   // Flag 3 hits
-  uint64_t flag3hit = 0;
+  uint64_t flag3hit  = 0;
   uint64_t missingT0 = 0;
   uint64_t missingT1 = 0;
 
 
   //loop over all CRT hits in an event
-  for(const auto & hit : hit_vector) {
+  for(const auto & hit : hit_vector)
+    {
+      const uint16_t & fragment_id        = hit.fragment_ID;
+      /**
+       * TODO:
+       * In order to distinguish between Top and Side CRT
+       * use the variable detector, defined above
+       * Otherwise, MAC address alone is not sufficient,
+       * as some MACs overlap between Top and Side
+       *
+       * Alternative: use fragment_ID directly (fragment_IDs
+       * are unique)
+       */
 
-    const uint16_t & fragment_id        = hit.fragment_ID;
-    /**
-     * TODO:
-     * In order to distinguish between Top and Side CRT
-     * use the variable detector, defined above
-     * Otherwise, MAC address alone is not sufficient,
-     * as some MACs overlap between Top and Side
-     *
-     * Alternative: use fragment_ID directly (fragment_IDs
-     * are unique)
-     */
+      const uint64_t & fragment_timestamp = hit.timestamp;
 
-    const uint64_t & fragment_timestamp = hit.timestamp;
+      //data from FEB:
+      const uint8_t & mac5     = hit.mac5;
+      unsigned readout_number  = mac5;
+      std::string readout_number_str = std::to_string(readout_number);
 
-    //data from FEB:
-    const uint8_t & mac5     = hit.mac5;
-    unsigned readout_number  = mac5;
-    std::string readout_number_str = std::to_string(readout_number);
+      //std::cout<<"Mac5: "<<readout_number_str<<std::endl;
 
-    //std::cout<<"Mac5: "<<readout_number_str<<std::endl;
-
-    //store the timing and flag information from a hit
-    const int ts0      = hit.ts0;
-    const int ts1      = hit.ts1;
-    const bool     isTS0    = hit.IsReference_TS0();
-    const bool     isTS1    = hit.IsReference_TS1();
-    const bool     isTS0good=!hit.IsOverflow_TS0();
-    const bool     isTS1good=!hit.IsOverflow_TS1();
+      //store the timing and flag information from a hit
+      const int ts0      = hit.ts0;
+      const int ts1      = hit.ts1;
+      const bool     isTS0    = hit.IsReference_TS0();
+      const bool     isTS1    = hit.IsReference_TS1();
+      const bool     isTS0good=!hit.IsOverflow_TS0();
+      const bool     isTS1good=!hit.IsOverflow_TS1();
     
-    // Deadtime
-    if (count_hit == 0) prev_fragment_timestamp = fragment_timestamp;
-    if (count_hit != 0) {
-      deadtime = fragment_timestamp - prev_fragment_timestamp;
-    }
-    prev_fragment_timestamp = hit.timestamp;
-    count_hit++;
-
-    const uint16_t * adc = hit.adc;
-
-    for(int ch=0; ch<32; ch++) {
-      if( adc[ch] > 600 ) {
-        fLastBigHit[ch] = fragment_timestamp;
+      // Deadtime
+      if (count_hit == 0) prev_fragment_timestamp = fragment_timestamp;
+      if (count_hit != 0) {
+	deadtime = fragment_timestamp - prev_fragment_timestamp;
       }
-    }
-    const uint64_t & this_poll_end             = hit.this_poll_end;
-    const uint64_t & last_poll_start           = hit.last_poll_start;
+      prev_fragment_timestamp = hit.timestamp;
+      count_hit++;
 
-    size_t max        = 0;
-    size_t secondmax  = 0;
-    size_t totaladc   = 0;
-    size_t ADCchannel = 0;
+      const uint16_t * adc = hit.adc;
 
-    std::string FEBID_str = std::to_string(fragment_id);
-    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
-
-    //let's fill our sample hist with the Time_TS0()-1e9 if 
-    //it's a GPS reference pulse
-    if(isTS0){
-      if (fDebug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
-    }
-    if(isTS1){
-      if (fDebug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl;
-      num_t1_resets++;
-    }
-    
-    ///////////////////////////
-    // Channel-Level Metrics //
-    ///////////////////////////
-   
-    auto currflag = hit.flags;
-    int maxindex = -1;
-    for(int i = 0; i<32; i++) {
-      if (currflag == 3) {
-        fFlag3Channel[i]++;
-        flag3hit++;
+      for(int ch=0; ch<32; ch++) {
+	if( adc[ch] > 600 ) {
+	  fLastBigHit[ch] = fragment_timestamp;
+	}
       }
-      totaladc  += adc[i];
-      ADCchannel = adc[i];
-      fPedSum[i] += adc[i];
-      if (adc[i] > fPedMax[i]) {fPedMax[i] = adc[i];}
-      if (adc[i] > fPed2Max[i]) {
-        if (adc[i] < fPedMax[i]) {
-          fPed2Max[i] += adc[i];
-        }
+      const uint64_t & this_poll_end             = hit.this_poll_end;
+      const uint64_t & last_poll_start           = hit.last_poll_start;
+
+      size_t max        = 0;
+      size_t secondmax  = 0;
+      size_t totaladc   = 0;
+      size_t ADCchannel = 0;
+
+      std::string FEBID_str = std::to_string(fragment_id);
+      sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint);
+
+      //let's fill our sample hist with the Time_TS0()-1e9 if
+      //it's a GPS reference pulse
+      if(isTS0){
+	if (fDebug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
       }
-      fPedSumSq[i] += adc[i]*adc[i];
-      fPedNHits[i]++;
-      uint64_t fLastBigHitChannel = fragment_timestamp -fLastBigHit[i];
+      if(isTS1){
+	if (fDebug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl;
+	num_t1_resets++;
+      }
+
+      ///////////////////////////
+      // Channel-Level Metrics //
+      ///////////////////////////
+
+      auto currflag = hit.flags;
+      int maxindex = -1;
+      for(int i = 0; i<32; i++) {
+	if (currflag == 3) {
+	  fFlag3Channel[i]++;
+	  flag3hit++;
+	}
+	totaladc  += adc[i];
+	ADCchannel = adc[i];
+	fPedSum[i] += adc[i];
+	if (adc[i] > fPedMax[i]) {fPedMax[i] = adc[i];}
+	if (adc[i] > fPed2Max[i]) {
+	  if (adc[i] < fPedMax[i]) {
+	    fPed2Max[i] += adc[i];
+	  }
+	}
+	fPedSumSq[i] += adc[i]*adc[i];
+	fPedNHits[i]++;
+	uint64_t fLastBigHitChannel = fragment_timestamp -fLastBigHit[i];
       
-      //Send Channel-Level Metrics to the database
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "LastBigHit", fLastBigHitChannel, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", fFlag3Channel[i], 0, artdaq::MetricMode::Average);
+	//Send Channel-Level Metrics to the database
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "LastBigHit", fLastBigHitChannel, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", fFlag3Channel[i], 0, artdaq::MetricMode::Average);
 
-      // Pedestals
-      double pedestalMean = fPedSum[i] - fPedMax[i] - fPed2Max[i];
-      fPedSumSq[i]= fPedSumSq[i] - fPedMax[i]*fPedMax[i] - fPed2Max[i]*fPed2Max[i];
-      double pedMeanRMS = pedestalMean/fPedNHits[i];
+	// Pedestals
+	double pedestalMean = fPedSum[i] - fPedMax[i] - fPed2Max[i];
+	fPedSumSq[i]= fPedSumSq[i] - fPedMax[i]*fPedMax[i] - fPed2Max[i]*fPed2Max[i];
+	double pedMeanRMS = pedestalMean/fPedNHits[i];
 
-      double pedestalRMS2 = fPedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + fPedSumSq[i];
-      double pedestalRMS = sqrt(pedestalRMS2/fPedNHits[i]);
+	double pedestalRMS2 = fPedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + fPedSumSq[i];
+	double pedestalRMS = sqrt(pedestalRMS2/fPedNHits[i]);
 
-      // Send Metrics to the database **
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average); 
+	// Send Metrics to the database **
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);
       
-      /////////////////////////
-      // Board-Level Metrics //
-      /////////////////////////
+	/////////////////////////
+	// Board-Level Metrics //
+	/////////////////////////
 
-      if(adc[i] > max){
-        max = adc[i];
-        maxindex = i;
+	if(adc[i] > max){
+	  max = adc[i];
+	  maxindex = i;
+	}
+      
       }
-      
-    }
     
-    //calculate second max:
-    for(int i = 0; i<32; i++) {
-      if(i == maxindex) {continue;}
-      if(adc[i] > secondmax) {
-        secondmax = adc[i];
-      } 
+      //calculate second max:
+      for(int i = 0; i<32; i++) {
+	if(i == maxindex) {continue;}
+	if(adc[i] > secondmax) {
+	  secondmax = adc[i];
+	} 
     
-    }
+      }
     
-    int baseline = (totaladc - max - secondmax)/30;
+      int baseline = (totaladc - max - secondmax)/30;
 
-    uint64_t earlysynch = last_poll_start - fragment_timestamp;
-    uint64_t latesynch = fragment_timestamp - this_poll_end;
+      uint64_t earlysynch = last_poll_start - fragment_timestamp;
+      uint64_t latesynch = fragment_timestamp - this_poll_end;
     
-    auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
+      auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
     
-    if (fDebug) std::cout<<"Plane: "<<plane<<std::endl;
+      if (fDebug) std::cout<<"Plane: "<<plane<<std::endl;
     
-    if (plane>7) {if (fDebug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
+      if (plane>7) {if (fDebug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
-    auto thisflag = hit.flags;
-    if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
-      missingT1++;
-    }
-    if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 10) {
-      missingT0++;
-    }
+      auto thisflag = hit.flags;
+      if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
+	missingT1++;
+      }
+      if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 10) {
+	missingT0++;
+      }
 
-    // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
-    if (thisflag & 0x2 && !(thisflag & 0xC) ) {
-      // check ts1 for beam window
-      if(fDebug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
-      if ((int)ts1>fBeamWindowStart && (int)ts1<fBeamWindowEnd) hitsperplane[plane]++;
-    }
+      // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
+      if (thisflag & 0x2 && !(thisflag & 0xC) ) {
+	// check ts1 for beam window
+	if(fDebug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
+	if ((int)ts1>fBeamWindowStart && (int)ts1<fBeamWindowEnd) hitsperplane[plane]++;
+      }
     
-    /**
-     * Below we send the metric information, hit by hit, to the online monitor / DQM.
-     * The syntax for the sendMetric function is as follows (from SBNMetricManager.hh):
-     *
-     * void sendMetric(std::string const& group,
-                       std::string const& instance,
-                       std::string const& metric,
-                       long unsigned int const& value,
-		       int level,
-		       MetricMode mode,
-		       std::string const& metricPrefix = "",
-		       bool useNameOverride = false) {
-		           if (metricMan != NULL) {
-			       metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
-			   }
-		       }
-     *
-     * Further documentation on this functon from MetricManager.hh:
-     * * \brief Send a metric with the given parameters to any MetricPlugins with a threshold level >= to level.
-     * \param name The Name of the metric
-     * \param value The value of the metric
-     * \param unit The units of the metric
-     * \param level The verbosity level of the metric. Higher number == more verbose
-     * \param mode The MetricMode that the metric should operate in. Options are:
-     *    LastPoint: Every reporting_interval, the latest metric value is sent (For run/event numbers, etc)
-     *    Accumulate: Every reporting_interval, the sum of all metric values since the last report is sent (for counters)
-     *    Average: Every reporting_interval, the average of all metric values since the last report is sent (for rates)
+      /**
+       * Below we send the metric information, hit by hit, to the online monitor / DQM.
+       * The syntax for the sendMetric function is as follows (from SBNMetricManager.hh):
+       *
+       * void sendMetric(std::string const& group,
+                         std::string const& instance,
+                         std::string const& metric,
+                         long unsigned int const& value,
+	                 int level,
+		         MetricMode mode,
+		         std::string const& metricPrefix = "",
+		         bool useNameOverride = false) {
+		             if (metricMan != NULL) {
+			         metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
+			     }
+                         }
+       *
+       * Further documentation on this functon from MetricManager.hh:
+       * * \brief Send a metric with the given parameters to any MetricPlugins with a threshold level >= to level.
+       * \param name The Name of the metric
+       * \param value The value of the metric
+       * \param unit The units of the metric
+       * \param level The verbosity level of the metric. Higher number == more verbose
+       * \param mode The MetricMode that the metric should operate in. Options are:
+       *    LastPoint: Every reporting_interval, the latest metric value is sent (For run/event numbers, etc)
+       *    Accumulate: Every reporting_interval, the sum of all metric values since the last report is sent (for counters)
+       *    Average: Every reporting_interval, the average of all metric values since the last report is sent (for rates)
 
-     * We note that the level here is used as a threshold; we send any value of the metric above the level. For the CRT DQM, all levels = 0.
-     */
+       * We note that the level here is used as a threshold; we send any value of the metric above the level. For the CRT DQM, all levels = 0.
+       */
 
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT0", missingT0, 0, artdaq::MetricMode::Maximum);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT1", missingT1, 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT0", missingT0, 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT1", missingT1, 0, artdaq::MetricMode::Maximum);
  
-    //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
-    if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T0clockdrift", ts0 - 1e9, 0, artdaq::MetricMode::LastPoint);}
-    if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
+      //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
+      if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T0clockdrift", ts0 - 1e9, 0, artdaq::MetricMode::LastPoint);}
+      if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
-    //Sychronization Metrics
-    sbndaq::sendMetric("CRT_board", readout_number_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
+      //Sychronization Metrics
+      sbndaq::sendMetric("CRT_board", readout_number_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", readout_number_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
 
-    // Flag 3 Hits (Board Level)
-    sbndaq::sendMetric("CRT_board", readout_number_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);  
+      // Flag 3 Hits (Board Level)
+      sbndaq::sendMetric("CRT_board", readout_number_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);
 
-  } //loop over all CRT hits in an event
+    } //loop over all CRT hits in an event
  
-    /////////////////////////
-    // Event-Level Metrics //
-    /////////////////////////
+  /////////////////////////
+  // Event-Level Metrics //
+  /////////////////////////
   
   //"CRT hits in beam window per plane per event"
   for (int i=0;i<7;++i){
@@ -451,8 +450,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   //Other event-level metrics:
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
-
-
 } //analyze
 
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
