@@ -32,13 +32,7 @@
 //              Deadtime - time following any type of hit (of any flag) where the board cannot process another hit (time difference between consecutive hits  on the same board)
 //              MissingT0 - counter of missing T0 reset (flag is not 1, 3, 7, or 11)
 //              MissingT1 - counter of missing T1 reset (flag is not 3, 7, 10, or 11)
-//      Fragment-Level:
-//              Flag - flag of the fragment
-//              frag_count - number of fragments sent
-//              zero_rate - number of empty fragments sent
-//      Event-Level (mostly for offline monitoring of artroot events):
-//              num_fragments - number of fragments sent in the event
-//              num_hits - number of hits across all fragments in the event
+//              Flag - flag of the hit
 //
 // To-do:
 //      1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
@@ -127,44 +121,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
   if (fDebug) std::cout<<"getCRTData satisfied";
     
-  /////////////////////////////////
-  // Send Fragment Level Metrics //
-  /////////////////////////////////
-    
-  for(auto const& frag : *fragmentHandle)
-    {
-      // if fragment is a container fragment, print # of fragments in that container fragment
-      if(frag.type() != artdaq::Fragment::ContainerFragmentType)
-	{
-	  if (fDebug) std::cout<<"Fragment type is not container!";
-	  continue;
-	}
-
-      artdaq::ContainerFragment cont_frag(frag);
-    
-      if(cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2)
-	{
-	  unsigned int const fragid = frag.fragmentID();
-	  std::string fragment_id   = std::to_string(fragid);
-
-	  uint64_t frag_count = cont_frag.block_count();
-	  uint64_t nzero      = frag_count == 0 ? 1 : 0;
-
-	  std::string group_name = "CRT_cont_frag";
-	  if (fDebug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
-
-	  sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
-	  sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
-	}
-  }//end loop over handle
-
   ///////////////////////////////////////
   // Extract Information from the Hits //
   ///////////////////////////////////////
-  
-  //Event-level variables for art root events - basic checks unnecessary for online monitoring
-  size_t num_fragments = fragmentHandle->size();
-  size_t num_hits      = hit_vector.size();
 
   //Variables used in Grafana to be sent to DQM OM:
   size_t num_t1_resets   = 0;
@@ -249,8 +208,8 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	    lastBigHit[mac5][ch] = fragment_timestamp;
 	}
 
-      const uint64_t & this_poll_end             = hit.this_poll_end;
-      const uint64_t & last_poll_start           = hit.last_poll_start;
+      const uint64_t& this_poll_end   = hit.this_poll_end;
+      const uint64_t& last_poll_start = hit.last_poll_start;
 
       size_t max        = 0;
       size_t secondmax  = 0;
@@ -336,7 +295,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       int baseline = (totaladc - max - secondmax)/30;
 
       uint64_t earlysynch = last_poll_start - fragment_timestamp;
-      uint64_t latesynch = fragment_timestamp - this_poll_end;
+      uint64_t latesynch  = fragment_timestamp - this_poll_end;
     
       auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
     
@@ -431,10 +390,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
                      "T1_resets_per_event",
                      num_t1_resets,
                      0, artdaq::MetricMode::LastPoint);
-
-  //Other event-level metrics:
-  sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
-  sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
 } //analyze
 
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
