@@ -150,7 +150,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     return;
 
-  auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
+  hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
   if (fDebug) std::cout<<"getCRTData satisfied";
     
   /////////////////////////////////
@@ -184,9 +184,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	}
   }//end loop over handle
 
-  //Concatenate hit vectors from each fragment into an event-long hit vector.
-  hit_vector.insert(hit_vector.end(),this_hit_vector.begin(),this_hit_vector.end());
-  
   ///////////////////////////////////////
   // Extract Information from the Hits //
   ///////////////////////////////////////
