@@ -81,6 +81,7 @@ private:
   std::string fCRTInstanceLabel;
   int fBeamWindowStart;
   int fBeamWindowEnd;
+  uint16_t fBigHitThreshold;
   std::vector<uint8_t> fMac5s;
 };
 
@@ -234,18 +235,20 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
 	  if(diff < deadtime[mac5])
 	    deadtime[mac5] = diff;
+
+	  prev_fragment_timestamp[mac5] = fragment_timestamp;
 	}
 
-      prev_fragment_timestamp[mac5] = hit.timestamp;
       ++count_hit[mac5];
 
-      const uint16_t * adc = hit.adc;
+      const uint16_t* adc = hit.adc;
 
-      for(int ch=0; ch<32; ch++) {
-	if( adc[ch] > 600 ) {
-	  lastBigHit[mac5][ch] = fragment_timestamp;
+      for(int ch = 0; ch < 32; ch++)
+	{
+	  if(adc[ch] > fBigHitThreshold)
+	    lastBigHit[mac5][ch] = fragment_timestamp;
 	}
-      }
+
       const uint64_t & this_poll_end             = hit.this_poll_end;
       const uint64_t & last_poll_start           = hit.last_poll_start;
 
@@ -289,6 +292,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	}
 	pedSumSq[mac5][ch] += adc[ch]*adc[ch];
 	pedNHits[mac5][ch]++;
+
 	uint64_t lastBigHitChannel = fragment_timestamp -lastBigHit[mac5][ch];
       
 	//Send Channel-Level Metrics to the database
@@ -440,6 +444,7 @@ void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
   fCRTInstanceLabel = pset.get<std::string>("CRTInstanceLabel", "ContainerBERNCRTV2");
   fBeamWindowStart  = pset.get<int>("BeamWindowStart",320000);
   fBeamWindowEnd    = pset.get<int>("BeamWindowEnd",350000);
+  fBigHitThreshold  = pset.get<uint16_t>("BigHitThreshold", 600);
   fMac5s            = pset.get<std::vector<uint8_t>>("metric_board_config.groups.CRT_board");
 } //reconfigure
 
