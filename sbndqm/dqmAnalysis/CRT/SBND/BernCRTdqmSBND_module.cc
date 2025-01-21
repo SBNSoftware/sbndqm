@@ -75,21 +75,13 @@ public:
  
 private:
 
-  uint64_t fLastBigHit[32];
-  float fPedSum[32];
-  float fPedMax[32];
-  float fPed2Max[32];
-  float fPedSumSq[32];
-  float fPedNHits[32];
-  float fFlag3Channel[32];
-
   //fhicl parameters
   bool fDebug;
   std::string fCRTModuleLabel;
   std::string fCRTInstanceLabel;
   int fBeamWindowStart;
   int fBeamWindowEnd;
-  
+  std::vector<uint8_t> fMac5s;
 };
 
 sbndaq::BernCRTdqmSBND::BernCRTdqmSBND(fhicl::ParameterSet const & pset)
@@ -177,73 +169,81 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   size_t num_t1_resets   = 0;
   size_t hitsperplane[7] = {0,0,0,0,0,0,0};
 
-  //Initialize variables used to calculate pedestals and flag3
-  for(int c = 0; c < 32; c++)
+  // Initialize per module and per channel vars
+  std::map<uint8_t, int> count_hit;
+  std::map<uint8_t, uint64_t> deadtime;
+  std::map<uint8_t, uint64_t> prev_fragment_timestamp;
+  std::map<uint8_t, uint64_t> flag3hit;
+  std::map<uint8_t, uint64_t> missingT0;
+  std::map<uint8_t, uint64_t> missingT1;
+
+  std::map<uint8_t, std::map<uint8_t, uint64_t>> lastBigHit;
+  std::map<uint8_t, std::map<uint8_t, float>> pedSum;
+  std::map<uint8_t, std::map<uint8_t, float>> pedMax;
+  std::map<uint8_t, std::map<uint8_t, float>> ped2Max;
+  std::map<uint8_t, std::map<uint8_t, float>> pedSumSq;
+  std::map<uint8_t, std::map<uint8_t, float>> pedNHits;
+  std::map<uint8_t, std::map<uint8_t, float>> flag3Channel;
+
+  for(const uint8_t& mac5 : fMac5s)
     {
-      fPedSum[c]       = 0.;
-      fPedMax[c]       = 0.;
-      fPed2Max[c]      = 0.;
-      fPedSumSq[c]     = 0.;
-      fPedNHits[c]     = 0.;
-      fFlag3Channel[c] = 0.;
+      count_hit[mac5]               = 0;
+      deadtime[mac5]                = std::numeric_limits<uint64_t>::max();
+      prev_fragment_timestamp[mac5] = 0;
+      flag3hit[mac5]                = 0;
+      missingT0[mac5]               = 0;
+      missingT1[mac5]               = 0;
+
+      for(int ch = 0; ch < 32; ++ch)
+	{
+	  pedSum[mac5][ch]       = 0.;
+	  pedMax[mac5][ch]       = 0.;
+	  ped2Max[mac5][ch]      = 0.;
+	  pedSumSq[mac5][ch]     = 0.;
+	  pedNHits[mac5][ch]     = 0.;
+	  flag3Channel[mac5][ch] = 0.;
+	}
     }
-
-  // Initialize variables used to calculate deadtime
-  int count_hit                    = 0;
-  uint64_t deadtime                = 0;
-  uint64_t prev_fragment_timestamp = 0;
-
-  // Flag 3 hits
-  uint64_t flag3hit  = 0;
-  uint64_t missingT0 = 0;
-  uint64_t missingT1 = 0;
-
 
   //loop over all CRT hits in an event
   for(const auto & hit : hit_vector)
     {
       const uint16_t & fragment_id        = hit.fragment_ID;
-      /**
-       * TODO:
-       * In order to distinguish between Top and Side CRT
-       * use the variable detector, defined above
-       * Otherwise, MAC address alone is not sufficient,
-       * as some MACs overlap between Top and Side
-       *
-       * Alternative: use fragment_ID directly (fragment_IDs
-       * are unique)
-       */
-
       const uint64_t & fragment_timestamp = hit.timestamp;
 
       //data from FEB:
-      const uint8_t & mac5     = hit.mac5;
-      unsigned readout_number  = mac5;
-      std::string readout_number_str = std::to_string(readout_number);
+      const uint8_t& mac5  = hit.mac5;
+      std::string mac5_str = std::to_string(mac5);
 
-      //std::cout<<"Mac5: "<<readout_number_str<<std::endl;
+      if (fDebug) std::cout << "Mac5: " << mac5_str <<std::endl;
 
       //store the timing and flag information from a hit
-      const int ts0      = hit.ts0;
-      const int ts1      = hit.ts1;
-      const bool     isTS0    = hit.IsReference_TS0();
-      const bool     isTS1    = hit.IsReference_TS1();
-      const bool     isTS0good=!hit.IsOverflow_TS0();
-      const bool     isTS1good=!hit.IsOverflow_TS1();
+      const int ts0        = hit.ts0;
+      const int ts1        = hit.ts1;
+      const bool isTS0     = hit.IsReference_TS0();
+      const bool isTS1     = hit.IsReference_TS1();
+      const bool isTS0good = !hit.IsOverflow_TS0();
+      const bool isTS1good = !hit.IsOverflow_TS1();
     
       // Deadtime
-      if (count_hit == 0) prev_fragment_timestamp = fragment_timestamp;
-      if (count_hit != 0) {
-	deadtime = fragment_timestamp - prev_fragment_timestamp;
-      }
-      prev_fragment_timestamp = hit.timestamp;
-      count_hit++;
+      if(count_hit[mac5] == 0)
+	prev_fragment_timestamp[mac5] = fragment_timestamp;
+      else
+	{
+	  uint64_t diff = fragment_timestamp - prev_fragment_timestamp[mac5];
+
+	  if(diff < deadtime[mac5])
+	    deadtime[mac5] = diff;
+	}
+
+      prev_fragment_timestamp[mac5] = hit.timestamp;
+      ++count_hit[mac5];
 
       const uint16_t * adc = hit.adc;
 
       for(int ch=0; ch<32; ch++) {
 	if( adc[ch] > 600 ) {
-	  fLastBigHit[ch] = fragment_timestamp;
+	  lastBigHit[mac5][ch] = fragment_timestamp;
 	}
       }
       const uint64_t & this_poll_end             = hit.this_poll_end;
@@ -273,58 +273,58 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
       auto currflag = hit.flags;
       int maxindex = -1;
-      for(int i = 0; i<32; i++) {
+      for(int ch = 0; ch < 32; ++ch) {
 	if (currflag == 3) {
-	  fFlag3Channel[i]++;
-	  flag3hit++;
+	  flag3Channel[mac5][ch]++;
+	  flag3hit[mac5]++;
 	}
-	totaladc  += adc[i];
-	ADCchannel = adc[i];
-	fPedSum[i] += adc[i];
-	if (adc[i] > fPedMax[i]) {fPedMax[i] = adc[i];}
-	if (adc[i] > fPed2Max[i]) {
-	  if (adc[i] < fPedMax[i]) {
-	    fPed2Max[i] += adc[i];
+	totaladc  += adc[ch];
+	ADCchannel = adc[ch];
+	pedSum[mac5][ch] += adc[ch];
+	if (adc[ch] > pedMax[mac5][ch]) {pedMax[mac5][ch] = adc[ch];}
+	if (adc[ch] > ped2Max[mac5][ch]) {
+	  if (adc[ch] < pedMax[mac5][ch]) {
+	    ped2Max[mac5][ch] += adc[ch];
 	  }
 	}
-	fPedSumSq[i] += adc[i]*adc[i];
-	fPedNHits[i]++;
-	uint64_t fLastBigHitChannel = fragment_timestamp -fLastBigHit[i];
+	pedSumSq[mac5][ch] += adc[ch]*adc[ch];
+	pedNHits[mac5][ch]++;
+	uint64_t lastBigHitChannel = fragment_timestamp -lastBigHit[mac5][ch];
       
 	//Send Channel-Level Metrics to the database
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "LastBigHit", fLastBigHitChannel, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", fFlag3Channel[i], 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "LastBigHit", lastBigHitChannel, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "ChFlag3Rate", flag3Channel[mac5][ch], 0, artdaq::MetricMode::Average);
 
 	// Pedestals
-	double pedestalMean = fPedSum[i] - fPedMax[i] - fPed2Max[i];
-	fPedSumSq[i]= fPedSumSq[i] - fPedMax[i]*fPedMax[i] - fPed2Max[i]*fPed2Max[i];
-	double pedMeanRMS = pedestalMean/fPedNHits[i];
+	double pedestalMean = pedSum[mac5][ch] - pedMax[mac5][ch] - ped2Max[mac5][ch];
+	pedSumSq[mac5][ch]= pedSumSq[mac5][ch] - pedMax[mac5][ch]*pedMax[mac5][ch] - ped2Max[mac5][ch]*ped2Max[mac5][ch];
+	double pedMeanRMS = pedestalMean/pedNHits[mac5][ch];
 
-	double pedestalRMS2 = fPedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + fPedSumSq[i];
-	double pedestalRMS = sqrt(pedestalRMS2/fPedNHits[i]);
+	double pedestalRMS2 = pedNHits[mac5][ch] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + pedSumSq[mac5][ch];
+	double pedestalRMS = sqrt(pedestalRMS2/pedNHits[mac5][ch]);
 
 	// Send Metrics to the database **
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);
       
 	/////////////////////////
 	// Board-Level Metrics //
 	/////////////////////////
 
-	if(adc[i] > max){
-	  max = adc[i];
-	  maxindex = i;
+	if(adc[ch] > max){
+	  max = adc[ch];
+	  maxindex = ch;
 	}
       
       }
     
       //calculate second max:
-      for(int i = 0; i<32; i++) {
-	if(i == maxindex) {continue;}
-	if(adc[i] > secondmax) {
-	  secondmax = adc[i];
+      for(int ch = 0; ch < 32; ++ch) {
+	if(ch == maxindex) {continue;}
+	if(adc[ch] > secondmax) {
+	  secondmax = adc[ch];
 	} 
     
       }
@@ -342,10 +342,10 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   
       auto thisflag = hit.flags;
       if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
-	missingT1++;
+	missingT1[mac5]++;
       }
       if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 10) {
-	missingT0++;
+	missingT0[mac5]++;
       }
 
       // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
@@ -386,26 +386,26 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
        * We note that the level here is used as a threshold; we send any value of the metric above the level. For the CRT DQM, all levels = 0.
        */
 
-      sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCValue", max, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT0", missingT0, 0, artdaq::MetricMode::Maximum);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT1", missingT1, 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCValue", max, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", mac5_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
+      //      sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
+      //      sbndaq::sendMetric("CRT_board", mac5_str, "MissingT0", missingT0, 0, artdaq::MetricMode::Maximum);
+      //      sbndaq::sendMetric("CRT_board", mac5_str, "MissingT1", missingT1, 0, artdaq::MetricMode::Maximum);
  
       //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
-      if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T0clockdrift", ts0 - 1e9, 0, artdaq::MetricMode::LastPoint);}
-      if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
+      if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", mac5_str, "T0clockdrift", ts0 - 1e9, 0, artdaq::MetricMode::LastPoint);}
+      if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", mac5_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
       //Sychronization Metrics
-      sbndaq::sendMetric("CRT_board", readout_number_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_board", readout_number_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", mac5_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", mac5_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
 
       // Flag 3 Hits (Board Level)
-      sbndaq::sendMetric("CRT_board", readout_number_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);
+      //      sbndaq::sendMetric("CRT_board", mac5_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);
 
     } //loop over all CRT hits in an event
  
@@ -440,6 +440,7 @@ void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
   fCRTInstanceLabel = pset.get<std::string>("CRTInstanceLabel", "ContainerBERNCRTV2");
   fBeamWindowStart  = pset.get<int>("BeamWindowStart",320000);
   fBeamWindowEnd    = pset.get<int>("BeamWindowEnd",350000);
+  fMac5s            = pset.get<std::vector<uint8_t>>("metric_board_config.groups.CRT_board");
 } //reconfigure
 
 DEFINE_ART_MODULE(sbndaq::BernCRTdqmSBND)
