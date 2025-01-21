@@ -157,38 +157,31 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   // Send Fragment Level Metrics //
   /////////////////////////////////
     
-  //Copied from FragmentDQMAna_module.cc
+  for(auto const& frag : *fragmentHandle)
+    {
+      // if fragment is a container fragment, print # of fragments in that container fragment
+      if(frag.type() != artdaq::Fragment::ContainerFragmentType)
+	{
+	  if (fDebug) std::cout<<"Fragment type is not container!";
+	  continue;
+	}
+
+      artdaq::ContainerFragment cont_frag(frag);
     
-  for (auto const& frag : *fragmentHandle){
-    //frag is artdaq::Fragment
+      if(cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2)
+	{
+	  unsigned int const fragid = frag.fragmentID();
+	  std::string fragment_id   = std::to_string(fragid);
 
-    // if fragment is a container fragment, print # of fragments in that container fragment
-    if(frag.type() != artdaq::Fragment::ContainerFragmentType) {
-      if (fDebug) std::cout<<"Fragment type is incorrect!";
-      continue;}
+	  uint64_t frag_count = cont_frag.block_count();
+	  uint64_t nzero      = frag_count == 0 ? 1 : 0;
 
-    artdaq::ContainerFragment cont_frag(frag);
-    
-    unsigned int const fragid = frag.fragmentID();
-    std::string fragment_id = std::to_string(fragid);
+	  std::string group_name = "CRT_cont_frag";
+	  if (fDebug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
 
-    //get frag count
-    uint64_t frag_count = cont_frag.block_count();
-    //get zero rate
-    uint64_t nzero = 0;
-    if (frag_count == 0) { nzero = 1; }
-
-    std::string group_name = "unknown_cont_frag";
-
-    if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::CAENV1730) {group_name = "PMT_cont_frag";}
-    else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";} //this one is relevant for us
-    //print out arguments of the sendMetric line
-    //i.e. print out fragment_id to match to fcl
-    if (fDebug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
-
-    sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
-    sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
-     
+	  sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
+	  sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
+	}
   }//end loop over handle
 
   //Concatenate hit vectors from each fragment into an event-long hit vector.
