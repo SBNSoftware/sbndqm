@@ -58,11 +58,9 @@
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
-//add these
+
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
-//---
-//#include "art/Framework/Services/Optional/TFileService.h"
 
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 
@@ -94,16 +92,15 @@ public:
   void reconfigure(fhicl::ParameterSet const & pset);
  
 private:
-  bool IsSideCRT(const icarus::crt::BernCRTTranslator & hit);
 
-   uint64_t lastbighit[32];
-   float pedSum[32];
-   float pedMax[32];
-   float ped2Max[32];
-   float pedSumSq[32];
-   float pedNHits[32];
-   float flag3channel[32];
-   //float NHits[32];
+  uint64_t lastbighit[32];
+  float pedSum[32];
+  float pedMax[32];
+  float ped2Max[32];
+  float pedSumSq[32];
+  float pedNHits[32];
+  float flag3channel[32];
+  //float NHits[32];
 
   bool debug = false;
 
@@ -135,14 +132,6 @@ sbndaq::BernCRTdqmSBND::BernCRTdqmSBND(fhicl::ParameterSet const & pset)
 sbndaq::BernCRTdqmSBND::~BernCRTdqmSBND()
 {
 }
-
-bool sbndaq::BernCRTdqmSBND::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
-  /**
-   * Fragment ID described in SBN doc 16111
-   */
-  return (hit.fragment_ID & 0x3100) == 0x3100;
-}
-
 
 void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   //sleep(2);
@@ -266,8 +255,6 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
   //loop over all CRT hits in an event
   for(const auto & hit : hit_vector) {
 
-    enum Detector {SIDE_CRT, TOP_CRT};
-//    const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
     const uint16_t & fragment_id        = hit.fragment_ID;
     /**
      * TODO:
