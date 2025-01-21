@@ -91,13 +91,13 @@ public:
  
 private:
 
-  uint64_t lastbighit[32];
-  float pedSum[32];
-  float pedMax[32];
-  float ped2Max[32];
-  float pedSumSq[32];
-  float pedNHits[32];
-  float flag3channel[32];
+  uint64_t fLastBigHit[32];
+  float fPedSum[32];
+  float fPedMax[32];
+  float fPed2Max[32];
+  float fPedSumSq[32];
+  float fPedNHits[32];
+  float fFlag3Channel[32];
 
   //sample histogram
   TH1F* fSampleHist;
@@ -197,15 +197,15 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   size_t hitsperplane[7] = {0,0,0,0,0,0,0};
 
   //Initialize variables used to calculate pedestals and flag3
-  for(int c=0; c<32; c++)
+  for(int c = 0; c < 32; c++)
     {
-      pedSum[c] = 0.;
-      pedMax[c] = 0.;
-      ped2Max[c] = 0.;
-      pedSumSq[c] = 0.;
-      pedNHits[c] = 0.;
-      flag3channel[c] = 0.;
-  }
+      fPedSum[c]       = 0.;
+      fPedMax[c]       = 0.;
+      fPed2Max[c]      = 0.;
+      fPedSumSq[c]     = 0.;
+      fPedNHits[c]     = 0.;
+      fFlag3Channel[c] = 0.;
+    }
 
   // Initialize variables used to calculate deadtime
   int count_hit = 0;
@@ -263,7 +263,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
     for(int ch=0; ch<32; ch++) {
       if( adc[ch] > 600 ) {
-        lastbighit[ch] = fragment_timestamp;
+        fLastBigHit[ch] = fragment_timestamp;
       }
     }
     const uint64_t & this_poll_end             = hit.this_poll_end;
@@ -295,34 +295,34 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
     int maxindex = -1;
     for(int i = 0; i<32; i++) {
       if (currflag == 3) {
-        flag3channel[i]++;
+        fFlag3Channel[i]++;
         flag3hit++;
       }
       totaladc  += adc[i];
       ADCchannel = adc[i];
-      pedSum[i] += adc[i];
-      if (adc[i] > pedMax[i]) {pedMax[i] = adc[i];}
-      if (adc[i] > ped2Max[i]) {
-        if (adc[i] < pedMax[i]) {
-          ped2Max[i] += adc[i];
+      fPedSum[i] += adc[i];
+      if (adc[i] > fPedMax[i]) {fPedMax[i] = adc[i];}
+      if (adc[i] > fPed2Max[i]) {
+        if (adc[i] < fPedMax[i]) {
+          fPed2Max[i] += adc[i];
         }
       }
-      pedSumSq[i] += adc[i]*adc[i];
-      pedNHits[i]++;
-      uint64_t lastbighitchannel = fragment_timestamp -lastbighit[i];
+      fPedSumSq[i] += adc[i]*adc[i];
+      fPedNHits[i]++;
+      uint64_t fLastBigHitChannel = fragment_timestamp -fLastBigHit[i];
       
       //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", flag3channel[i], 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "LastBigHit", fLastBigHitChannel, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", fFlag3Channel[i], 0, artdaq::MetricMode::Average);
 
       // Pedestals
-      double pedestalMean = pedSum[i] - pedMax[i] - ped2Max[i];
-      pedSumSq[i]= pedSumSq[i] - pedMax[i]*pedMax[i] - ped2Max[i]*ped2Max[i];
-      double pedMeanRMS = pedestalMean/pedNHits[i];
+      double pedestalMean = fPedSum[i] - fPedMax[i] - fPed2Max[i];
+      fPedSumSq[i]= fPedSumSq[i] - fPedMax[i]*fPedMax[i] - fPed2Max[i]*fPed2Max[i];
+      double pedMeanRMS = pedestalMean/fPedNHits[i];
 
-      double pedestalRMS2 = pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + pedSumSq[i];
-      double pedestalRMS = sqrt(pedestalRMS2/pedNHits[i]);
+      double pedestalRMS2 = fPedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + fPedSumSq[i];
+      double pedestalRMS = sqrt(pedestalRMS2/fPedNHits[i]);
 
       // Send Metrics to the database **
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
