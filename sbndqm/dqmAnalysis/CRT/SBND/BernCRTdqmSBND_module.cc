@@ -98,7 +98,6 @@ private:
   float pedSumSq[32];
   float pedNHits[32];
   float flag3channel[32];
-  //float NHits[32];
 
   bool debug = false;
 
@@ -121,7 +120,6 @@ sbndaq::BernCRTdqmSBND::BernCRTdqmSBND(fhicl::ParameterSet const & pset)
   }
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_channel_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));
-  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_fragment_config"));
 
   this->reconfigure( pset );
 }
@@ -289,7 +287,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
     std::string FEBID_str = std::to_string(fragment_id);
     sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
-
 
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
