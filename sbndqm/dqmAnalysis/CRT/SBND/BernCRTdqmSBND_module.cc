@@ -106,6 +106,8 @@ private:
   TH1F* fSampleHist;
   
   //fhicl parameters
+  std::string fCRTModuleLabel;
+  std::string fCRTInstanceLabel;
   int fBeamWindowStart;
   int fBeamWindowEnd;
   
@@ -142,13 +144,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
    */
   
   if (debug) std::cout<<"Hit vector declared. Going to getMany fragments";
-
   
-  std::string fCRTModuleLabel = "daq";
-  std::string CRTInstanceLabel = "ContainerBERNCRTV2";
-
   art::Handle<std::vector<artdaq::Fragment>> fragmentHandle;
-  evt.getByLabel(fCRTModuleLabel, CRTInstanceLabel, fragmentHandle);
+  evt.getByLabel(fCRTModuleLabel, fCRTInstanceLabel, fragmentHandle);
 
 
   if (debug) std::cout<<"evt.getByLabel successful.";
@@ -473,8 +471,10 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
 {
-  fBeamWindowStart = pset.get<int>("BeamWindowStart",320000);
-  fBeamWindowEnd = pset.get<int>("BeamWindowEnd",350000);
+  fCRTModuleLabel   = pset.get<std::string>("CRTModuleLabel", "daq");
+  fCRTInstanceLabel = pset.get<std::string>("CRTInstanceLabel", "ContainerBERNCRTV2");
+  fBeamWindowStart  = pset.get<int>("BeamWindowStart",320000);
+  fBeamWindowEnd    = pset.get<int>("BeamWindowEnd",350000);
 } //reconfigure
 
 DEFINE_ART_MODULE(sbndaq::BernCRTdqmSBND)
