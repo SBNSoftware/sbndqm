@@ -52,29 +52,13 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 
-#include "canvas/Utilities/Exception.h"
-
-#include "sbndaq-artdaq-core/Overlays/Common/BernCRTFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
+#include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
 
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
-
-#include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
-
-#include "TH1F.h"
-#include "TNtuple.h"
-
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <fstream>
-#include <iomanip>
-#include <vector>
-#include <iostream>
-#include <unistd.h>
 
 namespace sbndaq {
   class BernCRTdqmSBND;
@@ -99,9 +83,6 @@ private:
   float fPedNHits[32];
   float fFlag3Channel[32];
 
-  //sample histogram
-  TH1F* fSampleHist;
-  
   //fhicl parameters
   bool fDebug;
   std::string fCRTModuleLabel;
