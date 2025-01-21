@@ -190,20 +190,21 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   
   //Event-level variables for art root events - basic checks unnecessary for online monitoring
   size_t num_fragments = fragmentHandle->size();
-  size_t num_hits = hit_vector.size();
-  
+  size_t num_hits      = hit_vector.size();
+
   //Variables used in Grafana to be sent to DQM OM:
-  size_t num_t1_resets = 0;
+  size_t num_t1_resets   = 0;
   size_t hitsperplane[7] = {0,0,0,0,0,0,0};
 
   //Initialize variables used to calculate pedestals and flag3
-  for(int c=0; c<32; c++){
-    sbndaq::BernCRTdqmSBND::pedSum[c] = 0.; 
-    pedMax[c] = 0.; 
-    ped2Max[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::pedSumSq[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::pedNHits[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::flag3channel[c] = 0.; 
+  for(int c=0; c<32; c++)
+    {
+      pedSum[c] = 0.;
+      pedMax[c] = 0.;
+      ped2Max[c] = 0.;
+      pedSumSq[c] = 0.;
+      pedNHits[c] = 0.;
+      flag3channel[c] = 0.;
   }
 
   // Initialize variables used to calculate deadtime
@@ -262,7 +263,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
     for(int ch=0; ch<32; ch++) {
       if( adc[ch] > 600 ) {
-        sbndaq::BernCRTdqmSBND::lastbighit[ch] = fragment_timestamp;
+        lastbighit[ch] = fragment_timestamp;
       }
     }
     const uint64_t & this_poll_end             = hit.this_poll_end;
@@ -294,21 +295,21 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
     int maxindex = -1;
     for(int i = 0; i<32; i++) {
       if (currflag == 3) {
-        sbndaq::BernCRTdqmSBND::flag3channel[i]++;
+        flag3channel[i]++;
         flag3hit++;
       }
       totaladc  += adc[i];
       ADCchannel = adc[i];
-      sbndaq::BernCRTdqmSBND::pedSum[i] += adc[i];
+      pedSum[i] += adc[i];
       if (adc[i] > pedMax[i]) {pedMax[i] = adc[i];}
       if (adc[i] > ped2Max[i]) {
         if (adc[i] < pedMax[i]) {
           ped2Max[i] += adc[i];
         }
       }
-      sbndaq::BernCRTdqmSBND::pedSumSq[i] += adc[i]*adc[i];
-      sbndaq::BernCRTdqmSBND::pedNHits[i]++;
-      uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqmSBND::lastbighit[i];
+      pedSumSq[i] += adc[i]*adc[i];
+      pedNHits[i]++;
+      uint64_t lastbighitchannel = fragment_timestamp -lastbighit[i];
       
       //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
@@ -316,12 +317,12 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "ChFlag3Rate", flag3channel[i], 0, artdaq::MetricMode::Average);
 
       // Pedestals
-      double pedestalMean = sbndaq::BernCRTdqmSBND::pedSum[i] - sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i];
-      sbndaq::BernCRTdqmSBND::pedSumSq[i]= sbndaq::BernCRTdqmSBND::pedSumSq[i] - sbndaq::BernCRTdqmSBND::pedMax[i]*sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i]*sbndaq::BernCRTdqmSBND::ped2Max[i];
-      double pedMeanRMS = pedestalMean/sbndaq::BernCRTdqmSBND::pedNHits[i];
+      double pedestalMean = pedSum[i] - pedMax[i] - ped2Max[i];
+      pedSumSq[i]= pedSumSq[i] - pedMax[i]*pedMax[i] - ped2Max[i]*ped2Max[i];
+      double pedMeanRMS = pedestalMean/pedNHits[i];
 
-      double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + sbndaq::BernCRTdqmSBND::pedSumSq[i];
-      double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqmSBND::pedNHits[i]);
+      double pedestalRMS2 = pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + pedSumSq[i];
+      double pedestalRMS = sqrt(pedestalRMS2/pedNHits[i]);
 
       // Send Metrics to the database **
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
