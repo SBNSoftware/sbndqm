@@ -22,11 +22,11 @@ streamSPECTDC: {
   FTRIG_ch: 3
   ETRIG_ch: 4
 
-  Expected_BES_CRTT1_diff: 1.2 #ms
+  Expected_BES_CRTT1_diff: 1.22 #ms
   Expected_BES_CRTT1_jitter: 0.1 #ms
   
-  Expected_RWM_BES_diff: 2 #us
-  Expected_RWM_BES_jitter: 0.5 #us
+  Expected_RWM_BES_diff: 334 #us
+  Expected_RWM_BES_jitter: 1 #us
   
   Expected_ETRIG_BES_diff: 332 #us
   Expected_ETRIG_BES_jitter: 1 #us
