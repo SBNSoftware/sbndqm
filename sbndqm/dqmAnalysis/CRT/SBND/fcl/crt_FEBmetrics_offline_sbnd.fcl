@@ -3,8 +3,8 @@
 
 process_name: Dump
 
-services: {
-
+services:
+{
   RedisConnection: @local::redis_connection
 
   InitMetricManager:

@@ -3,7 +3,8 @@
 
 process_name: Dump
 
-services: {
+services:
+{
   RedisConnection: @local::redis_connection
   InitMetricManager:
   {
@@ -39,7 +40,7 @@ source:
       {
         module_type: "TransferOutput"
         transfer_plugin:
-	{
+        {
           destination_rank: 6
           first_event_builder_rank: 0
           max_fragment_size_words: 1e8
