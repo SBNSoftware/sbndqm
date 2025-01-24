@@ -460,16 +460,16 @@ uint64_t sbndaq::BernCRTdqmSBND::GetSPECTDCT1ResetTime(art::Event const &evt, co
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
 {
   fDebug                        = pset.get<bool>("Debug", false);
-  fCRTModuleLabel               = pset.get<std::string>("CRTModuleLabel", "daq");
-  fCRTInstanceLabel             = pset.get<std::string>("CRTInstanceLabel", "ContainerBERNCRTV2");
-  fSPECTDCModuleLabel           = pset.get<std::string>("SPECTDCModuleLabel", "daq");
-  fSPECTDCInstanceLabels        = pset.get<std::vector<std::string>>("SPECTDCInstanceLabels", {"TDCTIMESTAMP", "ContainerTDCTIMESTAMP"});
-  fDAQHeaderModuleLabel         = pset.get<std::string>("DAQHeaderModuleLabel", "");
-  fDAQHeaderInstanceLabel       = pset.get<std::string>("DAQHeaderInstanceLabel", "");
-  fSPECTDCT1Channel             = pset.get<uint16_t>("SPECTDCT1Channel", 0);
-  fRawTSCorrection              = pset.get<uint64_t>("RawTSCorrection", 367000);
-  fBigHitADCThreshold           = pset.get<uint16_t>("BigHitADCThreshold", 600);
-  fBoardsRequiredForResetSpread = pset.get<uint16_t>("BoardsRequiredForResetSpread", 100);
+  fCRTModuleLabel               = pset.get<std::string>("CRTModuleLabel");
+  fCRTInstanceLabel             = pset.get<std::string>("CRTInstanceLabel");
+  fSPECTDCModuleLabel           = pset.get<std::string>("SPECTDCModuleLabel");
+  fSPECTDCInstanceLabels        = pset.get<std::vector<std::string>>("SPECTDCInstanceLabels");
+  fDAQHeaderModuleLabel         = pset.get<std::string>("DAQHeaderModuleLabel");
+  fDAQHeaderInstanceLabel       = pset.get<std::string>("DAQHeaderInstanceLabel");
+  fSPECTDCT1Channel             = pset.get<uint16_t>("SPECTDCT1Channel");
+  fRawTSCorrection              = pset.get<uint64_t>("RawTSCorrection");
+  fBigHitADCThreshold           = pset.get<uint16_t>("BigHitADCThreshold");
+  fBoardsRequiredForResetSpread = pset.get<uint16_t>("BoardsRequiredForResetSpread");
   fMac5s                        = pset.get<std::vector<uint8_t>>("metric_board_config.groups.CRT_board");
 } //reconfigure
 

@@ -4,8 +4,17 @@ streamCRT:
 {
   module_type: BernCRTdqmSBND
 
-  Debug: false
-
+  Debug:                        false
+  CRTModuleLabel:               "daq"
+  CRTInstanceLabel:             "ContainerBERNCRTV2"
+  SPECTDCModuleLabel:           "daq"
+  SPECTDCInstanceLabels:        [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+  DAQHeaderModuleLabel:         "daq"
+  DAQHeaderInstanceLabel:       "RawEventHeader"
+  SPECTDCT1Channel:             0
+  RawTSCorrection:              367000
+  BigHitADCThreshold:           600
+  BoardsRequiredForResetSpread: 100
   metric_board_config:
   {
     groups:
