@@ -17,16 +17,15 @@
 //               ReadoutRate   - How many non-clock reset hits were there on this board in this event?
 //               T0ClockDrift  - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
 //               Baseline      - Average pedestal across all 32 channels
+//               Deadtime      - time difference between consecutive hits of any type (minimum value should be deadtime)
 //
 //       Channel-level:
 //               ChReadoutRate - How many non-clock reset hits were there on this board where this channel was the largest in this event?
-//               pedestalMean  - Pedestal mean for a channel
+//               Pedestal      - Pedestal mean for a channel
 
 // Current metrics being monitored:
 //      Channel-level:
 //              ADC          - the ADC value for a hit on a channel
-//              lastbighit   - the time on a given hit since the last hit above 600 ADC threshold
-//              ChFlag3Rate  - Number of flag 3 hit rate for each channel
 //               pedestalRMS   - Pedestal RMS
 //      Board-level:
 //              T0            - T0 timestamp of a hit
@@ -34,11 +33,9 @@
 //              T1Clockdrift  - For a T1 reset event, difference of T1 timestamp from beam signal (NEED TO IMPLEMENT)
 //              Earlysynch    - Difference of timestamp to beginning of pull window
 //              Latesynch     - Difference of timestamp to end of pull window
-//              Deadtime      - time following any type of hit (of any flag) where the board cannot process another hit (time difference between consecutive hits  on the same board)
 //
 // To-do:
 //      1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
-//      2. Turn lastbighit threshold into a fcl parameter
 //      3. Include beam timing information to make T1Clockdrift useful
 //
 ////////////////////////////////////////////////////////////////////////
@@ -117,19 +114,16 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
   // Initialize per module and per channel vars
   std::map<uint8_t, int> count_hit;
-  std::map<uint8_t, uint64_t> deadtime;
   std::map<uint8_t, uint64_t> prev_fragment_timestamp;
   std::map<uint8_t, uint64_t> readoutRate;
   std::map<uint8_t, uint64_t> missingT0;
   std::map<uint8_t, uint64_t> missingT1;
 
-  std::map<uint8_t, std::map<uint8_t, uint64_t>> lastBigHit;
   std::map<uint8_t, std::map<uint8_t, float>> chReadoutRate;
 
   for(const uint8_t& mac5 : fMac5s)
     {
       count_hit[mac5]               = 0;
-      deadtime[mac5]                = std::numeric_limits<uint64_t>::max();
       prev_fragment_timestamp[mac5] = 0;
       readoutRate[mac5]             = 0;
       missingT0[mac5]               = 0;
@@ -190,7 +184,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	    {
 	      if(adc[ch] > max_adc)
 		{
-		  max_adc = adc[ch];
+		  max_adc  = adc[ch];
 		  max_chan = ch;
 		}
 	    }
@@ -224,36 +218,24 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	    }
 	}
 
-      for(int ch = 0; ch < 32; ch++)
-	{
-	  if(adc[ch] > fBigHitThreshold)
-	    lastBigHit[mac5][ch] = fragment_timestamp;
-	}
-
-      // Deadtime
       if(count_hit[mac5] == 0)
 	prev_fragment_timestamp[mac5] = fragment_timestamp;
       else
 	{
 	  uint64_t diff = fragment_timestamp - prev_fragment_timestamp[mac5];
 
-	  if(diff < deadtime[mac5])
-	    deadtime[mac5] = diff;
+	  if (fDebug) std::cout << "Sending metric Deadtime with value " << diff << std::endl;
+	  sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", diff, 0, artdaq::MetricMode::Minimum);
 
 	  prev_fragment_timestamp[mac5] = fragment_timestamp;
 	}
 
       ++count_hit[mac5];
 
-      //      if(isTS1)
-      //	num_t1_resets++;
-
       ///////////////////////////
       // Channel-Level Metrics //
       ///////////////////////////
     
-      //  int baseline = (totaladc - max - secondmax)/30;
-
       uint64_t earlysynch = last_poll_start - fragment_timestamp;
       uint64_t latesynch  = fragment_timestamp - this_poll_end;
     
