@@ -16,6 +16,7 @@
 //               MissingT1     - Total number of hits on this board in this event with missing T1 flag
 //               ReadoutRate   - How many non-clock reset hits were there on this board in this event?
 //               T0ClockDrift  - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
+//               Baseline      - Average pedestal across all 32 channels
 //
 //       Channel-level:
 //               ChReadoutRate - How many non-clock reset hits were there on this board where this channel was the largest in this event?
@@ -28,7 +29,6 @@
 //              ChFlag3Rate  - Number of flag 3 hit rate for each channel
 //               pedestalRMS   - Pedestal RMS
 //      Board-level:
-//              Baseline      - Average pedestal
 //              T0            - T0 timestamp of a hit
 //              T1            - T1 timestamp of a hit
 //              T1Clockdrift  - For a T1 reset event, difference of T1 timestamp from beam signal (NEED TO IMPLEMENT)
@@ -124,11 +124,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   std::map<uint8_t, uint64_t> missingT1;
 
   std::map<uint8_t, std::map<uint8_t, uint64_t>> lastBigHit;
-  std::map<uint8_t, std::map<uint8_t, float>> pedSum;
-  std::map<uint8_t, std::map<uint8_t, float>> pedMax;
-  std::map<uint8_t, std::map<uint8_t, float>> ped2Max;
-  std::map<uint8_t, std::map<uint8_t, float>> pedSumSq;
-  std::map<uint8_t, std::map<uint8_t, float>> pedNHits;
   std::map<uint8_t, std::map<uint8_t, float>> chReadoutRate;
 
   for(const uint8_t& mac5 : fMac5s)
@@ -142,11 +137,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
       for(int ch = 0; ch < 32; ++ch)
 	{
-	  pedSum[mac5][ch]        = 0.;
-	  pedMax[mac5][ch]        = 0.;
-	  ped2Max[mac5][ch]       = 0.;
-	  pedSumSq[mac5][ch]      = 0.;
-	  pedNHits[mac5][ch]      = 0.;
 	  chReadoutRate[mac5][ch] = 0.;
 	}
     }
@@ -206,6 +196,32 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	    }
 
 	  ++chReadoutRate[mac5][max_chan];
+
+	  uint8_t max_chan_pair = max_chan % 2 ? max_chan - 1 : max_chan + 1;
+
+	  for(uint8_t ch = 0; ch < 32; ch++)
+	    {
+	      if(ch == max_chan || ch == max_chan_pair)
+		continue;
+
+	      if(adc[ch] > fBigHitThreshold)
+		continue;
+
+	      std::string ch_str = mac5_str + "_" + std::to_string(ch);
+	      if (fDebug) std::cout << "Sending metric Pedestal with value " << adc[ch] << std::endl;
+	      sbndaq::sendMetric("CRT_channel", ch_str, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
+	      sbndaq::sendMetric("CRT_board", mac5_str, "Baseline", adc[ch], 0, artdaq::MetricMode::Average);
+	    }
+	}
+      else if(isTs0Reset || isTs1Reset)
+	{
+	  for(uint8_t ch = 0; ch < 32; ch++)
+	    {
+	      std::string ch_str = mac5_str + "_" + std::to_string(ch);
+	      if (fDebug) std::cout << "Sending metric Pedestal with value " << adc[ch] << std::endl;
+	      sbndaq::sendMetric("CRT_channel", ch_str, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
+	      sbndaq::sendMetric("CRT_board", mac5_str, "Baseline", adc[ch], 0, artdaq::MetricMode::Average);
+	    }
 	}
 
       for(int ch = 0; ch < 32; ch++)
@@ -235,40 +251,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       ///////////////////////////
       // Channel-Level Metrics //
       ///////////////////////////
-
-      //      int maxindex = -1;
-      for(int ch = 0; ch < 32; ++ch) {
-	pedSum[mac5][ch] += adc[ch];
-	if (adc[ch] > pedMax[mac5][ch]) {pedMax[mac5][ch] = adc[ch];}
-	if (adc[ch] > ped2Max[mac5][ch]) {
-	  if (adc[ch] < pedMax[mac5][ch]) {
-	    ped2Max[mac5][ch] += adc[ch];
-	  }
-	}
-	pedSumSq[mac5][ch] += adc[ch]*adc[ch];
-	pedNHits[mac5][ch]++;
-
-	//	uint64_t lastBigHitChannel = fragment_timestamp -lastBigHit[mac5][ch];
-      
-	//Send Channel-Level Metrics to the database
-	//	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average);
-	//	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "LastBigHit", lastBigHitChannel, 0, artdaq::MetricMode::Average);
-	//	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "ChFlag3Rate", flag3Channel[mac5][ch], 0, artdaq::MetricMode::Average);
-
-	// Pedestals
-	double pedestalMean = pedSum[mac5][ch] - pedMax[mac5][ch] - ped2Max[mac5][ch];
-	pedSumSq[mac5][ch]= pedSumSq[mac5][ch] - pedMax[mac5][ch]*pedMax[mac5][ch] - ped2Max[mac5][ch]*ped2Max[mac5][ch];
-	double pedMeanRMS = pedestalMean/pedNHits[mac5][ch];
-
-	double pedestalRMS2 = pedNHits[mac5][ch] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + pedSumSq[mac5][ch];
-	double pedestalRMS = sqrt(pedestalRMS2/pedNHits[mac5][ch]);
-
-	// Send Metrics to the database **
-	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average);
-	sbndaq::sendMetric("CRT_channel", std::to_string(ch + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);
-      
-      }
     
       //  int baseline = (totaladc - max - secondmax)/30;
 
