@@ -17,7 +17,8 @@
 //               ReadoutRate   - How many non-clock reset hits were there on this board in this event?
 //               T0ClockDrift  - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
 //               Baseline      - Average pedestal across all 32 channels
-//               Deadtime      - time difference between consecutive hits of any type (minimum value should be deadtime)
+//               Deadtime      - Time difference between consecutive hits of any type (minimum value should be deadtime)
+//               PullWindow    - Difference between first & last timestamp for that board in the event (maximum value should be the pull window)
 //
 //       Channel-level:
 //               ChReadoutRate - How many non-clock reset hits were there on this board where this channel was the largest in this event?
@@ -31,8 +32,6 @@
 //              T0            - T0 timestamp of a hit
 //              T1            - T1 timestamp of a hit
 //              T1Clockdrift  - For a T1 reset event, difference of T1 timestamp from beam signal (NEED TO IMPLEMENT)
-//              Earlysynch    - Difference of timestamp to beginning of pull window
-//              Latesynch     - Difference of timestamp to end of pull window
 //
 // To-do:
 //      1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
@@ -118,8 +117,11 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
   std::map<uint8_t, uint64_t> readoutRate;
   std::map<uint8_t, uint64_t> missingT0;
   std::map<uint8_t, uint64_t> missingT1;
+  std::map<uint8_t, uint64_t> min_timestamp;
+  std::map<uint8_t, uint64_t> max_timestamp;
 
   std::map<uint8_t, std::map<uint8_t, float>> chReadoutRate;
+
 
   for(const uint8_t& mac5 : fMac5s)
     {
@@ -128,6 +130,8 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       readoutRate[mac5]             = 0;
       missingT0[mac5]               = 0;
       missingT1[mac5]               = 0;
+      min_timestamp[mac5]           = std::numeric_limits<uint64_t>::max();
+      max_timestamp[mac5]           = 0;
 
       for(int ch = 0; ch < 32; ++ch)
 	{
@@ -155,8 +159,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       const bool isTs1Reset               = hit.IsReference_TS1();
       const bool ts0Good                  = !hit.IsOverflow_TS0();
       const bool ts1Good                  = !hit.IsOverflow_TS1();
-      const uint64_t& this_poll_end       = hit.this_poll_end;
-      const uint64_t& last_poll_start     = hit.last_poll_start;
 
       std::string mac5_str = std::to_string(mac5);
       if (fDebug) std::cout << "Mac5: " << mac5_str <<std::endl;
@@ -238,12 +240,15 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
       ++count_hit[mac5];
 
+      if(fragment_timestamp < min_timestamp[mac5])
+	min_timestamp[mac5] = fragment_timestamp;
+
+      if(fragment_timestamp > max_timestamp[mac5])
+	max_timestamp[mac5] = fragment_timestamp;
+
       ///////////////////////////
       // Channel-Level Metrics //
       ///////////////////////////
-    
-      uint64_t earlysynch = last_poll_start - fragment_timestamp;
-      uint64_t latesynch  = fragment_timestamp - this_poll_end;
     
       auto thisone = fragment_id;  uint plane = (thisone & 0x0700) >> 8;
     
@@ -297,12 +302,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       //      sbndaq::sendMetric("CRT_board", mac5_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
       //      sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
  
-      //Sychronization Metrics
-      sbndaq::sendMetric("CRT_board", mac5_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_board", mac5_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
-
-      // Flag 3 Hits (Board Level)
-
     } //loop over all CRT hits in an event
  
   for(const uint8_t& mac5 : fMac5s)
@@ -317,6 +316,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
       if (fDebug) std::cout << "Sending metric ReadoutRate with value " << readoutRate[mac5] << std::endl;
       sbndaq::sendMetric("CRT_board", mac5_str, "ReadoutRate", readoutRate[mac5], 0, artdaq::MetricMode::Rate);
+
+      if (fDebug) std::cout << "Sending metric PullWindow with value " << max_timestamp[mac5] - min_timestamp[mac5] << std::endl;
+      sbndaq::sendMetric("CRT_board", mac5_str, "PullWindow", max_timestamp[mac5] - min_timestamp[mac5], 0, artdaq::MetricMode::Maximum);
 
       for(int ch = 0; ch < 32; ++ch)
 	{
