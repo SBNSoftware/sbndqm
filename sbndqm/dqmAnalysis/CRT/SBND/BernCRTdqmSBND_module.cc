@@ -22,10 +22,10 @@
 //       Channel-level:
 //               ChReadoutRate - How many non-clock reset hits were there on this board where this channel was the largest in this event?
 //               Pedestal      - Pedestal mean for a channel
+//               ADC           - Value of ADC when this channel is max (or paired with max)
 
 // Current metrics being monitored:
 //      Channel-level:
-//              ADC          - the ADC value for a hit on a channel
 //               pedestalRMS   - Pedestal RMS
 //      Board-level:
 //              T0            - T0 timestamp of a hit
@@ -192,6 +192,12 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 	  ++chReadoutRate[mac5][max_chan];
 
 	  uint8_t max_chan_pair = max_chan % 2 ? max_chan - 1 : max_chan + 1;
+
+	  std::string max_chan_str      = mac5_str + "_" + std::to_string(max_chan);
+	  std::string max_chan_pair_str = mac5_str + "_" + std::to_string(max_chan_pair);
+	  if (fDebug) std::cout << "Sending metric ADC with values " << adc[max_chan] << " & " << adc[max_chan_pair] << std::endl;
+	  sbndaq::sendMetric("CRT_channel", max_chan_str, "ADC", adc[max_chan], 0, artdaq::MetricMode::Average);
+	  sbndaq::sendMetric("CRT_channel", max_chan_pair_str, "ADC", adc[max_chan_pair], 0, artdaq::MetricMode::Average);
 
 	  for(uint8_t ch = 0; ch < 32; ch++)
 	    {
