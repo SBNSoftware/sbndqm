@@ -444,7 +444,14 @@ uint64_t sbndaq::BernCRTdqmSBND::GetSPECTDCT1ResetTime(art::Event const &evt, co
 
               if(tdcTS->vals.channel == fSPECTDCT1Channel)
                 {
-                  timestamp = tdcTS->timestamp_ns();
+                  uint64_t diff = tdcTS->timestamp_ns() > raw_event_ts ? tdcTS->timestamp_ns() - raw_event_ts : raw_event_ts - tdcTS->timestamp_ns();
+
+                  if(diff < min_diff)
+                    {
+                      min_diff  = diff;
+                      timestamp = tdcTS->timestamp_ns();
+                    }
+
                   ++count;
                 }
             }
