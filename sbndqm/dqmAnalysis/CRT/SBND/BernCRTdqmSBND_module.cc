@@ -250,7 +250,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
               if(adc[ch] > fBigHitADCThreshold)
                 continue;
 
-              std::string chStr = mac5Str + "_" + std::to_string(ch);
+              std::string chStr = std::to_string(mac5*100 + ch);
               if(fDebug) std::cout << "Sending metric Pedestal with value " << adc[ch] << std::endl;
               sbndaq::sendMetric("CRT_channel", chStr, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
               sbndaq::sendMetric("CRT_board", mac5Str, "Baseline", adc[ch], 0, artdaq::MetricMode::Average);
@@ -260,7 +260,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
         {
           for(uint8_t ch = 0; ch < 32; ch++)
             {
-              std::string chStr = mac5Str + "_" + std::to_string(ch);
+              std::string chStr = std::to_string(mac5*100 + ch);
               if(fDebug) std::cout << "Sending metric Pedestal with value " << adc[ch] << std::endl;
               sbndaq::sendMetric("CRT_channel", chStr, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
               sbndaq::sendMetric("CRT_board", mac5Str, "Baseline", adc[ch], 0, artdaq::MetricMode::Average);
@@ -356,7 +356,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
 
       for(int ch = 0; ch < 32; ++ch)
         {
-          std::string chStr = mac5Str + "_" + std::to_string(ch);
+          std::string chStr = std::to_string(mac5*100 + ch);
           if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] << std::endl;
           sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch], 0, artdaq::MetricMode::Rate);
         }
