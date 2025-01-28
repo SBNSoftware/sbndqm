@@ -15,6 +15,7 @@ streamCRT:
   RawTSCorrection:              367000
   BigHitADCThreshold:           600
   BoardsRequiredForResetSpread: 100
+
   metric_board_config:
   {
     groups:
@@ -50,7 +51,7 @@ streamCRT:
   {
     groups:
     {
-      CRT_channel: []
+      CRT_channel: [ [ 0, 23831 ] ]
     }
 
     streams: [ archiving ]
