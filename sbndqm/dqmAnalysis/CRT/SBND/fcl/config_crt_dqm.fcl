@@ -1,3 +1,5 @@
+#include "crt_channel_list.fcl"
+
 BEGIN_PROLOG 
 
 streamCRT:
@@ -51,7 +53,7 @@ streamCRT:
   {
     groups:
     {
-      CRT_channel: [ [ 0, 23831 ] ]
+      CRT_channel: @local::crt_channel_list
     }
 
     streams: [ archiving ]
