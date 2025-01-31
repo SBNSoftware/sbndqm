@@ -312,7 +312,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
       sbndaq::sendMetric("CRT_board", mac5Str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Accumulate);
 
       if(fDebug) std::cout << "Sending metric ReadoutRate with value " << readoutRate[mac5] << std::endl;
-      sbndaq::sendMetric("CRT_board", mac5Str, "ReadoutRate", readoutRate[mac5], 0, artdaq::MetricMode::Rate);
+      sbndaq::sendMetric("CRT_board", mac5Str, "ReadoutRate", readoutRate[mac5], 0, artdaq::MetricMode::Average);
 
       if(fDebug) std::cout << "Sending metric PullWindow with value " << maxTS[mac5] - minTS[mac5] << std::endl;
       sbndaq::sendMetric("CRT_board", mac5Str, "PullWindow", maxTS[mac5] - minTS[mac5], 0, artdaq::MetricMode::Maximum);
@@ -358,7 +358,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const &evt)
         {
           std::string chStr = std::to_string(mac5*100 + ch);
           if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] << std::endl;
-          sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch], 0, artdaq::MetricMode::Rate);
+          sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch], 0, artdaq::MetricMode::Average);
         }
     }
 
