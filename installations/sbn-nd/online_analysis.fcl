@@ -51,7 +51,7 @@ source:
   dispatcherPort: 6021
 
   transfer_plugin: {
-     unique_label: "SBNDOM"
+     unique_label: "SHIFTEROM"
       transferPluginType: Shmem
       shm_key: 0x40470920
       max_fragment_size_words: 1e8
@@ -61,14 +61,14 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "SBNDOM"
+    unique_label: "SHIFTEROM"
     path: [ out ]
     physics: {}
     outputs: {
       out: {
         module_type: TransferOutput
         transfer_plugin: {
-          unique_label: "SBNDOM"
+          unique_label: "SHIFTEROM"
           transferPluginType: Shmem
           shm_key: 0x40470920
           max_fragment_size_words: 1e8
