@@ -3,7 +3,7 @@ BEGIN_PROLOG
 flashmetrics: {
 
     module_type: CAENV1730FlashMetricsSBND
-    FlashMetricLabel: "pmtmetricsbnblight"
+    FlashMetricLabel: "pmtmetricbnblight"
     metric_flashes: {
         groups: { BeamMetrics: [0] }
         hostname: "sbnd-db01.fnal.gov"
