@@ -7,46 +7,41 @@
 // mking9@uchicago.edu
 // Additionally modified by Nikki Pallat. Last update made on November 18 2024.
 // palla110@umn.edu
+// Significant refactor January 2025 by Henry Lay
+// h.lay@sheffield.ac.uk
+// Refactors modified by John Plows, Feb-Mar 2025.
+// kplows@liverpool.ac.uk
 //
 // This Module sends metrics from the SBND CRT modules to the redis database
 // 
-// Current metrics being monitored:
-//	Channel-level:
-//		ADC - the ADC value for a hit on a channel
-//		lastbighit - the time on a given hit since the last hit above 600 ADC threshold
-//		pedestalMean - pedestal mean for a channel; pedestal calculated summing all ADC for a given channel < 4000 
-//		pedestalRMS2 - pedestal RMS squared
-//		pedestalRMS - pedestal RMS
-//		ChFlag3Rate - Number of flag 3 hit rate for each channel
-//	Board-level:
-//		MaxADCValue - Maximum ADC value across all channels on board
-//		MaxADCChannel - Channel which has the maximum ADC Value - given as index 0-31 + 32*mac5 (absolute channel reference)
-//		Baseline - average of channels across board, not including the maximum 2 channel values (cut out possible signals)
-//		T0 - T0 timestamp of a hit
-//		T1 - T1 timestamp of a hit
-//		T0Clockdrift - For T0 reset event, difference of T0 timestamp from pps
-//		T1Clockdrift - For a T1 reset event, difference of T1 timestamp from beam signal (NEED TO IMPLEMENT)
-//		Earlysynch - Difference of timestamp to beginning of pull window
-//		Latesynch - Difference of timestamp to end of pull window
-//		Flag3Hit - Flag 3 hit rate for all channels in the board
-//		Deadtime - time following any type of hit (of any flag) where the board cannot process another hit (time difference between consecutive hits  on the same board)
-//              MissingT0 - counter of missing T0 reset (flag is not 1, 3, 7, or 11)
-//              MissingT1 - counter of missing T1 reset (flag is not 3, 7, 10, or 11)
-//	Fragment-Level:
-//		Flag - flag of the fragment
-//		frag_count - number of fragments sent 
-//		zero_rate - number of empty fragments sent
-//	Event-Level (mostly for offline monitoring of artroot events):
-//		num_fragments - number of fragments sent in the event
-//		num_hits - number of hits across all fragments in the event
-//      Event-level:
-//               T0ResetSpread  - The range between the lowest & highest T0 values for T0 reset events seen across all boards
-//               T1ResetSpread  - The range between the lowest & highest T0 values for T1 reset events seen across all boards
-//
-// To-do:
-//	1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
-//	2. Turn lastbighit threshold into a fcl parameter
-//	3. Include beam timing information to make T1Clockdrift useful		
+/*
+ * Current metrics being monitored:
+ *       Board-level:
+ *               MissingT0      - Total number of hits on this board in this event with missing T0 flag
+ *               MissingT1      - Total number of hits on this board in this event with missing T1 flag
+ *               ReadoutRate    - How many non-clock reset hits were there on this board in this event?
+ *               T0ClockDrift   - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
+ *               Baseline       - Average pedestal across all 32 channels
+ *               Deadtime       - Time difference between consecutive hits of any type (minimum value should be deadtime)
+ *               PullWindow     - Difference between first & last timestamp for that board in the event (maximum value should be the pull window)
+ *               NT0Resets      - Number of T0 reset events in this board in this event
+ *               NT1Resets      - Number of T1 reset events in this board in this event
+ *               T1ResetTDCDiff - Similar to T0ClockDrift, difference between the T0 timestamp of the T1 reset and the value recorded in the TDC
+ *
+ *       Channel-level:
+ *               ChReadoutRate  - How many non-clock reset hits were there on this board where this channel was the largest in this event?
+ *               Pedestal       - Pedestal mean for a channel
+ *               ADC            - Value of ADC when this channel is max (or paired with max)
+ *
+ *	Event-level:
+ *             T0ResetSpread  - The range between the lowest & highest T0 values for T0 reset events seen across all boards
+ *             T1ResetSpread  - The range between the lowest & highest T0 values for T1 reset events seen across all boards
+ *
+ *	Fragment-Level:
+ *		Flag - flag of the fragment
+ *		frag_count - number of fragments sent 
+ *		zero_rate - number of empty fragments sent
+*/
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -160,6 +155,7 @@ sbndaq::BernCRTdqmSBND::BernCRTdqmSBND(fhicl::ParameterSet const & pset)
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_channel_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_fragment_config"));
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_event_config"));
 
   this->reconfigure( pset );
 }
@@ -459,7 +455,8 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
       double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + sbndaq::BernCRTdqmSBND::pedSumSq[i];
       double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqmSBND::pedNHits[i]);
       // Send Metrics to the database **
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
+      //sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
+      sbndaq::sendMetric("CRT_channel", std::to_string( i + 100 * mac5 ), "pesedtalMean", adc[i], 0, artdaq::MetricMode::Average);
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average); 
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 32 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average); 
       
