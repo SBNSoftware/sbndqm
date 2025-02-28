@@ -351,7 +351,7 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
       const bool ts1Good         = !hit.IsOverflow_TS1();
 
       std::string mac5Str = std::to_string(mac5);
-      if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
+      //if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
 
     enum Detector {SIDE_CRT, TOP_CRT};
 //    const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
@@ -675,7 +675,7 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
       for(int ch = 0; ch < 32; ++ch)
         {
           std::string chStr = std::to_string(mac5*100 + ch);
-          if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] / fRateNormalisation << std::endl;
+          //if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] / fRateNormalisation << std::endl;
           //sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch] / fRateNormalisation, 0, artdaq::MetricMode::Average);
         }
     } // loop over mac5
@@ -684,14 +684,14 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     {
       uint64_t t0ResetSpread = t0ResetMax - t0ResetMin;
       if(fDebug) std::cout << "Sending metric T0ResetSpread with value " << t0ResetSpread << std::endl;
-      //sbndaq::sendMetric("CRT_event", "0", "T0ResetSpread", t0ResetSpread, 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_event", "0", "T0ResetSpread", t0ResetSpread, 0, artdaq::MetricMode::Maximum);
     }
 
   if(boardsWithT1Reset > fBoardsRequiredForResetSpread)
     {
       uint64_t t1ResetSpread = t1ResetMax - t1ResetMin;
       if(fDebug) std::cout << "Sending metric T1ResetSpread with value " << t1ResetSpread << std::endl;
-      //sbndaq::sendMetric("CRT_event", "0", "T1ResetSpread", t1ResetSpread, 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_event", "0", "T1ResetSpread", t1ResetSpread, 0, artdaq::MetricMode::Maximum);
     }
   
  

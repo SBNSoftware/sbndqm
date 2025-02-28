@@ -13,8 +13,8 @@ services: {
   RedisConnection: @local::redis_connection
   InitMetricManager: {
     connections: {
-      #fast: @local::redis_metric_fast
-      #slow: @local::redis_metric_slow
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
     }
   }

@@ -65,9 +65,12 @@ streamCRT: {
     }       
   }
   metric_event_config: {
-    groups: { }
+    groups: { CRT_event: [0] }
     streams:[archiving]
-    metrics:{ }
+    metrics:{ 
+      T0ResetSpread: {}
+      T1ResetSpread: {}
+    }
   }
   metric_fragment_config: {
      groups:{ CRT_cont_frag:[] }
