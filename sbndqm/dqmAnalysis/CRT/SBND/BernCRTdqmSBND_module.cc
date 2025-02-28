@@ -39,6 +39,9 @@
 //	Event-Level (mostly for offline monitoring of artroot events):
 //		num_fragments - number of fragments sent in the event
 //		num_hits - number of hits across all fragments in the event
+//      Event-level:
+//               T0ResetSpread  - The range between the lowest & highest T0 values for T0 reset events seen across all boards
+//               T1ResetSpread  - The range between the lowest & highest T0 values for T1 reset events seen across all boards
 //
 // To-do:
 //	1. Make sure we handle different CRT walls with overlapping mac5 addresses properly
@@ -56,8 +59,11 @@
 
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTFragment.hh"
 #include "artdaq-core/Data/Fragment.hh"
+#include "artdaq-core/Data/RawEvent.hh"
 #include "artdaq-core/Data/ContainerFragment.hh"
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
+#include "sbndaq-artdaq-core/Overlays/SBND/TDCTimestampFragment.hh"
+#include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 //add these
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
@@ -78,6 +84,12 @@
 #include <iostream>
 #include <unistd.h>
 
+// See StackOverflow 5966594
+#define StringSize( L )    #L
+#define MakeString( M, L ) M(L)
+#define $Line MakeString( StringSize, __LINE__ )
+#define Hello __FILE__ "(" $Line ") : Pou sai file - "
+
 namespace sbndaq {
   class BernCRTdqmSBND;
 }
@@ -91,9 +103,29 @@ public:
   virtual ~BernCRTdqmSBND();
   
   virtual void analyze(art::Event const & evt);
+  uint64_t GetRawEventTime(art::Event const &evt);
+  uint64_t GetSPECTDCT1ResetTime(art::Event const &evt, const uint64_t &rawEventTS);
   void reconfigure(fhicl::ParameterSet const & pset);
  
 private:
+
+#pragma message(Hello "got the private variables")
+
+  //fhicl parameters
+  bool                     fDebug;
+  std::string              fCRTModuleLabel;
+  std::string              fCRTInstanceLabel;
+  std::string              fSPECTDCModuleLabel;
+  std::vector<std::string> fSPECTDCInstanceLabels;
+  std::string              fDAQHeaderModuleLabel;
+  std::string              fDAQHeaderInstanceLabel;
+  uint16_t                 fSPECTDCT1Channel;
+  uint64_t                 fRawTSCorrection;
+  uint16_t                 fBigHitADCThreshold;
+  uint16_t                 fBoardsRequiredForResetSpread;
+  double                   fRateNormalisation;
+  std::vector<uint8_t>     fMac5s;
+
   bool IsSideCRT(const icarus::crt::BernCRTTranslator & hit);
 
    uint64_t lastbighit[32];
@@ -151,6 +183,45 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   if (debug) std::cout << std::endl;  
   if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
 
+#pragma message(Hello "custom analyze here")
+
+  uint64_t rawEventTS = GetRawEventTime(evt);
+
+  uint64_t tdcT1Reset = GetSPECTDCT1ResetTime(evt, rawEventTS);
+
+  // Initialise per module and per channel vars
+  std::map<uint8_t, int> hitCount;
+  std::map<uint8_t, uint64_t> prevFragmentTS;
+  std::map<uint8_t, uint16_t> readoutRate;
+  std::map<uint8_t, uint16_t> missingT0;
+  std::map<uint8_t, uint16_t> missingT1;
+  std::map<uint8_t, uint64_t> minTS;
+  std::map<uint8_t, uint64_t> maxTS;
+  std::map<uint8_t, uint16_t> nT0Resets;
+  std::map<uint8_t, uint16_t> nT1Resets;
+  std::map<uint8_t, uint32_t> t0Reset;
+  std::map<uint8_t, uint32_t> t1Reset;
+  
+  std::map<uint8_t, std::map<uint8_t, float>> chReadoutRate;
+
+  for(const uint8_t& mac5 : fMac5s)
+    {
+      hitCount[mac5]       = 0;
+      prevFragmentTS[mac5] = 0;
+      readoutRate[mac5]    = 0;
+      missingT0[mac5]      = 0;
+      missingT1[mac5]      = 0;
+      minTS[mac5]          = std::numeric_limits<uint64_t>::max();
+      maxTS[mac5]          = 0;
+      nT0Resets[mac5]      = 0;
+      nT1Resets[mac5]      = 0;
+      t0Reset[mac5]        = std::numeric_limits<uint32_t>::max();
+      t1Reset[mac5]        = std::numeric_limits<uint32_t>::max();
+
+      for(int ch = 0; ch < 32; ++ch)
+        chReadoutRate[mac5][ch] = 0.;
+    }
+
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
   /**
   * We are using BernCRTTranslatorV2, which takes in a fragment and stores its corresponding fields in a new object
@@ -182,7 +253,7 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
   //    continue;}
 
     auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
-    if (debug) std::cout<<"getCRTData satisfied";
+    if (debug) std::cout<<"Successfully obtained CRT data" << std::endl;
     
     /////////////////////////////////
     // Send Fragment Level Metrics //
@@ -259,12 +330,28 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
 
   // Flag 3 hits
   uint64_t flag3hit = 0;
-  uint64_t missingT0 = 0;
-  uint64_t missingT1 = 0;
+  //uint64_t missingT0 = 0;
+  //uint64_t missingT1 = 0;
 
 
   //loop over all CRT hits in an event
   for(const auto & hit : hit_vector) {
+
+    // Extract core hit information
+      const uint8_t& mac5 = hit.mac5;
+      //const uint32_t ts0  = hit.ts0;
+      //const uint16_t* adc = hit.adc;
+
+      // Extract metadata information
+#pragma message(Hello "RETHERE - restore fragmentTS")
+      //const uint64_t& fragmentTS = hit.timestamp;
+      const bool isTs0Reset      = hit.IsReference_TS0();
+      const bool isTs1Reset      = hit.IsReference_TS1();
+      const bool ts0Good         = !hit.IsOverflow_TS0();
+      const bool ts1Good         = !hit.IsOverflow_TS1();
+
+      std::string mac5Str = std::to_string(mac5);
+      if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
 
     enum Detector {SIDE_CRT, TOP_CRT};
 //    const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
@@ -283,15 +370,15 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     const uint64_t & fragment_timestamp = hit.timestamp;
 
     //data from FEB:
-    const uint8_t & mac5     = hit.mac5;
-    unsigned readout_number  = mac5;
+    //const uint8_t & mac5     = hit.mac5;
+    unsigned readout_number  = hit.mac5;
     std::string readout_number_str = std::to_string(readout_number);
 
     //std::cout<<"Mac5: "<<readout_number_str<<std::endl;
 
     //store the timing and flag information from a hit
-    const int ts0      = hit.ts0;
-    const int ts1      = hit.ts1;
+    const uint32_t ts0      = static_cast<uint32_t>(hit.ts0);
+    const uint32_t ts1      = static_cast<uint32_t>(hit.ts1);
     const bool     isTS0    = hit.IsReference_TS0();
     const bool     isTS1    = hit.IsReference_TS1();
     const bool     isTS0good=!hit.IsOverflow_TS0();
@@ -413,18 +500,56 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     if (plane>7) {if (debug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
     auto thisflag = hit.flags;
+    /*
     if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
       missingT1++;
     }
     if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 10) {
       missingT0++;
     }
+    */
+    
+#pragma message(Hello "I have changed the way missing T0/1 is done")
+    if(!ts0Good)
+      ++missingT0[mac5];
+    
+    if(!ts1Good)
+      ++missingT1[mac5];
+
     // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
     if (thisflag & 0x2 && !(thisflag & 0xC) ) {
       // check ts1 for beam window
       if(debug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
       if ((int)ts1>fBeamWindowStart && (int)ts1<fBeamWindowEnd) hitsperplane[plane]++;
     }
+
+    if(isTs0Reset)
+        {
+          ++nT0Resets[mac5];
+
+          if(ts0Good)
+            t0Reset[mac5] = ts0;
+        }
+
+    if(isTs1Reset)
+      {
+	++nT1Resets[mac5];
+	
+	if(ts0Good)
+	  {
+	    if(t1Reset[mac5] != std::numeric_limits<uint32_t>::max())
+	      {
+		uint32_t fracTDCT1Reset = tdcT1Reset % static_cast<uint32_t>(1e9);
+		uint32_t diff           = ts0 > fracTDCT1Reset ? ts0 - fracTDCT1Reset : fracTDCT1Reset - ts0;
+		uint32_t currDiff       = t1Reset[mac5] > fracTDCT1Reset ? t1Reset[mac5] - fracTDCT1Reset : fracTDCT1Reset - t1Reset[mac5];
+		
+		if(diff < currDiff)
+		  t1Reset[mac5] = ts0;
+	      }
+	    else
+	      t1Reset[mac5] = ts0;
+	  }
+      }
     
     /**
     * Below we send the metric information, hit by hit, to the online monitor / DQM.
@@ -461,13 +586,14 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     sbndaq::sendMetric("CRT_board", readout_number_str, "MaxADCChannel", maxindex + 32 * mac5, 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", readout_number_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", readout_number_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", ts0, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", ts1, 0, artdaq::MetricMode::LastPoint);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "TS0", static_cast<int>(ts0), 0, artdaq::MetricMode::LastPoint);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "TS1", static_cast<int>(ts1), 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", readout_number_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT0", missingT0, 0, artdaq::MetricMode::Maximum);
-    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT1", missingT1, 0, artdaq::MetricMode::Maximum);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT0", missingT0[mac5], 0, artdaq::MetricMode::Maximum);
+    sbndaq::sendMetric("CRT_board", readout_number_str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Maximum);
  
     //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
+#pragma message(Hello "I have NOT changed the clock drift quantities, RETHERE!")
     if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T0clockdrift", ts0 - 1e9, 0, artdaq::MetricMode::LastPoint);}
     if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", readout_number_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
@@ -479,6 +605,95 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     sbndaq::sendMetric("CRT_board", readout_number_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);  
 
   } //loop over all CRT hits in an event
+
+  /*
+   * RETHERE: My spicy metrics live here
+   */
+#pragma message(Hello "EDW SE 8ELW MASTORA")
+
+  uint32_t t0ResetMin = std::numeric_limits<uint32_t>::max();
+  uint32_t t0ResetMax = std::numeric_limits<uint32_t>::lowest();
+  uint32_t t1ResetMin = std::numeric_limits<uint32_t>::max();
+  uint32_t t1ResetMax = std::numeric_limits<uint32_t>::lowest();
+
+  uint16_t boardsWithT0Reset = 0;
+  uint16_t boardsWithT1Reset = 0;
+ 
+  for(const uint8_t& mac5 : fMac5s)
+    {
+      std::string mac5Str = std::to_string(mac5);
+
+      if(fDebug) std::cout << "Sending metric MissingT0 with value " << missingT0[mac5] << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "MissingT0", missingT0[mac5], 0, artdaq::MetricMode::Accumulate);
+
+      if(fDebug) std::cout << "Sending metric MissingT1 with value " << missingT1[mac5] << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Accumulate);
+
+      if(fDebug) std::cout << "Sending metric ReadoutRate with value " << readoutRate[mac5]  / fRateNormalisation << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "ReadoutRate", readoutRate[mac5] / fRateNormalisation, 0, artdaq::MetricMode::Average);
+
+      if(fDebug) std::cout << "Sending metric PullWindow with value " << maxTS[mac5] - minTS[mac5] << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "PullWindow", maxTS[mac5] - minTS[mac5], 0, artdaq::MetricMode::Maximum);
+
+      if(fDebug) std::cout << "Sending metric NT0Resets with value " << nT0Resets[mac5] << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "NT0Resets", nT0Resets[mac5], 0, artdaq::MetricMode::Maximum);
+
+      if(fDebug) std::cout << "Sending metric NT1Resets with value " << nT1Resets[mac5] << std::endl;
+      //sbndaq::sendMetric("CRT_board", mac5Str, "NT1Resets", nT1Resets[mac5], 0, artdaq::MetricMode::Maximum);
+
+      if(nT0Resets[mac5] == 1 && t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
+        {
+          ++boardsWithT0Reset;
+
+          if(t0Reset[mac5] < t0ResetMin)
+            t0ResetMin = t0Reset[mac5];
+
+          if(t0Reset[mac5] > t0ResetMax)
+            t0ResetMax = t0Reset[mac5];
+        }
+
+      if(nT1Resets[mac5] == 1 && t1Reset[mac5] != std::numeric_limits<uint32_t>::max())
+        {
+          ++boardsWithT1Reset;
+
+          if(t1Reset[mac5] < t1ResetMin)
+            t1ResetMin = t1Reset[mac5];
+
+          if(t1Reset[mac5] > t1ResetMax)
+            t1ResetMax = t1Reset[mac5];
+        }
+
+      if(tdcT1Reset != std::numeric_limits<uint64_t>::max() && t1Reset[mac5] != std::numeric_limits<uint32_t>::max())
+        {
+          uint32_t fracTDCT1Reset = tdcT1Reset % static_cast<uint32_t>(1e9);
+          uint64_t t1ResetTDCDiff = fracTDCT1Reset > t1Reset[mac5] ? fracTDCT1Reset - t1Reset[mac5] : t1Reset[mac5] - fracTDCT1Reset;
+
+          if(fDebug) std::cout << "Sending metric T1ResetTDCDiff with value " << t1ResetTDCDiff << std::endl;
+          //sbndaq::sendMetric("CRT_board", mac5Str, "T1ResetTDCDiff", t1ResetTDCDiff, 0, artdaq::MetricMode::LastPoint);
+        }
+
+      for(int ch = 0; ch < 32; ++ch)
+        {
+          std::string chStr = std::to_string(mac5*100 + ch);
+          if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] / fRateNormalisation << std::endl;
+          //sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch] / fRateNormalisation, 0, artdaq::MetricMode::Average);
+        }
+    } // loop over mac5
+
+  if(boardsWithT0Reset > fBoardsRequiredForResetSpread)
+    {
+      uint64_t t0ResetSpread = t0ResetMax - t0ResetMin;
+      if(fDebug) std::cout << "Sending metric T0ResetSpread with value " << t0ResetSpread << std::endl;
+      //sbndaq::sendMetric("CRT_event", "0", "T0ResetSpread", t0ResetSpread, 0, artdaq::MetricMode::Maximum);
+    }
+
+  if(boardsWithT1Reset > fBoardsRequiredForResetSpread)
+    {
+      uint64_t t1ResetSpread = t1ResetMax - t1ResetMin;
+      if(fDebug) std::cout << "Sending metric T1ResetSpread with value " << t1ResetSpread << std::endl;
+      //sbndaq::sendMetric("CRT_event", "0", "T1ResetSpread", t1ResetSpread, 0, artdaq::MetricMode::Maximum);
+    }
+  
  
     /////////////////////////
     // Event-Level Metrics //
@@ -509,12 +724,112 @@ if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
 
 } //analyze
 
+uint64_t sbndaq::BernCRTdqmSBND::GetRawEventTime(art::Event const &evt)
+{
+  art::Handle<artdaq::detail::RawEventHeader> DAQHeaderHandle;
+  evt.getByLabel(fDAQHeaderModuleLabel, fDAQHeaderInstanceLabel, DAQHeaderHandle);
+
+  if(DAQHeaderHandle.isValid())
+    {
+      artdaq::RawEvent rawHeaderEvent = artdaq::RawEvent(*DAQHeaderHandle);
+      return rawHeaderEvent.timestamp() - fRawTSCorrection;
+    }
+
+  return std::numeric_limits<uint64_t>::max();
+}
+
+uint64_t sbndaq::BernCRTdqmSBND::GetSPECTDCT1ResetTime(art::Event const &evt, const uint64_t &rawEventTS)
+{
+  uint64_t minDiff   = std::numeric_limits<uint64_t>::max();
+  uint64_t timestamp = 0;
+  uint16_t count     = 0;
+
+  for(const std::string &SPECTDCInstanceLabel : fSPECTDCInstanceLabels)
+    {
+      art::Handle<std::vector<artdaq::Fragment>> fragmentHandle;
+      evt.getByLabel(fSPECTDCModuleLabel, SPECTDCInstanceLabel, fragmentHandle);
+
+      if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
+        continue;
+
+      if(fragmentHandle->front().type() == artdaq::Fragment::ContainerFragmentType)
+        {
+          for(auto cont : *fragmentHandle)
+            {
+              artdaq::ContainerFragment contf(cont);
+
+              if(contf.fragment_type() == sbndaq::detail::FragmentType::TDCTIMESTAMP)
+                {
+                  for(unsigned i = 0; i < contf.block_count(); ++i)
+                    {
+                      const artdaq::Fragment frag                = *contf[i].get();
+                      const sbndaq::TDCTimestampFragment tdcFrag = sbndaq::TDCTimestampFragment(frag);
+                      const sbndaq::TDCTimestamp         *tdcTS  = tdcFrag.getTDCTimestamp();
+
+                      if(tdcTS->vals.channel == fSPECTDCT1Channel)
+                        {
+                          uint64_t diff = tdcTS->timestamp_ns() > rawEventTS ? tdcTS->timestamp_ns() - rawEventTS : rawEventTS - tdcTS->timestamp_ns();
+
+                          if(diff < minDiff)
+                            {
+                              minDiff   = diff;
+                              timestamp = tdcTS->timestamp_ns();
+                            }
+
+                          ++count;
+                        }
+                    }
+                }
+            }
+        }
+      else if(fragmentHandle->front().type() == sbndaq::detail::FragmentType::TDCTIMESTAMP)
+        {
+          for(auto frag : *fragmentHandle)
+            {
+              const sbndaq::TDCTimestampFragment tdcFrag = sbndaq::TDCTimestampFragment(frag);
+              const sbndaq::TDCTimestamp         *tdcTS  = tdcFrag.getTDCTimestamp();
+
+              if(tdcTS->vals.channel == fSPECTDCT1Channel)
+                {
+                  uint64_t diff = tdcTS->timestamp_ns() > rawEventTS ? tdcTS->timestamp_ns() - rawEventTS : rawEventTS - tdcTS->timestamp_ns();
+
+                  if(diff < minDiff)
+                    {
+                      minDiff   = diff;
+                      timestamp = tdcTS->timestamp_ns();
+                    }
+
+                  ++count;
+                }
+            }
+        }
+    }
+
+  if(count > 0)
+    return timestamp;
+  else
+    return std::numeric_limits<uint64_t>::max();
+}
+
 void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
 {
+  fDebug                        = pset.get<bool>("Debug", false);
+  fCRTModuleLabel               = pset.get<std::string>("CRTModuleLabel");
+  fCRTInstanceLabel             = pset.get<std::string>("CRTInstanceLabel");
+  fSPECTDCModuleLabel           = pset.get<std::string>("SPECTDCModuleLabel");
+  fSPECTDCInstanceLabels        = pset.get<std::vector<std::string>>("SPECTDCInstanceLabels");
+  fDAQHeaderModuleLabel         = pset.get<std::string>("DAQHeaderModuleLabel");
+  fDAQHeaderInstanceLabel       = pset.get<std::string>("DAQHeaderInstanceLabel");
+  fSPECTDCT1Channel             = pset.get<uint16_t>("SPECTDCT1Channel");
+  fRawTSCorrection              = pset.get<uint64_t>("RawTSCorrection");
+  fBigHitADCThreshold           = pset.get<uint16_t>("BigHitADCThreshold");
+  fBoardsRequiredForResetSpread = pset.get<uint16_t>("BoardsRequiredForResetSpread");
+  fRateNormalisation            = pset.get<double>("RateNormalisation");
+  fMac5s                        = pset.get<std::vector<uint8_t>>("metric_board_config.groups.CRT_board");
   fBeamWindowStart = pset.get<int>("BeamWindowStart",320000);
   fBeamWindowEnd = pset.get<int>("BeamWindowEnd",350000);
+ 
 } //reconfigure
-
 
 DEFINE_ART_MODULE(sbndaq::BernCRTdqmSBND)
 //this is where the name is specified
