@@ -31,13 +31,15 @@ streamCRT: {
 	121, 40, 39, 128, 127, 178, 144, 180, 141, 179, 109, 116, 47, 49, 117, 185, 184, 183, 72, 216, 213, 212, 211, 210, 209  # TopHigh
       ]
     }
-    streams:[archiving]
+    streams:[slow, fast, archiving]
     metrics:{
       TS0:{}
       TS1:{}
       T0clockdrift:{}
       MaxADCValue:{}
       MaxADCChannel:{}
+      MaxADCValuePair:{}
+      MaxADCChannelPair:{}
       Flag:{}
       baseline:{}     
       earlysynch: { alarmrange: [-100000,100000] }
@@ -54,7 +56,7 @@ streamCRT: {
   {
     #groups: { CRT_channel:[[0,7616]] } # Reconfigure channels
     groups: { CRT_channel: @local::crt_channel_list }
-    streams: [archiving]
+    streams: [slow, fast, archiving]
     metrics:{ 
       ADC:{ display_range: [0, 4000] }
       lastbighit:{}
@@ -66,7 +68,7 @@ streamCRT: {
   }
   metric_event_config: {
     groups: { CRT_event: [0] }
-    streams:[archiving]
+    streams:[slow, fast, archiving]
     metrics:{ 
       T0ResetSpread: {}
       T1ResetSpread: {}
@@ -74,7 +76,7 @@ streamCRT: {
   }
   metric_fragment_config: {
      groups:{ CRT_cont_frag:[] }
-     streams:[archiving]
+     streams:[slow, fast, archiving]
      metrics:{ }
   }
 }
