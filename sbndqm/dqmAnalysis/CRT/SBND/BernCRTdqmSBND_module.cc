@@ -318,12 +318,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //sbndaq::BernCRTdqmSBND::NHits[c] = 0.; 
   }
 
-  // Initialize variables used to calculate deadtime
-  int count_hit = 0;
-  uint64_t deadtime;
-  //uint64_t & prev_fragment_timestamp = hit.timestamp;
-  uint64_t prev_fragment_timestamp;
-
   // Flag 3 hits
   uint64_t flag3hit = 0;
 
@@ -334,8 +328,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const uint8_t& mac5 = hit.mac5;
 
     // Extract metadata information
-#pragma message(Hello "RETHERE - restore fragmentTS")
-    //const uint64_t& fragmentTS = hit.timestamp;
+    const uint64_t& fragmentTS = hit.timestamp;
     const bool isTs0Reset      = hit.IsReference_TS0();
     const bool isTs1Reset      = hit.IsReference_TS1();
     const bool ts0Good         = !hit.IsOverflow_TS0();
@@ -374,14 +367,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const bool     isTS0good=!hit.IsOverflow_TS0();
     const bool     isTS1good=!hit.IsOverflow_TS1();
     
-    // Deadtime
-    if (count_hit == 0) prev_fragment_timestamp = fragment_timestamp;
-    if (count_hit != 0) {
-      deadtime = fragment_timestamp - prev_fragment_timestamp;
-    }
-    prev_fragment_timestamp = hit.timestamp;
-    count_hit++;
-
     const uint16_t * adc = hit.adc;
 
     for(int ch=0; ch<32; ch++) {
@@ -393,7 +378,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const uint64_t & last_poll_start           = hit.last_poll_start;
 
     size_t maxadc        = 0; int maxindex = -1;
-    size_t secondmaxadc  = 0;
+    //size_t secondmaxadc  = 0;
     size_t totaladc   = 0;
     size_t ADCchannel = 0;
 
@@ -454,6 +439,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);       
     }
 
+    int pairindex = -1;
     // Get the max ADC and its pair for this hit - only send if not a reset
     if( !isTs0Reset && !isTs1Reset && ts0Good ) {
       ++readoutRate[mac5];
@@ -462,7 +448,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 	if( adc[ch] > maxadc ) { maxadc = adc[ch]; maxindex = ch; }
       }
       ++chReadoutRate[mac5][maxindex];
-      int pairindex = ( maxindex % 2 == 1 ) ? maxindex - 1 : maxindex + 1;
+      pairindex = ( maxindex % 2 == 1 ) ? maxindex - 1 : maxindex + 1;
       
       sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCValue", maxadc, 0, artdaq::MetricMode::LastPoint);
       sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannel", maxindex + 100 * mac5, 0, artdaq::MetricMode::LastPoint);
@@ -474,7 +460,26 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //int baseline = (totaladc-max)/31;
     
     // need to redefine baseline to take out the second maximum (one max for each board) -MK
-    int baseline = (totaladc - maxadc - secondmaxadc)/30;
+    //int baseline = (totaladc - maxadc - secondmaxadc)/30;
+
+    // JP - Baseline needs to be the totaladc minus the ADC from the top channel and its pair.. not 2nd max.
+    // only send it if this is not a T0/1 reset
+    if( !isTs0Reset && !isTs1Reset && ts0Good ) {
+      int baseline = ( totaladc - maxadc - adc[pairindex] ) / 30;
+      sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+    }
+
+    // Calculate deadtime
+    if( hitCount[mac5] == 0 )
+      prevFragmentTS[mac5] = fragmentTS;
+    else {
+      uint64_t diff = fragmentTS - prevFragmentTS[mac5];
+      
+      //if(fDebug) std::cout << "Sending metric Deadtime with value " << diff << std::endl;
+      sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", diff, 0, artdaq::MetricMode::Minimum);
+    }
+
+    ++hitCount[mac5];
 
     uint64_t earlysynch = last_poll_start - fragment_timestamp;
     uint64_t latesynch = fragment_timestamp - this_poll_end;
@@ -487,16 +492,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     if (plane>7) {if (debug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
     auto thisflag = hit.flags;
-    /*
-      if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 1) {
-      missingT1++;
-      }
-      if (thisflag != 7 && thisflag != 11 && thisflag != 3 && thisflag != 10) {
-      missingT0++;
-      }
-    */
-    
-#pragma message(Hello "I have changed the way missing T0/1 is done")
+   
     if(!ts0Good)
       ++missingT0[mac5];
     
@@ -570,10 +566,8 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
      */
 
     sbndaq::sendMetric("CRT_board", mac5_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
     sbndaq::sendMetric("CRT_board", mac5_str, "TS0", static_cast<int>(ts0), 0, artdaq::MetricMode::LastPoint);
     sbndaq::sendMetric("CRT_board", mac5_str, "TS1", static_cast<int>(ts1), 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", deadtime, 0, artdaq::MetricMode::Minimum);
     sbndaq::sendMetric("CRT_board", mac5_str, "MissingT0", missingT0[mac5], 0, artdaq::MetricMode::Maximum);
     sbndaq::sendMetric("CRT_board", mac5_str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Maximum);
  
