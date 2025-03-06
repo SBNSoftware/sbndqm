@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <vector>
 #include <iostream>
+#include<limits>
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -53,8 +54,8 @@ class SPECTDCStreams : public art::EDAnalyzer {
 
       // Define your function
       void ResetVars();	
-      float OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts);
-      std::vector<float> ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts);
+      double OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts);
+      std::vector<double> ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts);
       bool CheckSecondRollOver(std::vector<art::Ptr<sbnd::timing::DAQTimestamp>> ts_vec);	
 
       void Check_nCRTT1();
@@ -90,17 +91,17 @@ class SPECTDCStreams : public art::EDAnalyzer {
       uint32_t fFTRIG_ch;
       uint32_t fETRIG_ch;
 
-      float fExpected_BES_CRTT1_diff;
-      float fExpected_BES_CRTT1_jitter;
+      double fExpected_BES_CRTT1_diff;
+      double fExpected_BES_CRTT1_jitter;
 
-      float fExpected_RWM_BES_diff;
-      float fExpected_RWM_BES_jitter;
+      double fExpected_RWM_BES_diff;
+      double fExpected_RWM_BES_jitter;
 
-      float fExpected_ETRIG_BES_diff;
-      float fExpected_ETRIG_BES_jitter;
+      double fExpected_ETRIG_BES_diff;
+      double fExpected_ETRIG_BES_jitter;
 
-      float fExpected_FTRIG_ETRIG_diff;
-      float fExpected_FTRIG_ETRIG_jitter;
+      double fExpected_FTRIG_ETRIG_diff;
+      double fExpected_FTRIG_ETRIG_jitter;
 
       //Class variables 
       int _event; 
@@ -119,10 +120,10 @@ class SPECTDCStreams : public art::EDAnalyzer {
       int nFTRIG = 0; 
       int nETRIG = 0; 
 
-      float BES_CRTT1_diff; 
-      float RWM_BES_diff;  
-      float ETRIG_BES_diff;
-      std::vector<float> FTRIG_ETRIG_diff;
+      double BES_CRTT1_diff; 
+      double RWM_BES_diff;  
+      double ETRIG_BES_diff;
+      std::vector<double> FTRIG_ETRIG_diff;
      
 }; 
  
@@ -144,14 +145,14 @@ SPECTDCStreams::SPECTDCStreams(fhicl::ParameterSet const & pset)
   , fRWM_ch(pset.get<uint32_t>("RWM_ch", 2))
   , fFTRIG_ch(pset.get<uint32_t>("FTRIG_ch", 3))
   , fETRIG_ch(pset.get<uint32_t>("ETRIG_ch", 4))
-  , fExpected_BES_CRTT1_diff(pset.get<float>("Expected_BES_CRTT1_diff", 1.5)) //ms
-  , fExpected_BES_CRTT1_jitter(pset.get<float>("Expected_BES_CRTT1_jitter", 0.1)) //ms
-  , fExpected_RWM_BES_diff(pset.get<float>("Expected_RWM_BES_diff", 2)) //us
-  , fExpected_RWM_BES_jitter(pset.get<float>("Expected_RWM_BES_jitter", 1)) //us
-  , fExpected_ETRIG_BES_diff(pset.get<float>("Expected_ETRIG_BES_diff", 332)) //us
-  , fExpected_ETRIG_BES_jitter(pset.get<float>("Expected_ETRIG_BES_jitter", 1)) //us
-  , fExpected_FTRIG_ETRIG_diff(pset.get<float>("Expected_FTRIG_ETRIG_diff", 2)) //ms
-  , fExpected_FTRIG_ETRIG_jitter(pset.get<float>("Expected_FTRIG_ETRIG_jitter", 0.5)) //ms
+  , fExpected_BES_CRTT1_diff(pset.get<double>("Expected_BES_CRTT1_diff", 1.5)) //ms
+  , fExpected_BES_CRTT1_jitter(pset.get<double>("Expected_BES_CRTT1_jitter", 0.1)) //ms
+  , fExpected_RWM_BES_diff(pset.get<double>("Expected_RWM_BES_diff", 2)) //us
+  , fExpected_RWM_BES_jitter(pset.get<double>("Expected_RWM_BES_jitter", 1)) //us
+  , fExpected_ETRIG_BES_diff(pset.get<double>("Expected_ETRIG_BES_diff", 332)) //us
+  , fExpected_ETRIG_BES_jitter(pset.get<double>("Expected_ETRIG_BES_jitter", 1)) //us
+  , fExpected_FTRIG_ETRIG_diff(pset.get<double>("Expected_FTRIG_ETRIG_diff", 2)) //ms
+  , fExpected_FTRIG_ETRIG_jitter(pset.get<double>("Expected_FTRIG_ETRIG_jitter", 0.5)) //ms
 {
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
@@ -167,15 +168,15 @@ void SPECTDCStreams::ResetVars() {
   ftrig_vec.clear();
   etrig_vec.clear();
 
-  nCRTT1 = 0; 
-  nBES = 0; 
-  nRWM = 0; 
-  nFTRIG = 0; 
-  nETRIG = 0; 
+  nCRTT1 = -1; 
+  nBES = -1; 
+  nRWM = -1; 
+  nFTRIG = -1; 
+  nETRIG = -1; 
 
-  BES_CRTT1_diff = DBL_MAX; 
-  RWM_BES_diff = DBL_MAX;  
-  ETRIG_BES_diff = DBL_MAX;
+  BES_CRTT1_diff = std::numeric_limits<double>::min(); 
+  RWM_BES_diff = std::numeric_limits<double>::min();  
+  ETRIG_BES_diff = std::numeric_limits<double>::min();
   FTRIG_ETRIG_diff.clear();
 }
 
@@ -273,34 +274,34 @@ void SPECTDCStreams::Check_FTRIG_ETRIG_diff() {
   }
 }
 
-float SPECTDCStreams::OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts){
+double SPECTDCStreams::OneToOneDiff(std::vector<uint64_t> early_ts, std::vector<uint64_t> late_ts){
 
-  float diff = DBL_MAX;
+  double diff = DBL_MAX;
 
   if ((early_ts.size() == 1)  && (late_ts.size() == 1)){
 
-    //get the ns part so it's only 9 digits for float
-    float early_ts_nspart = early_ts.back()%uint64_t(1e9);
-    float late_ts_nspart = late_ts.back()%uint64_t(1e9);
+    //get the ns part so it's only 9 digits for double
+    double early_ts_nspart = early_ts.back()%uint64_t(1e9);
+    double late_ts_nspart = late_ts.back()%uint64_t(1e9);
     
     diff = late_ts_nspart - early_ts_nspart;
   }
   return diff;
 }
 
-std::vector<float> SPECTDCStreams::ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts){
+std::vector<double> SPECTDCStreams::ManyToOneDiff(std::vector<uint64_t> many_ts, std::vector<uint64_t> one_ts){
 
-  std::vector<float> diff;
+  std::vector<double> diff;
 
   if ((one_ts.size() == 1)  && (many_ts.size() > 1)){
     
-    //get the ns part so it's only 9 digits for float
-    float one_ts_nspart = one_ts.back()%uint64_t(1e9);
+    //get the ns part so it's only 9 digits for double
+    double one_ts_nspart = one_ts.back()%uint64_t(1e9);
     
     for (auto const ts: many_ts){
 
-      //get the ns part so it's only 9 digits for float
-      float ts_nspart = ts%uint64_t(1e9);
+      //get the ns part so it's only 9 digits for double
+      double ts_nspart = ts%uint64_t(1e9);
       diff.push_back(ts_nspart - one_ts_nspart);
     }  
   }
@@ -467,6 +468,13 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     }
 
     //Send metrics
+    // Dispatcher regularly sends out 0, so converts 0 to -1
+    if (nCRTT1 == 0) nCRTT1 = -1;
+    if (nBES == 0) nBES = -1;
+    if (nRWM == 0) nRWM = -1;
+    if (nETRIG == 0) nETRIG = -1;
+    if (nFTRIG == 0) nFTRIG = -1;
+
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nCRTT1", nCRTT1, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nBES", nBES, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nRWM", nRWM, 3, artdaq::MetricMode::LastPoint);  
@@ -511,6 +519,11 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     } 
 
     //Send metrics
+    // Dispatcher regularly sends out 0, so converts 0 to -1
+    if (nCRTT1 == 0) nCRTT1 = -1;
+    if (nETRIG == 0) nETRIG = -1;
+    if (nFTRIG == 0) nFTRIG = -1;
+
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nCRTT1", nCRTT1, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);  
@@ -550,6 +563,10 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     } 
 
     //Send metrics
+    // Dispatcher regularly sends out 0, so converts 0 to -1
+    if (nETRIG == 0) nETRIG = -1;
+    if (nFTRIG == 0) nFTRIG = -1;
+    
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);  
 
