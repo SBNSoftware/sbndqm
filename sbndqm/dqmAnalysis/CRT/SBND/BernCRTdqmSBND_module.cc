@@ -79,12 +79,6 @@
 #include <iostream>
 #include <unistd.h>
 
-// See StackOverflow 5966594
-#define StringSize( L )    #L
-#define MakeString( M, L ) M(L)
-#define $Line MakeString( StringSize, __LINE__ )
-#define Hello __FILE__ "(" $Line ") : Pou sai file - "
-
 namespace sbndaq {
   class BernCRTdqmSBND;
 }
@@ -103,8 +97,6 @@ public:
   void reconfigure(fhicl::ParameterSet const & pset);
  
 private:
-
-#pragma message(Hello "got the private variables")
 
   //fhicl parameters
   bool                     fDebug;
@@ -178,8 +170,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   if (debug) std::cout << "######################################################################" << std::endl;
   if (debug) std::cout << std::endl;  
   if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
-
-#pragma message(Hello "custom analyze here")
 
   uint64_t rawEventTS = GetRawEventTime(evt);
 
@@ -425,18 +415,20 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ChFlag3Rate", flag3channel[i], 0, artdaq::MetricMode::Average);
       // Pedestals
-      double pedestalMean = sbndaq::BernCRTdqmSBND::pedSum[i] - sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i];
-      sbndaq::BernCRTdqmSBND::pedSumSq[i]= sbndaq::BernCRTdqmSBND::pedSumSq[i] - sbndaq::BernCRTdqmSBND::pedMax[i]*sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i]*sbndaq::BernCRTdqmSBND::ped2Max[i];
-      double pedMeanRMS = pedestalMean/sbndaq::BernCRTdqmSBND::pedNHits[i];
+      //double pedestalMean = sbndaq::BernCRTdqmSBND::pedSum[i] - sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i];
+      //sbndaq::BernCRTdqmSBND::pedSumSq[i]= sbndaq::BernCRTdqmSBND::pedSumSq[i] - sbndaq::BernCRTdqmSBND::pedMax[i]*sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i]*sbndaq::BernCRTdqmSBND::ped2Max[i];
+      //double pedMeanRMS = pedestalMean/sbndaq::BernCRTdqmSBND::pedNHits[i];
       // need to modify
       //double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedMeanRMS*sbndaq::BernCRTdqmSBND::pedSum[i] + sbndaq::BernCRTdqmSBND::pedSumSq[i];
-      double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + sbndaq::BernCRTdqmSBND::pedSumSq[i];
-      double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqmSBND::pedNHits[i]);
+      //double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + sbndaq::BernCRTdqmSBND::pedSumSq[i];
+      //double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqmSBND::pedNHits[i]);
       // Send Metrics to the database **
       //sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
+      /*
       sbndaq::sendMetric("CRT_channel", std::to_string( i + 100 * mac5 ), "pedestalMean", adc[i], 0, artdaq::MetricMode::Average);
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average); 
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);       
+      */
     }
 
     int pairindex = -1;
@@ -451,9 +443,22 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       pairindex = ( maxindex % 2 == 1 ) ? maxindex - 1 : maxindex + 1;
       
       sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCValue", maxadc, 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannel", maxindex + 100 * mac5, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannel", maxindex, 0, artdaq::MetricMode::LastPoint);
       sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCValuePair", adc[pairindex], 0, artdaq::MetricMode::LastPoint);
-      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannelPair", pairindex + 100 * mac5, 0, artdaq::MetricMode::LastPoint);
+      sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannelPair", pairindex, 0, artdaq::MetricMode::LastPoint);
+    }
+
+    // We also want to keep track of the averaged ADC of each channel over time (Pedestal),
+    // and the average of all ADC over boards at each point (AverageADC) (Board)
+
+    if( (!isTs0Reset && !isTs1Reset && ts0Good) || (isTs0Reset || isTs1Reset) ) {
+      for( int ch = 0; ch < 32; ch++ ) {
+	if( ch == maxindex || ch == pairindex ) continue;
+	if( adc[ch] > fBigHitADCThreshold ) continue;
+
+	std::string chStr = std::to_string(mac5*100 + ch);
+	sbndaq::sendMetric("CRT_channel", chStr, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
+      }
     }
     
     //old definition of baseline:
@@ -467,6 +472,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     if( !isTs0Reset && !isTs1Reset && ts0Good ) {
       int baseline = ( totaladc - maxadc - adc[pairindex] ) / 30;
       sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", mac5_str, "AverageADC", baseline, 0, artdaq::MetricMode::LastPoint);
     }
 
     // Calculate deadtime
@@ -477,7 +483,14 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       
       //if(fDebug) std::cout << "Sending metric Deadtime with value " << diff << std::endl;
       sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", diff, 0, artdaq::MetricMode::Minimum);
+      prevFragmentTS[mac5] = fragmentTS;
     }
+
+    if(fragmentTS < minTS[mac5])
+        minTS[mac5] = fragmentTS;
+
+      if(fragmentTS > maxTS[mac5])
+        maxTS[mac5] = fragmentTS;
 
     ++hitCount[mac5];
 
@@ -572,7 +585,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     sbndaq::sendMetric("CRT_board", mac5_str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Maximum);
  
     //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
-#pragma message(Hello "Need to implement sensible T1 clockdrift")
     if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", mac5_str, "T0clockdrift", static_cast<int>(ts0) - 1e9, 0, artdaq::MetricMode::LastPoint);}
     if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", mac5_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
@@ -584,11 +596,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     sbndaq::sendMetric("CRT_board", mac5_str, "Flag3Hit", flag3hit, 0, artdaq::MetricMode::Average);  
 
   } //loop over all CRT hits in an event
-
-  /*
-   * RETHERE: My spicy metrics live here
-   */
-#pragma message(Hello "EDW SE 8ELW MASTORA")
 
   uint32_t t0ResetMin = std::numeric_limits<uint32_t>::max();
   uint32_t t0ResetMax = std::numeric_limits<uint32_t>::lowest();
@@ -602,23 +609,17 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     {
       std::string mac5Str = std::to_string(mac5);
 
-      if(fDebug) std::cout << "Sending metric MissingT0 with value " << missingT0[mac5] << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "MissingT0", missingT0[mac5], 0, artdaq::MetricMode::Accumulate);
-
-      if(fDebug) std::cout << "Sending metric MissingT1 with value " << missingT1[mac5] << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Accumulate);
-
       if(fDebug) std::cout << "Sending metric ReadoutRate with value " << readoutRate[mac5]  / fRateNormalisation << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "ReadoutRate", readoutRate[mac5] / fRateNormalisation, 0, artdaq::MetricMode::Average);
+      sbndaq::sendMetric("CRT_board", mac5Str, "ReadoutRate", readoutRate[mac5] / fRateNormalisation, 0, artdaq::MetricMode::Average);
 
       if(fDebug) std::cout << "Sending metric PullWindow with value " << maxTS[mac5] - minTS[mac5] << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "PullWindow", maxTS[mac5] - minTS[mac5], 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", mac5Str, "PullWindow", maxTS[mac5] - minTS[mac5], 0, artdaq::MetricMode::Maximum);
 
       if(fDebug) std::cout << "Sending metric NT0Resets with value " << nT0Resets[mac5] << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "NT0Resets", nT0Resets[mac5], 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", mac5Str, "NT0Resets", nT0Resets[mac5], 0, artdaq::MetricMode::Maximum);
 
       if(fDebug) std::cout << "Sending metric NT1Resets with value " << nT1Resets[mac5] << std::endl;
-      //sbndaq::sendMetric("CRT_board", mac5Str, "NT1Resets", nT1Resets[mac5], 0, artdaq::MetricMode::Maximum);
+      sbndaq::sendMetric("CRT_board", mac5Str, "NT1Resets", nT1Resets[mac5], 0, artdaq::MetricMode::Maximum);
 
       if(nT0Resets[mac5] == 1 && t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
@@ -648,14 +649,14 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
           uint64_t t1ResetTDCDiff = fracTDCT1Reset > t1Reset[mac5] ? fracTDCT1Reset - t1Reset[mac5] : t1Reset[mac5] - fracTDCT1Reset;
 
           if(fDebug) std::cout << "Sending metric T1ResetTDCDiff with value " << t1ResetTDCDiff << std::endl;
-          //sbndaq::sendMetric("CRT_board", mac5Str, "T1ResetTDCDiff", t1ResetTDCDiff, 0, artdaq::MetricMode::LastPoint);
+          sbndaq::sendMetric("CRT_board", mac5Str, "T1ResetTDCDiff", t1ResetTDCDiff, 0, artdaq::MetricMode::LastPoint);
         }
 
       for(int ch = 0; ch < 32; ++ch)
         {
           std::string chStr = std::to_string(mac5*100 + ch);
-          //if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] / fRateNormalisation << std::endl;
-          //sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch] / fRateNormalisation, 0, artdaq::MetricMode::Average);
+          if(fDebug) std::cout << "Sending metric ChReadoutRate with value " << chReadoutRate[mac5][ch] / fRateNormalisation << std::endl;
+          sbndaq::sendMetric("CRT_channel", chStr, "ChReadoutRate", chReadoutRate[mac5][ch] / fRateNormalisation, 0, artdaq::MetricMode::Average);
         }
     } // loop over mac5
 

@@ -48,7 +48,12 @@ streamCRT: {
       Deadtime:{}
       MissingT0:{}
       MissingT1:{}
-
+      AverageADC:{ display_range: [0, 4000] }
+      ReadoutRate:{}
+      PullWindow:{}
+      NT0Resets:{}
+      NT1Resets:{}
+      T1ResetTDCDiff:{}
     }
   }
   
@@ -60,9 +65,11 @@ streamCRT: {
     metrics:{ 
       ADC:{ display_range: [0, 4000] }
       lastbighit:{}
-      pedestalMean:{}
-      pedestalRMS:{}
-      pedestalRMS2:{}
+      #pedestalMean:{}
+      #pedestalRMS:{}
+      #pedestalRMS2:{}
+      ChReadoutRate: {}
+      Pedestal: {}
       ChFlag3Rate:{}
     }       
   }
