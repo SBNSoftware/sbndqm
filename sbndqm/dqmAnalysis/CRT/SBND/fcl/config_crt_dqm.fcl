@@ -35,94 +35,94 @@ streamCRT: {
     metrics:{
       TS0: {
 	units: ns
-	title: "CRT board %(instance)s Ts0 (ns)"
+	title: "FEB %(instance)s"
 	#display_range: []
       }
       TS1: {
 	units: ns
-	title: "CRT board %(instance)s Ts1 (ns)"
+	title: "FEB %(instance)s"
 	#display_range: []
       }
       T0clockdrift: {
 	units: ns
-	title: "CRT board %(instance)s Ts0 clockdrift (ns)"
+	title: "FEB %(instance)s"
 	display_range: [-20.0, 20.0]
       }
       T1ResetTDCDiff: {
 	units: ns
-	title: "CRT board %(instance)s difference between (T1-reset's Ts0) and (TDC value) (ns)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 100.0]
       }
       MaxADCValue: {
 	units: ADC
-	title: "CRT board %(instance)s max ADC value (ADC)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0]
       }
       MaxADCChannel: {
-	title: "CRT board %(instance)s max ADC channel (channel index)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 31.0]
       }
       MaxADCValuePair: {
 	units: ADC
-	title: "CRT board %(instance)s ADC value of max-paired channel (ADC)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0]
       }
       MaxADCChannelPair: {
-	title: "CRT board %(instance)s index of max-paired channel (channel index)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 31.0]
       }
       Flag: {
-	title: "CRT board %(instance)s flag type"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 15.0]
       }
       baseline: {
 	units: ADC
-	title: "CRT board %(instance)s baseline (ADC)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0]
       } 
       AverageADC: { 
 	units: ADC
-	title: "CRT board %(instance)s average ADC across all channels (ADC)"
+	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0] 
       }    
       Flag3Hit: {
-	title: "CRT board %(instance)s average N flag 3 hits"
+	title: "FEB %(instance)s"
       }
       Deadtime: {
 	units: ns
-	title: "CRT board %(instance)s minimum deadtime (ns)"
+	title: "FEB %(instance)s"
 	#display_range: [0.0, 1000000.0]
       }
       ReadoutRate: {
-	title: "CRT board %(instance)s average normalised readout rate"
+	title: "FEB %(instance)s"
       }
       PullWindow: {
 	units: ns
-	title: "CRT board %(instance)s pull window (ns)"
+	title: "FEB %(instance)s"
       }
       earlysynch: { 
 	units: ns
-	title: "CRT board %(instance)s fragment average distance from last poll start (ns)"
+	title: "FEB %(instance)s"
 	display_range: [-100000,100000] 
 	alarmrange: [-100000,100000] 
       }
       latesynch: { 
 	units: ns
-	title: "CRT board %(instance)s fragment average distance from this poll end (ns)"
+	title: "FEB %(instance)s"
 	display_range: [-100000,100000]
 	alarmrange: [-100000,100000] 
       }
       MissingT0: {
-	title: "CRT board %(instance)s missed T0 resets"
+	title: "FEB %(instance)s"
       }
       MissingT1: {
-	title: "CRT board %(instance)s missed T1 resets"
+	title: "FEB %(instance)s"
       }
       NT0Resets: {
-	title: "CRT board %(instance)s maximum N T0 resets"
+	title: "FEB %(instance)s"
       }
       NT1Resets: {
-	title: "CRT board %(instance)s maximum N T1 resets"
+	title: "FEB %(instance)s"
       }
     }
   }
@@ -134,20 +134,20 @@ streamCRT: {
     metrics:{ 
       ADC:{ 
 	units: ADC
-	title: "CRT channel %(instance)s average ADC"
+	title: "CRT channel %(instance)s"
 	display_range: [0, 4000] 
       }
       lastbighit: {
 	units: ns
-	title: "CRT channel %(instance)s timestamp at last hit with > 600 ADC (ns)"
+	title: "CRT channel %(instance)s"
 	display_range: [0.0, 1000000000.0]
       }
       ChReadoutRate: {
-	title: "CRT channel %(instance)s average normalised readout rate"
+	title: "CRT channel %(instance)s"
       }
       Pedestal: {
 	units: ADC
-	title: "CRT channel %(instance)s pedestal (ADC)"
+	title: "CRT channel %(instance)s"
 	display_range: [0.0, 4000.0]
       }
     }       
@@ -159,11 +159,11 @@ streamCRT: {
     metrics:{ 
       T0ResetSpread: {
 	units: ns
-	title: "Maximum difference in t0 reset timestamps"
+	#title: "Maximum difference in t0 reset timestamps"
       }
       T1ResetSpread: {
 	units: ns
-	title: "Maximum difference in t1 reset timestamps"
+	#title: "Maximum difference in t1 reset timestamps"
       }
     }
   }
