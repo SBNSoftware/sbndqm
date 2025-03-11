@@ -32,6 +32,7 @@
  *               ChReadoutRate  - How many non-clock reset hits were there on this board where this channel was the largest in this event?
  *               Pedestal       - Pedestal mean for a channel
  *               ADC            - Value of ADC when this channel is max (or paired with max)
+ *               lastbighit     - Timestamp of last hit with > 600 ADC
  *
  *	Event-level:
  *             T0ResetSpread  - The range between the lowest & highest T0 values for T0 reset events seen across all boards
@@ -121,7 +122,6 @@ private:
   float ped2Max[32];
   float pedSumSq[32];
   float pedNHits[32];
-  float flag3channel[32];
   //float NHits[32];
 
   bool debug = false;
@@ -304,7 +304,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     ped2Max[c] = 0.; 
     sbndaq::BernCRTdqmSBND::pedSumSq[c] = 0.; 
     sbndaq::BernCRTdqmSBND::pedNHits[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::flag3channel[c] = 0.; 
     //sbndaq::BernCRTdqmSBND::NHits[c] = 0.; 
   }
 
@@ -393,7 +392,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     auto currflag = hit.flags;
     for(int i = 0; i<32; i++) {
       if (currflag == 3) {
-        sbndaq::BernCRTdqmSBND::flag3channel[i]++;
         flag3hit++;
       }
       totaladc  += adc[i];
@@ -412,23 +410,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       
       //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ChFlag3Rate", flag3channel[i], 0, artdaq::MetricMode::Average);
-      // Pedestals
-      //double pedestalMean = sbndaq::BernCRTdqmSBND::pedSum[i] - sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i];
-      //sbndaq::BernCRTdqmSBND::pedSumSq[i]= sbndaq::BernCRTdqmSBND::pedSumSq[i] - sbndaq::BernCRTdqmSBND::pedMax[i]*sbndaq::BernCRTdqmSBND::pedMax[i] - sbndaq::BernCRTdqmSBND::ped2Max[i]*sbndaq::BernCRTdqmSBND::ped2Max[i];
-      //double pedMeanRMS = pedestalMean/sbndaq::BernCRTdqmSBND::pedNHits[i];
-      // need to modify
-      //double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedMeanRMS*sbndaq::BernCRTdqmSBND::pedSum[i] + sbndaq::BernCRTdqmSBND::pedSumSq[i];
-      //double pedestalRMS2 = sbndaq::BernCRTdqmSBND::pedNHits[i] * pedMeanRMS*pedMeanRMS - 2 * pedestalMean + sbndaq::BernCRTdqmSBND::pedSumSq[i];
-      //double pedestalRMS = sqrt(pedestalRMS2/sbndaq::BernCRTdqmSBND::pedNHits[i]);
-      // Send Metrics to the database **
-      //sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalMean", pedestalMean, 0, artdaq::MetricMode::Average); 
-      /*
-      sbndaq::sendMetric("CRT_channel", std::to_string( i + 100 * mac5 ), "pedestalMean", adc[i], 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalRMS2", pedestalRMS2, 0, artdaq::MetricMode::Average); 
-      sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "pedestalRMS", pedestalRMS, 0, artdaq::MetricMode::Average);       
-      */
+      sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "lastbighit", lastbighitchannel, 0, artdaq::MetricMode::LastPoint); // TODO - Average doesn't make much sense here... We want to see if this metric remains suspiciously stable
     }
 
     int pairindex = -1;

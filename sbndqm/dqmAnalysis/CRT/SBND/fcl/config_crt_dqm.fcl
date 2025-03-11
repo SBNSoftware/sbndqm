@@ -33,54 +33,142 @@ streamCRT: {
     }
     streams:[slow, fast, archiving]
     metrics:{
-      TS0:{}
-      TS1:{}
-      T0clockdrift:{}
-      MaxADCValue:{}
-      MaxADCChannel:{}
-      MaxADCValuePair:{}
-      MaxADCChannelPair:{}
-      Flag:{}
-      baseline:{}     
-      earlysynch: { alarmrange: [-100000,100000] }
-      latesynch: { alarmrange: [-100000,100000] }
-      Flag3Hit:{}
-      Deadtime:{}
-      MissingT0:{}
-      MissingT1:{}
-      AverageADC:{ display_range: [0, 4000] }
-      ReadoutRate:{}
-      PullWindow:{}
-      NT0Resets:{}
-      NT1Resets:{}
-      T1ResetTDCDiff:{}
+      TS0: {
+	units: ns
+	title: "CRT board %(instance)s Ts0 (ns)"
+	#display_range: []
+      }
+      TS1: {
+	units: ns
+	title: "CRT board %(instance)s Ts1 (ns)"
+	#display_range: []
+      }
+      T0clockdrift: {
+	units: ns
+	title: "CRT board %(instance)s Ts0 clockdrift (ns)"
+	display_range: [-20.0, 20.0]
+      }
+      T1ResetTDCDiff: {
+	units: ns
+	title: "CRT board %(instance)s difference between (T1-reset's Ts0) and (TDC value) (ns)"
+	display_range: [0.0, 100.0]
+      }
+      MaxADCValue: {
+	units: ADC
+	title: "CRT board %(instance)s max ADC value (ADC)"
+	display_range: [0.0, 4000.0]
+      }
+      MaxADCChannel: {
+	title: "CRT board %(instance)s max ADC channel (channel index)"
+	display_range: [0.0, 31.0]
+      }
+      MaxADCValuePair: {
+	units: ADC
+	title: "CRT board %(instance)s ADC value of max-paired channel (ADC)"
+	display_range: [0.0, 4000.0]
+      }
+      MaxADCChannelPair: {
+	title: "CRT board %(instance)s index of max-paired channel (channel index)"
+	display_range: [0.0, 31.0]
+      }
+      Flag: {
+	title: "CRT board %(instance)s flag type"
+	display_range: [0.0, 15.0]
+      }
+      baseline: {
+	units: ADC
+	title: "CRT board %(instance)s baseline (ADC)"
+	display_range: [0.0, 4000.0]
+      } 
+      AverageADC: { 
+	units: ADC
+	title: "CRT board %(instance)s average ADC across all channels (ADC)"
+	display_range: [0.0, 4000.0] 
+      }    
+      Flag3Hit: {
+	title: "CRT board %(instance)s average N flag 3 hits"
+      }
+      Deadtime: {
+	units: ns
+	title: "CRT board %(instance)s minimum deadtime (ns)"
+	#display_range: [0.0, 1000000.0]
+      }
+      ReadoutRate: {
+	title: "CRT board %(instance)s average normalised readout rate"
+      }
+      PullWindow: {
+	units: ns
+	title: "CRT board %(instance)s pull window (ns)"
+      }
+      earlysynch: { 
+	units: ns
+	title: "CRT board %(instance)s fragment average distance from last poll start (ns)"
+	display_range: [-100000,100000] 
+	alarmrange: [-100000,100000] 
+      }
+      latesynch: { 
+	units: ns
+	title: "CRT board %(instance)s fragment average distance from this poll end (ns)"
+	display_range: [-100000,100000]
+	alarmrange: [-100000,100000] 
+      }
+      MissingT0: {
+	title: "CRT board %(instance)s missed T0 resets"
+      }
+      MissingT1: {
+	title: "CRT board %(instance)s missed T1 resets"
+      }
+      NT0Resets: {
+	title: "CRT board %(instance)s maximum N T0 resets"
+      }
+      NT1Resets: {
+	title: "CRT board %(instance)s maximum N T1 resets"
+      }
     }
   }
   
   metric_channel_config: 
   {
-    #groups: { CRT_channel:[[0,7616]] } # Reconfigure channels
     groups: { CRT_channel: @local::crt_channel_list }
     streams: [slow, fast, archiving]
     metrics:{ 
-      ADC:{ display_range: [0, 4000] }
-      lastbighit:{}
-      #pedestalMean:{}
-      #pedestalRMS:{}
-      #pedestalRMS2:{}
-      ChReadoutRate: {}
-      Pedestal: {}
-      ChFlag3Rate:{}
+      ADC:{ 
+	units: ADC
+	title: "CRT channel %(instance)s average ADC"
+	display_range: [0, 4000] 
+      }
+      lastbighit: {
+	units: ns
+	title: "CRT channel %(instance)s timestamp at last hit with > 600 ADC (ns)"
+	display_range: [0.0, 1000000000.0]
+      }
+      ChReadoutRate: {
+	title: "CRT channel %(instance)s average normalised readout rate"
+      }
+      Pedestal: {
+	units: ADC
+	title: "CRT channel %(instance)s pedestal (ADC)"
+	display_range: [0.0, 4000.0]
+      }
     }       
   }
+
   metric_event_config: {
     groups: { CRT_event: [0] }
     streams:[slow, fast, archiving]
     metrics:{ 
-      T0ResetSpread: {}
-      T1ResetSpread: {}
+      T0ResetSpread: {
+	units: ns
+	title: "Maximum difference in t0 reset timestamps"
+      }
+      T1ResetSpread: {
+	units: ns
+	title: "Maximum difference in t1 reset timestamps"
+      }
     }
   }
+  
+  # TODO - remove this
   metric_fragment_config: {
      groups:{ CRT_cont_frag:[] }
      streams:[slow, fast, archiving]
