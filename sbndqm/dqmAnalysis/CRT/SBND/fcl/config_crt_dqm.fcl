@@ -33,16 +33,6 @@ streamCRT: {
     }
     streams:[slow, fast, archiving]
     metrics:{
-      TS0: {
-	units: ns
-	title: "FEB %(instance)s"
-	#display_range: []
-      }
-      TS1: {
-	units: ns
-	title: "FEB %(instance)s"
-	#display_range: []
-      }
       T0clockdrift: {
 	units: ns
 	title: "FEB %(instance)s"
@@ -71,10 +61,6 @@ streamCRT: {
 	title: "FEB %(instance)s"
 	display_range: [0.0, 31.0]
       }
-      Flag: {
-	title: "FEB %(instance)s"
-	display_range: [0.0, 15.0]
-      }
       baseline: {
 	units: ADC
 	title: "FEB %(instance)s"
@@ -87,6 +73,7 @@ streamCRT: {
       }    
       Flag3Hit: {
 	title: "FEB %(instance)s"
+	display_range: [0.0, 32.0]
       }
       Deadtime: {
 	units: ns
@@ -132,22 +119,22 @@ streamCRT: {
     groups: { CRT_channel: @local::crt_channel_list }
     streams: [slow, fast, archiving]
     metrics:{ 
-      ADC:{ 
+      ADC: { 
 	units: ADC
-	title: "CRT channel %(instance)s"
+	title: "Chan %(instance)s"
 	display_range: [0, 4000] 
       }
       lastbighit: {
 	units: ns
-	title: "CRT channel %(instance)s"
+	title: "Chan %(instance)s"
 	display_range: [0.0, 1000000000.0]
       }
       ChReadoutRate: {
-	title: "CRT channel %(instance)s"
+	title: "Chan %(instance)s"
       }
       Pedestal: {
 	units: ADC
-	title: "CRT channel %(instance)s"
+	title: "Chan %(instance)s"
 	display_range: [0.0, 4000.0]
       }
     }       

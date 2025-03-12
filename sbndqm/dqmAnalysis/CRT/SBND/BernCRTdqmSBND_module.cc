@@ -17,16 +17,24 @@
 /*
  * Current metrics being monitored:
  *       Board-level:
- *               MissingT0      - Total number of hits on this board in this event with missing T0 flag
- *               MissingT1      - Total number of hits on this board in this event with missing T1 flag
- *               ReadoutRate    - How many non-clock reset hits were there on this board in this event?
- *               T0ClockDrift   - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
- *               Baseline       - Average pedestal across all 32 channels
- *               Deadtime       - Time difference between consecutive hits of any type (minimum value should be deadtime)
- *               PullWindow     - Difference between first & last timestamp for that board in the event (maximum value should be the pull window)
- *               NT0Resets      - Number of T0 reset events in this board in this event
- *               NT1Resets      - Number of T1 reset events in this board in this event
- *               T1ResetTDCDiff - Similar to T0ClockDrift, difference between the T0 timestamp of the T1 reset and the value recorded in the TDC
+ *               MissingT0         - Total number of hits on this board in this event with missing T0 flag
+ *               MissingT1         - Total number of hits on this board in this event with missing T1 flag
+ *               ReadoutRate       - How many non-clock reset hits were there on this board in this event?
+ *               T0ClockDrift      - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
+ *               Baseline          - Average pedestal across all channels on this board, with the exception of max and pair of max, and any channels that surpass fBigHitADCThreshold
+ *               AverageADC        - Same as Baseline but reported as LastPoint in sbndaq::sendMetric
+ *               Deadtime          - Time difference between consecutive hits of any type (minimum value should be deadtime)
+ *               PullWindow        - Difference between first & last timestamp for that board in the event (maximum value should be the pull window)
+ *               NT0Resets         - Number of T0 reset events in this board in this event
+ *               NT1Resets         - Number of T1 reset events in this board in this event
+ *               T1ResetTDCDiff    - Similar to T0ClockDrift, difference between the T0 timestamp of the T1 reset and the value recorded in the TDC
+ *               MaxADCValue       - ADC value from highest-ADC channel
+ *               MaxADCValuePair   - ADC value from pair of highest-ADC channel
+ *               MaxADCChannel     - Index of channel with highest ADC
+ *               MaxADCChannelPair - Index of channel paired to the one with highest ADC
+ *               earlysynch        - Distance between last poll start and hit timestamp
+ *               latesynch         - Distance between hit timestamp and end of this poll
+ *               Flag3Hit          - Number of flag 3 events on the board
  *
  *       Channel-level:
  *               ChReadoutRate  - How many non-clock reset hits were there on this board where this channel was the largest in this event?
@@ -60,11 +68,8 @@
 #include "sbndaq-artdaq-core/Overlays/FragmentType.hh"
 #include "sbndaq-artdaq-core/Overlays/SBND/TDCTimestampFragment.hh"
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
-//add these
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
-//---
-//#include "art/Framework/Services/Optional/TFileService.h"
 
 #include "sbndaq-artdaq-core/Overlays/Common/BernCRTTranslator.hh"
 
@@ -114,17 +119,7 @@ private:
   double                   fRateNormalisation;
   std::vector<uint8_t>     fMac5s;
 
-  bool IsSideCRT(const icarus::crt::BernCRTTranslator & hit);
-
   uint64_t lastbighit[32];
-  float pedSum[32];
-  float pedMax[32];
-  float ped2Max[32];
-  float pedSumSq[32];
-  float pedNHits[32];
-  //float NHits[32];
-
-  bool debug = false;
 
   //sample histogram
   TH1F* fSampleHist;
@@ -143,7 +138,6 @@ sbndaq::BernCRTdqmSBND::BernCRTdqmSBND(fhicl::ParameterSet const & pset)
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   }
-  //sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics")); //This causes the error for no "metrics" at the beginning or the end
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_channel_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_board_config"));
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_fragment_config"));
@@ -156,20 +150,12 @@ sbndaq::BernCRTdqmSBND::~BernCRTdqmSBND()
 {
 }
 
-bool sbndaq::BernCRTdqmSBND::IsSideCRT(const icarus::crt::BernCRTTranslator & hit) {
-  /**
-   * Fragment ID described in SBN doc 16111
-   */
-  return (hit.fragment_ID & 0x3100) == 0x3100;
-}
-
-
 void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   //sleep(2);
 
-  if (debug) std::cout << "######################################################################" << std::endl;
-  if (debug) std::cout << std::endl;  
-  if (debug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
+  if (fDebug) std::cout << "######################################################################" << std::endl;
+  if (fDebug) std::cout << std::endl;  
+  if (fDebug) std::cout << "Run " << evt.run() << ", subrun " << evt.subRun()<< ", event " << evt.event();
 
   uint64_t rawEventTS = GetRawEventTime(evt);
 
@@ -209,15 +195,8 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     }
 
   std::vector<icarus::crt::BernCRTTranslator> hit_vector;
-  /**
-   * We are using BernCRTTranslatorV2, which takes in a fragment and stores its corresponding fields in a new object
-   * Each BernCRTTranslator object contains the information from 1 CRT hit, and this hit_vector contains the information
-   * From all of the hits in all of the fragments within an art event. -MK
-   */
   
-  if (debug) std::cout<<"Hit vector declared. Going to getMany fragments";
-
-  //auto fragmentHandles = evt.getMany<artdaq::Fragments>();
+  if (fDebug) std::cout<<"Hit vector declared. Going to getMany fragments";
   
   std::string fCRTModuleLabel = "daq";
   std::string CRTInstanceLabel = "ContainerBERNCRTV2";
@@ -226,20 +205,13 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   evt.getByLabel(fCRTModuleLabel, CRTInstanceLabel, fragmentHandle);
 
 
-  if (debug) std::cout<<"evt.getByLabel successful.";
+  if (fDebug) std::cout<<"evt.getByLabel successful.";
 
   if(!fragmentHandle.isValid() || fragmentHandle->size() == 0)
     return;
 
-  // if (debug) std::cout<<"fragmentHandles gotten. Looping over fragmentHandles";
-
-  //for (auto  handle : fragmentHandles) {
-  //  if (!handle.isValid() || handle->size() == 0){
-  //    if (debug) {std::cout << "Fragment handle is not valid or handle size is 0";}
-  //    continue;}
-
   auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*fragmentHandle);
-  if (debug) std::cout<<"Successfully obtained CRT data" << std::endl;
+  if (fDebug) std::cout<<"Successfully obtained CRT data" << std::endl;
     
   /////////////////////////////////
   // Send Fragment Level Metrics //
@@ -252,7 +224,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
     // if fragment is a container fragment, print # of fragments in that container fragment
     if(frag.type() != artdaq::Fragment::ContainerFragmentType) {
-      if (debug) std::cout<<"Fragment type is incorrect!";
+      if (fDebug) std::cout<<"Fragment type is incorrect!";
       continue;}
 
     artdaq::ContainerFragment cont_frag(frag);
@@ -269,43 +241,28 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     std::string group_name = "unknown_cont_frag";
 
     if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::CAENV1730) {group_name = "PMT_cont_frag";}
-    else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";} //this one is relevant for us
-    //print out arguments of the sendMetric line
-    //i.e. print out fragment_id to match to fcl
-    if (debug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
+    else if (cont_frag.fragment_type() == sbndaq::detail::FragmentType::BERNCRTV2) {group_name = "CRT_cont_frag";}
+    if (fDebug) std::cout<<"fragment_id: "<<fragment_id<<std::endl;
 
     sbndaq::sendMetric(group_name, fragment_id, "frag_count", frag_count, 0, artdaq::MetricMode::Average);
     sbndaq::sendMetric(group_name, fragment_id, "zero_rate", nzero, 0, artdaq::MetricMode::Rate);
      
   }//end loop over handle
-    
-  //End copy from FragmentDQMAna_module.cc
 
   //Concatenate hit vectors from each fragment into an event-long hit vector.
   hit_vector.insert(hit_vector.end(),this_hit_vector.begin(),this_hit_vector.end());
-  //}//loop over fragment handles ???
   
   ///////////////////////////////////////
   // Extract Information from the Hits //
   ///////////////////////////////////////
   
   //Event-level variables for art root events - basic checks unnecessary for online monitoring
-  size_t num_fragments = fragmentHandle->size();
-  size_t num_hits = hit_vector.size();
+  //size_t num_fragments = fragmentHandle->size();
+  //size_t num_hits = hit_vector.size();
   
   //Variables used in Grafana to be sent to DQM OM:
   size_t num_t1_resets = 0;
   size_t hitsperplane[7] = {0,0,0,0,0,0,0};
-
-  //Initialize variables used to calculate pedestals and flag3
-  for(int c=0; c<32; c++){
-    sbndaq::BernCRTdqmSBND::pedSum[c] = 0.; 
-    pedMax[c] = 0.; 
-    ped2Max[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::pedSumSq[c] = 0.; 
-    sbndaq::BernCRTdqmSBND::pedNHits[c] = 0.; 
-    //sbndaq::BernCRTdqmSBND::NHits[c] = 0.; 
-  }
 
   // Flag 3 hits
   uint64_t flag3hit = 0;
@@ -324,29 +281,14 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const bool ts1Good         = !hit.IsOverflow_TS1();
 
     std::string mac5Str = std::to_string(mac5);
-    //if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
+    if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
 
     enum Detector {SIDE_CRT, TOP_CRT};
-    //    const Detector detector = IsSideCRT(hit) ? SIDE_CRT : TOP_CRT;
-    const uint16_t & fragment_id        = hit.fragment_ID;
-    /**
-     * TODO:
-     * In order to distinguish between Top and Side CRT
-     * use the variable detector, defined above
-     * Otherwise, MAC address alone is not sufficient,
-     * as some MACs overlap between Top and Side
-     *
-     * Alternative: use fragment_ID directly (fragment_IDs
-     * are unique)
-     */
-
+    //const uint16_t & fragment_id        = hit.fragment_ID;
     const uint64_t & fragment_timestamp = hit.timestamp;
 
     //data from FEB:
-    //unsigned readout_number  = hit.mac5;
     std::string mac5_str = std::to_string(mac5);
-
-    //std::cout<<"Mac5: "<<mac5_str<<std::endl;
 
     //store the timing and flag information from a hit
     const uint32_t ts0      = static_cast<uint32_t>(hit.ts0);
@@ -354,7 +296,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const bool     isTS0    = hit.IsReference_TS0();
     const bool     isTS1    = hit.IsReference_TS1();
     const bool     isTS0good=!hit.IsOverflow_TS0();
-    const bool     isTS1good=!hit.IsOverflow_TS1();
+    [[maybe_unused]] const bool     isTS1good=!hit.IsOverflow_TS1();
     
     const uint16_t * adc = hit.adc;
 
@@ -367,21 +309,16 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     const uint64_t & last_poll_start           = hit.last_poll_start;
 
     size_t maxadc        = 0; int maxindex = -1;
-    //size_t secondmaxadc  = 0;
     size_t totaladc   = 0;
     size_t ADCchannel = 0;
-
-    std::string FEBID_str = std::to_string(fragment_id);
-    sbndaq::sendMetric("CRT_board", FEBID_str, "FEBID", fragment_id, 0, artdaq::MetricMode::LastPoint); 
-
 
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
     if(isTS0){
-      if (debug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
+      if (fDebug) std::cout<<" TS0 "<<ts0 - 1e9<<std::endl;
     }
     if(isTS1){
-      if (debug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
+      if (fDebug) std::cout<<" TS1 "<<ts1 - 1e9<<std::endl; 
       num_t1_resets++;
     }
     
@@ -394,19 +331,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       if (currflag == 3) {
         flag3hit++;
       }
-      totaladc  += adc[i];
+      //totaladc  += adc[i]; // We'll account for totaladc later
       ADCchannel = adc[i];
-      sbndaq::BernCRTdqmSBND::pedSum[i] += adc[i];
-      if (adc[i] > pedMax[i]) {pedMax[i] = adc[i];}
-      if (adc[i] > ped2Max[i]) {
-        if (adc[i] < pedMax[i]) {
-          ped2Max[i] += adc[i];
-        }
-      }
-      sbndaq::BernCRTdqmSBND::pedSumSq[i] += adc[i]*adc[i];
-      sbndaq::BernCRTdqmSBND::pedNHits[i]++;
       uint64_t lastbighitchannel = fragment_timestamp -sbndaq::BernCRTdqmSBND::lastbighit[i];
-      /////    RMSchannel = rms[i];
       
       //Send Channel-Level Metrics to the database
       sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::Average); 
@@ -434,27 +361,25 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     // and the average of all ADC over boards at each point (AverageADC) (Board)
 
     if( (!isTs0Reset && !isTs1Reset && ts0Good) || (isTs0Reset || isTs1Reset) ) {
+      int nBaselineChannels = 0;
       for( int ch = 0; ch < 32; ch++ ) {
 	if( ch == maxindex || ch == pairindex ) continue;
 	if( adc[ch] > fBigHitADCThreshold ) continue;
 
+	totaladc += adc[ch];
+	nBaselineChannels++;
+
 	std::string chStr = std::to_string(mac5*100 + ch);
 	sbndaq::sendMetric("CRT_channel", chStr, "Pedestal", adc[ch], 0, artdaq::MetricMode::Average);
       }
-    }
-    
-    //old definition of baseline:
-    //int baseline = (totaladc-max)/31;
-    
-    // need to redefine baseline to take out the second maximum (one max for each board) -MK
-    //int baseline = (totaladc - maxadc - secondmaxadc)/30;
 
-    // JP - Baseline needs to be the totaladc minus the ADC from the top channel and its pair.. not 2nd max.
-    // only send it if this is not a T0/1 reset
-    if( !isTs0Reset && !isTs1Reset && ts0Good ) {
-      int baseline = ( totaladc - maxadc - adc[pairindex] ) / 30;
-      sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-      sbndaq::sendMetric("CRT_board", mac5_str, "AverageADC", baseline, 0, artdaq::MetricMode::LastPoint);
+      // guard against 0 channels contributing
+      nBaselineChannels = std::max(nBaselineChannels, 1);
+      int baseline = totaladc / nBaselineChannels;
+      if( (!isTs0Reset && !isTs1Reset && ts0Good) ) {
+	sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
+	sbndaq::sendMetric("CRT_board", mac5_str, "AverageADC", baseline, 0, artdaq::MetricMode::LastPoint);
+      }
     }
 
     // Calculate deadtime
@@ -463,7 +388,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     else {
       uint64_t diff = fragmentTS - prevFragmentTS[mac5];
       
-      //if(fDebug) std::cout << "Sending metric Deadtime with value " << diff << std::endl;
+      if(fDebug) std::cout << "Sending metric Deadtime with value " << diff << std::endl;
       sbndaq::sendMetric("CRT_board", mac5_str, "Deadtime", diff, 0, artdaq::MetricMode::Minimum);
       prevFragmentTS[mac5] = fragmentTS;
     }
@@ -482,9 +407,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //From the code that writes to Grafana	
     auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
     
-    if (debug) std::cout<<"Plane: "<<plane<<std::endl;
+    if (fDebug) std::cout<<"Plane: "<<plane<<std::endl;
     
-    if (plane>7) {if (debug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
+    if (plane>7) {if (fDebug) std::cout << "bad plane value " << plane << std::endl; plane=0;}
   
     auto thisflag = hit.flags;
    
@@ -497,7 +422,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     // require that this is data and not clock reset (0xC), and that the ts1 time is valid (0x2)
     if (thisflag & 0x2 && !(thisflag & 0xC) ) {
       // check ts1 for beam window
-      if(debug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
+      if(fDebug) std::cout<<"It's a data event! Ts1: "<<ts1<<std::endl;
       if ((int)ts1>fBeamWindowStart && (int)ts1<fBeamWindowEnd) hitsperplane[plane]++;
     }
 
@@ -527,48 +452,16 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 	    else
 	      t1Reset[mac5] = ts0;
 	  }
-      }
-    
-    /**
-     * Below we send the metric information, hit by hit, to the online monitor / DQM.
-     * The syntax for the sendMetric function is as follows (from SBNMetricManager.hh):
-     *
-     * void sendMetric(std::string const& group, 
-     std::string const& instance, 
-     std::string const& metric, 
-     long unsigned int const& value, 
-     int level, 
-     MetricMode mode, 
-     std::string const& metricPrefix = "", 
-     bool useNameOverride = false) {
-     if (metricMan != NULL) {
-     metricMan->sendMetric(buildMetricName(group, instance, metric), value, "", level, mode, metricPrefix, useNameOverride);
-     }
-     }
-     *
-     * Further documentation on this functon from MetricManager.hh:
-     * * \brief Send a metric with the given parameters to any MetricPlugins with a threshold level >= to level.
-     * \param name The Name of the metric
-     * \param value The value of the metric
-     * \param unit The units of the metric
-     * \param level The verbosity level of the metric. Higher number == more verbose
-     * \param mode The MetricMode that the metric should operate in. Options are:
-     *    LastPoint: Every reporting_interval, the latest metric value is sent (For run/event numbers, etc)
-     *    Accumulate: Every reporting_interval, the sum of all metric values since the last report is sent (for counters)
-     *    Average: Every reporting_interval, the average of all metric values since the last report is sent (for rates)
-	
-     * We note that the level here is used as a threshold; we send any value of the metric above the level. For the CRT DQM, all levels = 0.
-     */
+      }    
 
-    sbndaq::sendMetric("CRT_board", mac5_str, "Flag", thisflag, 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", mac5_str, "TS0", static_cast<int>(ts0), 0, artdaq::MetricMode::LastPoint);
-    sbndaq::sendMetric("CRT_board", mac5_str, "TS1", static_cast<int>(ts1), 0, artdaq::MetricMode::LastPoint);
+    // Documentation on sbndaq::sendMetric lives in MetricManager.hh
+
     sbndaq::sendMetric("CRT_board", mac5_str, "MissingT0", missingT0[mac5], 0, artdaq::MetricMode::Maximum);
     sbndaq::sendMetric("CRT_board", mac5_str, "MissingT1", missingT1[mac5], 0, artdaq::MetricMode::Maximum);
  
     //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
     if(isTS0 && isTS0good) {sbndaq::sendMetric("CRT_board", mac5_str, "T0clockdrift", static_cast<int>(ts0) - 1e9, 0, artdaq::MetricMode::LastPoint);}
-    if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", mac5_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
+    //if(isTS1 && isTS1good) {sbndaq::sendMetric("CRT_board", mac5_str, "T1clockdrift", ts1 - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
     //Sychronization Metrics
     sbndaq::sendMetric("CRT_board", mac5_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
@@ -642,6 +535,11 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
         }
     } // loop over mac5
 
+  /////////////////////////
+  // Event-Level Metrics //
+  /////////////////////////
+  //Currently using "0" as my blank Mac5 address for the event-level metrics.
+
   if(boardsWithT0Reset > fBoardsRequiredForResetSpread)
     {
       uint64_t t0ResetSpread = t0ResetMax - t0ResetMin;
@@ -655,25 +553,20 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       if(fDebug) std::cout << "Sending metric T1ResetSpread with value " << t1ResetSpread << std::endl;
       sbndaq::sendMetric("CRT_event", "0", "T1ResetSpread", t1ResetSpread, 0, artdaq::MetricMode::Maximum);
     }
-  
- 
-  /////////////////////////
-  // Event-Level Metrics //
-  /////////////////////////
-  //Currently using "0" as my blank Mac5 address for the event-level metrics.
-  
+    
+  /*
   //Metrics which are on the Grafana:
   
   //"CRT hits in beam window per plane per event"
   for (int i=0;i<7;++i){
-    if(debug) {std::cout<<"hitsperplane["<<i<<"]: "<<hitsperplane[i]<<std::endl;}
+    if(fDebug) {std::cout<<"hitsperplane["<<i<<"]: "<<hitsperplane[i]<<std::endl;}
     sbndaq::sendMetric("CRT_event", std::to_string(0),
 		       std::string("CRT_hits_beam_plane_")+std::to_string(i),
 		       hitsperplane[i],
 		       0, artdaq::MetricMode::LastPoint);
   }
   //"CRT T1 resets per event"
-  if(debug) {std::cout<<"num_t1_resets: "<<num_t1_resets<<std::endl;}
+  if(fDebug) {std::cout<<"num_t1_resets: "<<num_t1_resets<<std::endl;}
   sbndaq::sendMetric("CRT_event", std::to_string(0),
 		     "T1_resets_per_event",
 		     num_t1_resets,
@@ -682,6 +575,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   //Other event-level metrics:
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_fragments", num_fragments, 0, artdaq::MetricMode::LastPoint);
   sbndaq::sendMetric("CRT_event", std::to_string(0), "num_hits", num_hits, 0, artdaq::MetricMode::LastPoint);
+  */
 
 
 } //analyze
