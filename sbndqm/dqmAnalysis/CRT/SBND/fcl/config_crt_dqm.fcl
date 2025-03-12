@@ -71,10 +71,6 @@ streamCRT: {
 	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0] 
       }    
-      Flag3Hit: {
-	title: "FEB %(instance)s"
-	display_range: [0.0, 32.0]
-      }
       Deadtime: {
 	units: ns
 	title: "FEB %(instance)s"
