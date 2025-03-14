@@ -168,11 +168,11 @@ void SPECTDCStreams::ResetVars() {
   ftrig_vec.clear();
   etrig_vec.clear();
 
-  nCRTT1 = -1; 
-  nBES = -1; 
-  nRWM = -1; 
-  nFTRIG = -1; 
-  nETRIG = -1; 
+  nCRTT1 = 0; 
+  nBES = 0; 
+  nRWM = 0; 
+  nFTRIG = 0; 
+  nETRIG = 0; 
 
   BES_CRTT1_diff = std::numeric_limits<double>::min(); 
   RWM_BES_diff = std::numeric_limits<double>::min();  
@@ -394,7 +394,6 @@ void SPECTDCStreams::analyze(art::Event const & e) {
   
   // Populate local vectors and count channels  
   for(auto const ts: DAQTimestampVec) { 
-       
       if (ts->Channel() == fCRTT1_ch) { 
         crtt1_vec.push_back(ts->Timestamp() + ts->Offset()); 
         nCRTT1++; 
@@ -443,6 +442,18 @@ void SPECTDCStreams::analyze(art::Event const & e) {
   */
   if (passBeam) {
 
+    int num_nCRTT1_bad = 1;	
+    if (nCRTT1 == 1) num_nCRTT1_bad = 0;
+
+    int num_nBES_bad = 1;	
+    if (nBES == 1) num_nBES_bad = 0;
+
+    int num_nRWM_bad = 1;	
+    if (nRWM == 1) num_nRWM_bad = 0;
+
+    int num_nETRIG_bad = 1;	
+    if (nETRIG == 1) num_nETRIG_bad = 0;
+
     BES_CRTT1_diff = OneToOneDiff(crtt1_vec, bes_vec)/1'000'000; //ns to ms
     RWM_BES_diff = OneToOneDiff(bes_vec, rwm_vec)/1'000; //ns to us
     ETRIG_BES_diff = OneToOneDiff(bes_vec, etrig_vec)/1'000; //ns to us
@@ -478,12 +489,18 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nCRTT1", nCRTT1, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nBES", nBES, 3, artdaq::MetricMode::LastPoint);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nRWM", nRWM, 3, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);  
-  
-    if ((nBES == 1) & (nCRTT1 == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_CRTT1_diff", BES_CRTT1_diff, 3, artdaq::MetricMode::LastPoint);  
-    if ((nRWM == 1) & (nBES == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_diff", RWM_BES_diff, 3, artdaq::MetricMode::LastPoint);  
-    if ((nETRIG == 1) & (nBES == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 3, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::Average);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);
+
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "num_nCRTT1_bad", num_nCRTT1_bad, 3, artdaq::MetricMode::Accumulate);
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "num_nBES_bad", num_nBES_bad, 3, artdaq::MetricMode::Accumulate);
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "num_nRWM_bad", num_nRWM_bad, 3, artdaq::MetricMode::Accumulate);
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "num_nETRIG_bad", num_nETRIG_bad, 3, artdaq::MetricMode::Accumulate);
+
+    //Only send the time different if the number of signals are good 
+    if ((nBES == 1) & (nCRTT1 == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "BES_CRTT1_diff", BES_CRTT1_diff, 3, artdaq::MetricMode::Average);  
+    if ((nRWM == 1) & (nBES == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "RWM_BES_diff", RWM_BES_diff, 3, artdaq::MetricMode::Average);  
+    if ((nETRIG == 1) & (nBES == 1)) sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "ETRIG_BES_diff", ETRIG_BES_diff, 3, artdaq::MetricMode::Average);  
     if ((nETRIG == 1) & (ftrig_vec.size() > 1)){
       for (auto const ts: FTRIG_ETRIG_diff){
         sbndaq::sendMetric("SPECTDC_Streams_Timing", "0", "FTRIG_ETRIG_diff", ts, 3, artdaq::MetricMode::LastPoint); 
@@ -500,6 +517,12 @@ void SPECTDCStreams::analyze(art::Event const & e) {
   ch4: ETRIG (Event trigger from PTB)  -- once per event 
   */
   if (passOffbeam) {
+
+    int num_nCRTT1_bad = 1;	
+    if (nCRTT1 == 1) num_nCRTT1_bad = 0;
+
+    int num_nETRIG_bad = 1;	
+    if (nETRIG == 1) num_nETRIG_bad = 0;
     
     FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
     for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
@@ -525,9 +548,13 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     if (nFTRIG == 0) nFTRIG = -1;
 
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nCRTT1", nCRTT1, 3, artdaq::MetricMode::LastPoint);  
-    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::Average);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);  
 
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "num_nCRTT1_bad", num_nCRTT1_bad, 3, artdaq::MetricMode::Accumulate);
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "num_nETRIG_bad", num_nETRIG_bad, 3, artdaq::MetricMode::Accumulate);
+
+    //Only send the time different if the number of signals are good 
     if ((nETRIG == 1) & (ftrig_vec.size() > 1)){
       for (auto const ts: FTRIG_ETRIG_diff){
         sbndaq::sendMetric("SPECTDC_Streams_Timing", "1", "FTRIG_ETRIG_diff", ts, 3, artdaq::MetricMode::LastPoint); 
@@ -544,6 +571,9 @@ void SPECTDCStreams::analyze(art::Event const & e) {
   ch4: ETRIG (Event trigger from PTB)  -- once per event 
   */
   if (passXmuon) {
+
+    int num_nETRIG_bad = 1;	
+    if (nETRIG == 1) num_nETRIG_bad = 0;
 
     FTRIG_ETRIG_diff = ManyToOneDiff(ftrig_vec, etrig_vec);
     for (unsigned int i = 0; i < FTRIG_ETRIG_diff.size(); i++){
@@ -567,9 +597,12 @@ void SPECTDCStreams::analyze(art::Event const & e) {
     if (nETRIG == 0) nETRIG = -1;
     if (nFTRIG == 0) nFTRIG = -1;
     
-    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::LastPoint);  
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nFTRIG", nFTRIG, 3, artdaq::MetricMode::Average);  
     sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "nETRIG", nETRIG, 3, artdaq::MetricMode::LastPoint);  
 
+    sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "num_nETRIG_bad", num_nETRIG_bad, 3, artdaq::MetricMode::Accumulate);
+
+    //Only send the time different if the number of signals are good 
     if ((nETRIG == 1) & (ftrig_vec.size() > 1)){
       for (auto const ts: FTRIG_ETRIG_diff){
         sbndaq::sendMetric("SPECTDC_Streams_Timing", "2", "FTRIG_ETRIG_diff", ts, 3, artdaq::MetricMode::LastPoint); 

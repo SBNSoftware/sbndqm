@@ -70,6 +70,26 @@ streamSPECTDC: {
         title: "Number of ETRIG in an event"
         display_range: [0., 10.]
       }
+      
+      num_nCRTT1_bad: {
+        title: "Number of events with missing CRTT1"
+	display_range: [0., 10.]
+      }
+      
+      num_nBES_bad: {
+        title: "Number of events with missing BES"
+	display_range: [0., 10.]
+      }
+      
+      num_nRWM_bad: {
+        title: "Number of events with missing RWM"
+	display_range: [0., 10.]
+      }
+      
+      num_nETRIG_bad: {
+        title: "Number of events with missing ETRIG"
+	display_range: [0., 10.]
+      }
 
       BES_CRTT1_diff: {
         title: "Difference of BES - CRT T1 in an event"
