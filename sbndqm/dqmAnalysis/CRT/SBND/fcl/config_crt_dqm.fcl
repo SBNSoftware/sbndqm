@@ -112,7 +112,8 @@ streamCRT: {
   
   metric_channel_config: 
   {
-    groups: { CRT_channel: @local::crt_channel_list }
+    #groups: { CRT_channel: @local::crt_channel_list }
+    groups: { CRT_channel: [[1600, 23831]] }
     streams: [slow, fast, archiving]
     metrics:{ 
       ADC: { 
