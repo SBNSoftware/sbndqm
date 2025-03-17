@@ -474,10 +474,11 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
         {
           ++boardsWithT1Reset;
 
-          if(t1Reset[mac5] < t1ResetMin)
+	  // 78 is a bad board, nuke it
+          if(t1Reset[mac5] < t1ResetMin && static_cast<int>(mac5) != 78 ) 
             t1ResetMin = t1Reset[mac5];
 
-          if(t1Reset[mac5] > t1ResetMax)
+          if(t1Reset[mac5] > t1ResetMax && static_cast<int>(mac5) != 78 )
             t1ResetMax = t1Reset[mac5];
         }
 
