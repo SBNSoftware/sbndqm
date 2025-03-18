@@ -397,8 +397,16 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       {
 	++nT0Resets[mac5];
 
-	if(isTs0Good)
+	if(isTs0Good){
 	  t0Reset[mac5] = ts0;
+
+	  if( t0Reset[mac5] != std::numeric_limits<uint32_t>::lowest() &&
+	      t0Reset[mac5] != std::numeric_limits<uint32_t>::max() ) {
+	    std::cout << "From mac5 = " << static_cast<int>(mac5) << " the t0Reset = " << t0Reset[mac5]
+		      << std::endl;
+	  }
+	}
+
       }
 
     if(isTs1Reset)
@@ -440,6 +448,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   uint32_t t1ResetMin = std::numeric_limits<uint32_t>::max();
   uint32_t t1ResetMax = std::numeric_limits<uint32_t>::lowest();
 
+  int t0minboard = -1, t0maxboard = -1;
+  int t1minboard = -1, t1maxboard = -1;
+
   uint16_t boardsWithT0Reset = 0;
   uint16_t boardsWithT1Reset = 0;
  
@@ -459,27 +470,39 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       if(fDebug) std::cout << "Sending metric NT1Resets with value " << nT1Resets[mac5] << std::endl;
       sbndaq::sendMetric("CRT_board", mac5Str, "NT1Resets", nT1Resets[mac5], 0, artdaq::MetricMode::Maximum);
 
-      if(nT0Resets[mac5] == 1 && t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
+      //if(nT0Resets[mac5] == 1 && t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
+
+      // John: I saw weirdly large spreads when including 78 and 86. 86 seems to fire early by 5 us,
+      // and 78 is known temperamental. Switching this off after chatting with Henry
+      if(t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
           ++boardsWithT0Reset;
-
-          if(t0Reset[mac5] < t0ResetMin)
+	  
+	  // testing removal of 86 (seems to fire early by 5 us)
+          if(t0Reset[mac5] < t0ResetMin && static_cast<int>(mac5) != 78 && static_cast<int>(mac5) != 86) {
             t0ResetMin = t0Reset[mac5];
+	    t0minboard = static_cast<int>(mac5);
+	  }
 
-          if(t0Reset[mac5] > t0ResetMax)
+          if(t0Reset[mac5] > t0ResetMax && static_cast<int>(mac5) != 78 && static_cast<int>(mac5) != 86) {
             t0ResetMax = t0Reset[mac5];
+	    t0maxboard = static_cast<int>(mac5);
+	  }
         }
 
       if(nT1Resets[mac5] == 1 && t1Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
           ++boardsWithT1Reset;
 
-	  // 78 is a bad board, nuke it
-          if(t1Reset[mac5] < t1ResetMin && static_cast<int>(mac5) != 78 ) 
+          if(t1Reset[mac5] < t1ResetMin && static_cast<int>(mac5) != 78 && static_cast<int>(mac5) != 86 ) {
             t1ResetMin = t1Reset[mac5];
+	    t1minboard = static_cast<int>(mac5);
+	  }
 
-          if(t1Reset[mac5] > t1ResetMax && static_cast<int>(mac5) != 78 )
+          if(t1Reset[mac5] > t1ResetMax && static_cast<int>(mac5) != 78 && static_cast<int>(mac5) != 86 ) {
             t1ResetMax = t1Reset[mac5];
+	    t1maxboard = static_cast<int>(mac5);
+	  }
         }
 
       if(tdcT1Reset != std::numeric_limits<uint64_t>::max() && t1Reset[mac5] != std::numeric_limits<uint32_t>::max())
@@ -504,17 +527,25 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
   /////////////////////////
   //Currently using "0" as my blank Mac5 address for the event-level metrics.
 
-  if(boardsWithT0Reset > fBoardsRequiredForResetSpread)
+  if( //boardsWithT0Reset > fBoardsRequiredForResetSpread && 
+     ( t0minboard > -1 && t0maxboard > -1 ))
     {
       uint64_t t0ResetSpread = t0ResetMax - t0ResetMin;
-      if(fDebug) std::cout << "Sending metric T0ResetSpread with value " << t0ResetSpread << std::endl;
+      if(fDebug){ std::cout << "Sending metric T0ResetSpread with value " << t0ResetSpread
+			    << " (min = " << t0ResetMin << ", max = " << t0ResetMax << " )"
+			    << ", min board = " << t0minboard << ", max board = " << t0maxboard
+			    << std::endl; }
       sbndaq::sendMetric("CRT_event", "0", "T0ResetSpread", t0ResetSpread, 0, artdaq::MetricMode::Maximum);
     }
 
-  if(boardsWithT1Reset > fBoardsRequiredForResetSpread)
+  if(boardsWithT1Reset > fBoardsRequiredForResetSpread  && 
+     ( t1minboard > -1 && t1maxboard > -1 ))
     {
       uint64_t t1ResetSpread = t1ResetMax - t1ResetMin;
-      if(fDebug) std::cout << "Sending metric T1ResetSpread with value " << t1ResetSpread << std::endl;
+      if(fDebug){ std::cout << "Sending metric T1ResetSpread with value " << t1ResetSpread
+			    << " (min = " << t1ResetMin << ", max = " << t1ResetMax << " )"
+			    << ", min board = " << t1minboard << ", max board = " << t1maxboard
+			    << std::endl; }
       sbndaq::sendMetric("CRT_event", "0", "T1ResetSpread", t1ResetSpread, 0, artdaq::MetricMode::Maximum);
     }
   

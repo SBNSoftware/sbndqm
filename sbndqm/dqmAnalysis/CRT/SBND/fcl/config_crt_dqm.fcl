@@ -6,7 +6,7 @@ streamCRT: {
   
   module_type: BernCRTdqmSBND
 
-  Debug:                        true
+  Debug:                        false
   CRTModuleLabel:               "daq"
   CRTInstanceLabel:             "ContainerBERNCRTV2"
   SPECTDCModuleLabel:           "daq"
