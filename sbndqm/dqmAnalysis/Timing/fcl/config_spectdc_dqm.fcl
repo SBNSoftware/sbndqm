@@ -7,7 +7,7 @@ streamSPECTDC: {
   DAQTimestampLabel: "daqSPECTDC"
   DAQLabel: "daq"
   PTBContainerInstance: "ContainerPTB"
-  Verbose: 0
+  Verbose: 1
   
   HLT_beam: [1, 2] #bnb zero bias + bnb light
   HLT_beam_excluded: [3, 4, 14, 15] 
@@ -22,17 +22,17 @@ streamSPECTDC: {
   FTRIG_ch: 3
   ETRIG_ch: 4
 
-  fExpected_BES_CRTT1_diff: 1.5 #ms
-  fExpected_BES_CRTT1_jitter: 0.1 #ms
+  Expected_BES_CRTT1_diff: 1.22 #ms
+  Expected_BES_CRTT1_jitter: 0.1 #ms
   
-  fExpected_RWM_BES_diff: 2 #us
-  fExpected_RWM_BES_jitter: 0.5 #us
+  Expected_RWM_BES_diff: 334 #us
+  Expected_RWM_BES_jitter: 1 #us
   
-  fExpected_ETRIG_BES_diff: 332 #us
-  fExpected_ETRIG_BES_jitter: 1 #us
+  Expected_ETRIG_BES_diff: 332 #us
+  Expected_ETRIG_BES_jitter: 1 #us
   
-  fExpected_FTRIG_ETRIG_diff: 2 #+- 2ms
-  fExpected_FTRIG_ETRIG_jitter: 0.5 #ms
+  Expected_FTRIG_ETRIG_diff: 1.5 #+- 2ms
+  Expected_FTRIG_ETRIG_jitter: 0.5 #ms
 
   SPECTDCMetricConfig: {
 
@@ -69,6 +69,26 @@ streamSPECTDC: {
       nETRIG: {
         title: "Number of ETRIG in an event"
         display_range: [0., 10.]
+      }
+      
+      num_nCRTT1_bad: {
+        title: "Number of events with missing CRTT1"
+	display_range: [0., 10.]
+      }
+      
+      num_nBES_bad: {
+        title: "Number of events with missing BES"
+	display_range: [0., 10.]
+      }
+      
+      num_nRWM_bad: {
+        title: "Number of events with missing RWM"
+	display_range: [0., 10.]
+      }
+      
+      num_nETRIG_bad: {
+        title: "Number of events with missing ETRIG"
+	display_range: [0., 10.]
       }
 
       BES_CRTT1_diff: {
