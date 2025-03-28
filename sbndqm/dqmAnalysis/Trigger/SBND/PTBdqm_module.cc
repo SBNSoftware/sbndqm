@@ -1043,6 +1043,10 @@ void sbndaq::PTBdqm::analyze(art::Event const & evt) {
   art::InputTag itag(fDAQLabel, fPTBContainerInstance);
   auto cont_frags = evt.getHandle<artdaq::Fragments>(itag);
 
+  // if getHandle is causing the delayed reader error, try this: --MK 3/13/25
+  //art::Handle<artdaq::Fragments> thisHandle;
+  //event.getByLabel("daq", input_tag, thisHandle);
+
   if(!cont_frags){
     mf::LogError("sbndaq::PTBdqm::analyze") << "Data product '" << fDAQLabel << "' has no " << fPTBContainerInstance << " in it! Skip event " << evt.event() << ".\n";
     std::cout << "Data product '" << fDAQLabel << "' has no " << fPTBContainerInstance << " in it! Skip event " << evt.event() << std::endl;
@@ -1065,10 +1069,11 @@ void sbndaq::PTBdqm::analyze(art::Event const & evt) {
   // -------DEBUGGING------
 
   // default
-  auto fragmentHandles = evt.getMany<artdaq::Fragments>();
+  // causes delayedreader error -- MK 3/13/25
+  //auto fragmentHandles = evt.getMany<artdaq::Fragments>();
 
   // use function from PMT decoder
-  //auto fragmentHandles = readHandles( evt ); 
+  auto fragmentHandles = readHandles( evt ); 
 
   for (auto const& handle : fragmentHandles) {
 
