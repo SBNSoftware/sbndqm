@@ -25,10 +25,8 @@ services:
 
   InitMetricManager: {
     connections: {
-      fast: @local::redis_metric_fast
       slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
-      flash: @local::redis_metric_flash
     }
   }
 }
@@ -51,7 +49,7 @@ source:
   dispatcherPort: 6021
 
   transfer_plugin: {
-     unique_label: "SHIFTEROM"
+     unique_label: "SHIFTOM"
       transferPluginType: Shmem
       shm_key: 0x40470920
       max_fragment_size_words: 1e8
@@ -61,14 +59,14 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "SHIFTEROM"
+    unique_label: "SHIFTOM"
     path: [ out ]
     physics: {}
     outputs: {
       out: {
         module_type: TransferOutput
         transfer_plugin: {
-          unique_label: "SHIFTEROM"
+          unique_label: "SHIFTOM"
           transferPluginType: Shmem
           shm_key: 0x40470920
           max_fragment_size_words: 1e8
