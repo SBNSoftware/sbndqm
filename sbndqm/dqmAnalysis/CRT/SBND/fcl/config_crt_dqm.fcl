@@ -18,6 +18,7 @@ streamCRT: {
   BigHitADCThreshold:           600
   BoardsRequiredForResetSpread: 100
   RateNormalisation:            0.05
+  BoardPedestalGap:             60
 
   metric_board_config: {
     groups: {
@@ -31,7 +32,7 @@ streamCRT: {
 	121, 40, 39, 128, 127, 178, 144, 180, 141, 179, 109, 116, 47, 49, 117, 185, 184, 183, 72, 216, 213, 212, 211, 210, 209  # TopHigh
       ]
     }
-    streams:[slow, fast, archiving]
+    streams:[archiving]
     metrics:{
       T0clockdrift: {
 	units: ns
@@ -66,11 +67,6 @@ streamCRT: {
 	title: "FEB %(instance)s"
 	display_range: [0.0, 4000.0]
       } 
-      AverageADC: { 
-	units: ADC
-	title: "FEB %(instance)s"
-	display_range: [0.0, 4000.0] 
-      }    
       Deadtime: {
 	units: ns
 	title: "FEB %(instance)s"
@@ -82,18 +78,6 @@ streamCRT: {
       PullWindow: {
 	units: ns
 	title: "FEB %(instance)s"
-      }
-      earlysynch: { 
-	units: ns
-	title: "FEB %(instance)s"
-	display_range: [-100000,100000] 
-	alarmrange: [-100000,100000] 
-      }
-      latesynch: { 
-	units: ns
-	title: "FEB %(instance)s"
-	display_range: [-100000,100000]
-	alarmrange: [-100000,100000] 
       }
       MissingT0: {
 	title: "FEB %(instance)s"
@@ -114,17 +98,12 @@ streamCRT: {
   {
     #groups: { CRT_channel: @local::crt_channel_list }
     groups: { CRT_channel: [[1600, 23831]] }
-    streams: [slow, fast, archiving]
+    streams: [archiving]
     metrics:{ 
       ADC: { 
 	units: ADC
 	title: "Chan %(instance)s"
 	display_range: [0, 4000] 
-      }
-      lastbighit: {
-	units: ns
-	title: "Chan %(instance)s"
-	display_range: [0.0, 1000000000.0]
       }
       ChReadoutRate: {
 	title: "Chan %(instance)s"
@@ -139,7 +118,7 @@ streamCRT: {
 
   metric_event_config: {
     groups: { CRT_event: [0] }
-    streams:[slow, fast, archiving]
+    streams:[archiving]
     metrics:{ 
       T0ResetSpread: {
 	units: ns
@@ -155,7 +134,7 @@ streamCRT: {
   # TODO - remove this
   metric_fragment_config: {
      groups:{ CRT_cont_frag:[] }
-     streams:[slow, fast, archiving]
+     streams:[archiving]
      metrics:{ }
   }
 }
