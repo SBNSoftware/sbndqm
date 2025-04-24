@@ -95,6 +95,7 @@ private:
   TH1F* fSampleHist;
   
   //fhicl parameters
+  std::vector<art::InputTag>> fFragmentLabels;
   int fBeamWindowStart;
   int fBeamWindowEnd;
   
@@ -105,6 +106,8 @@ sbndaq::BernCRTdqm::BernCRTdqm(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
 {
 
+  fFragmentLabels = pset.get<std::vector<art::InputTag>>("FragmentLabels");
+  
   if (pset.has_key("metrics")) {
     sbndaq::InitializeMetricManager(pset.get<fhicl::ParameterSet>("metrics"));
   }
@@ -142,10 +145,17 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   * From all of the hits in all of the fragments within an art event. -MK
   */
   
-  auto fragmentHandles = evt.getMany<artdaq::Fragments>();
+  std::vector<art::Handle<std::vector<artdaq::Fragment>>> fragmentHandles; 
+  for(auto const& label : fFragmentLabels ) {
+     
+    art::Handle<std::vector<artdaq::Fragment>>> handle;
+    evt.getByLabel( label, handle );
+    if (!handle.isValid() || handle->size() == 0)  continue;
+    fragmentHandles.push_back(handle);
+ 	
+  }
+
   for (auto  handle : fragmentHandles) {
-    if (!handle.isValid() || handle->size() == 0)
-      continue;
 
     auto this_hit_vector = icarus::crt::BernCRTTranslator::getCRTData(*handle);
     
