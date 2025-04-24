@@ -95,7 +95,7 @@ private:
   TH1F* fSampleHist;
   
   //fhicl parameters
-  std::vector<art::InputTag>> fFragmentLabels;
+  std::vector<art::InputTag> fFragmentLabels;
   int fBeamWindowStart;
   int fBeamWindowEnd;
   
@@ -148,7 +148,7 @@ void sbndaq::BernCRTdqm::analyze(art::Event const & evt) {
   std::vector<art::Handle<std::vector<artdaq::Fragment>>> fragmentHandles; 
   for(auto const& label : fFragmentLabels ) {
      
-    art::Handle<std::vector<artdaq::Fragment>>> handle;
+    art::Handle<std::vector<artdaq::Fragment>> handle;
     evt.getByLabel( label, handle );
     if (!handle.isValid() || handle->size() == 0)  continue;
     fragmentHandles.push_back(handle);
