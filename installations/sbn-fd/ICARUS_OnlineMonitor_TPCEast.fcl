@@ -396,7 +396,8 @@ physics.analyzers:
     SelectEvents: [ pmt_only, crt_only ]
 
     module_type: FragmentDQMAna
-    
+    FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730", "daq:ContainerBERNCRTV2", "daq:BERNCRTV2"]
+ 
     metric_config: {
        groups: {
            PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 
