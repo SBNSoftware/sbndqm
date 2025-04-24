@@ -148,7 +148,11 @@ outputs.decodedout:{
   dataTier:    "raw"
   compressionLevel: 3
   SelectEvents: [pscale_OnMonFiles]
-  outputCommands: [ "keep *_*_*_*", "drop raw::OpDetWaveforms_*_*_*" ]
+  outputCommands: [ "keep *_*_*_*", "drop raw::OpDetWaveforms_*_*_*", 
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEERAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEWRAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWERAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWWRAW_*" ]
 
   fileProperties: { 
     #maxSubRuns: 1 
