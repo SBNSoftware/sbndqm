@@ -9,8 +9,8 @@
 BEGIN_PROLOG
 
 tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW"]
-tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW"]
-tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW"]
+tpclabels_DecoderRaw: ["daqTPCROI:PHYSCRATEDATATPCEERAW","daqTPCROI:PHYSCRATEDATATPCEWRAW"]
+tpclabels_DecoderDenoised: ["daqTPCROI:PHYSCRATEDATATPCEE","daqTPCROI:PHYSCRATEDATATPCEW"]
 
 analysis_config: {
   // producer of digits and header info
@@ -158,9 +158,9 @@ outputs.decodedout:{
 }
 
 # TPC decoder
-physics.producers.daqTPC: @local::physics.producers.daqTPC
-physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
-physics.producers.daqTPC.OutputRawWaveform: true
+physics.producers.daqTPCROI: @local::physics.producers.daqTPCROI
+physics.producers.daqTPCROI.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
+physics.producers.daqTPCROI.OutputRawWaveform: true
 
 # PMT + trigger decoder
 physics.producers.daqPMT: @local::decodePMTOnline
@@ -354,6 +354,7 @@ physics.analyzers:
   CRTAna:{
     SelectEvents: [ crt_only ]
     module_type: BernCRTdqm
+    FragmentLabels: [ "daq:ContainerBERNCRTV2", "daq:BERNCRTV2" ]
 
     metric_board_config: {
       groups:{
@@ -451,9 +452,9 @@ physics.analyzers.pmtana.SelectEvents: [ pmt_only ]
 physics.analyzers.timingana.SelectEvents: [ pmt_only ]
 physics.analyzers.triggerana.SelectEvents: [ trigger_only ]
 
-physics.pscale_OnMonFiles:    [prescale5, daqTPC ]
-physics.online_purity:   [prescale5,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale2, daqTPC ]
+physics.pscale_OnMonFiles:    [prescale5, daqTPCROI ]
+physics.online_purity:   [prescale5,  daqTPCROI, purityana0, purityana1]
+physics.tpc_only: [ prescale2, daqTPCROI ]
 physics.pmt_only: [ prescale1, daqPMT, daqTrigger ]
 physics.trigger_only: [ prescale1, daqTrigger ]
 physics.crt_only: [ prescale1 ]
