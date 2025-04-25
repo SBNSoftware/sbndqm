@@ -152,8 +152,10 @@ outputs.decodedout:{
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEERAW_*",
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEWRAW_*",
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWERAW_*",
-		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWWRAW_*" ]
-
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWWRAW_*",
+		    "drop recob::ChannelROIs_daqTPCROI_*_*",	   
+		    "drop *_*_*_DAQ*" ]
+  
   fileProperties: { 
     #maxSubRuns: 1 
     #maxRuns: 1 
