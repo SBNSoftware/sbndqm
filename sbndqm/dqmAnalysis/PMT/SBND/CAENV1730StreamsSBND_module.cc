@@ -260,6 +260,7 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       
       // send EventMeta
       sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
+      sbndaq::SendEventMeta("snapshot:fft:PMT:" + pmtId_s, evt);
 
 //	} //// end channels with no 16th
     } // for      

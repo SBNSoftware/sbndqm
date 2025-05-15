@@ -256,6 +256,9 @@ void sbndaq::PTBdqm::analyze_caen_fragment(artdaq::Fragment frag) {
 
        // send waveform from MSUM
        sbndaq::SendWaveform("snapshot:waveform:MSUM:" + board_ID, fTicksVec, tickPeriod);
+
+       sbndaq::SendEventMeta("snapshot:waveform:MSUM:" + board_ID, evt);
+
        }
 
 }
