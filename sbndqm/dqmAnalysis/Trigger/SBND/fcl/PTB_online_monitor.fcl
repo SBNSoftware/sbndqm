@@ -3,12 +3,6 @@
 
 analysis_config: {
 ReportingLevel: 1
-BoardID: 3
-ChannelNumber: 15
-
-EventBlock: 10
-BeamBESGate: 30
-OffBeamBESGate: 26
 }
 
 physics: {
@@ -29,11 +23,9 @@ physics: {
         streams: ["slow","fast","archiving"]
         metrics: {
 
-          LLT_periodicity:{            
+          LLT_counts:{            
             units: seconds 
-            title: "PTB LLT %(instance)s periodicity" 
-            #display_range: [ 0, 6 ]
-
+            title: "PTB LLT %(instance)s counts" 
           }
         }
       }
@@ -46,11 +38,9 @@ physics: {
         streams: ["slow","fast","archiving"]
         metrics: {
 
-          HLT_periodicity:{
+          HLT_counts:{
             units: seconds 
-            title: "PTB HLT %(instance)s periodicity" 
-            #display_range: [ 0, 6 ]
-
+            title: "PTB HLT %(instance)s counts" 
           }
         }
       }
@@ -135,9 +125,7 @@ physics: {
             title: "|PTB - TDC| BES timestamps"
           }
 
-          NUMBER_TDC_T1:{
-            title: "Number of TDC T1 timestamps in block"
-          }
+          NUMBER_TDC_T1:{}
 
           NUMBER_TDC_BES:{}
 
@@ -209,7 +197,7 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "TriggerOnlineMonitor3"
+     unique_label: "TriggerOnlineMonitor"
       transferPluginType: Shmem
       shm_key: 0x40471187
       max_fragment_size_words: 100000000 #58543672 #33554432
@@ -220,7 +208,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "TriggerOnlineMonitor3"
+    unique_label: "TriggerOnlineMonitor"
     path: [ out ]
     physics: {}
     outputs: {
@@ -228,7 +216,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "TriggerOnlineMonitor3"
+           unique_label: "TriggerOnlineMonitor"
             transferPluginType: Shmem
 
             shm_key: 0x40471187
