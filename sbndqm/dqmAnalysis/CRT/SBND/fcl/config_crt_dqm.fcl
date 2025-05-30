@@ -19,6 +19,7 @@ streamCRT: {
   BoardsRequiredForResetSpread: 100
   RateNormalisation:            0.05
   BoardPedestalGap:             60
+  VetoedBoards:                 [ 61, 78, 86, 166, 169 ]
 
   metric_board_config: {
     groups: {

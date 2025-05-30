@@ -114,6 +114,7 @@ private:
   double                   fRateNormalisation;
   uint16_t                 fBoardPedestalGap;
   std::vector<uint8_t>     fMac5s;
+  std::vector<uint8_t>     fVetoedMac5s;
   
   //fhicl parameters
   int fBeamWindowStart;
@@ -474,21 +475,20 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       // John: I saw weirdly large spreads when including 78 and 86. 86 seems to fire early by 5 us,
       // and 78 is known temperamental. Switching this off after chatting with Henry
 
-      // This vector contains vetoed boards. We do not want to see these // NOTE - add to fcl
-      std::vector<int> masked_boards = { 61, 78, 86, 166, 169 };
+      // This vector contains vetoed boards. We do not want to see these
       if(t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
           ++boardsWithT0Reset;
 	  
 	  // testing removal of 86 (seems to fire early by 5 us)
           if(t0Reset[mac5] < t0ResetMin && 
-	     std::find(masked_boards.begin(), masked_boards.end(), static_cast<int>(mac5)) == masked_boards.end()) {
+	     std::find(fVetoedMac5s.begin(), fVetoedMac5s.end(), static_cast<uint8_t>(mac5)) == fVetoedMac5s.end()) {
             t0ResetMin = t0Reset[mac5];
 	    t0minboard = static_cast<int>(mac5);
 	  }
 
           if(t0Reset[mac5] > t0ResetMax && 
-	     std::find(masked_boards.begin(), masked_boards.end(), static_cast<int>(mac5)) == masked_boards.end()) {
+	     std::find(fVetoedMac5s.begin(), fVetoedMac5s.end(), static_cast<uint8_t>(mac5)) == fVetoedMac5s.end()) {
             t0ResetMax = t0Reset[mac5];
 	    t0maxboard = static_cast<int>(mac5);
 	  }
@@ -499,12 +499,12 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
           ++boardsWithT1Reset;
 
           if(t1Reset[mac5] < t1ResetMin && 
-	     std::find(masked_boards.begin(), masked_boards.end(), static_cast<int>(mac5)) == masked_boards.end()) {
+	     std::find(fVetoedMac5s.begin(), fVetoedMac5s.end(), static_cast<uint8_t>(mac5)) == fVetoedMac5s.end()) {
             t1ResetMin = t1Reset[mac5];
 	    t1minboard = static_cast<int>(mac5);
 	  }
 
-          if(t1Reset[mac5] > t1ResetMax && std::find(masked_boards.begin(), masked_boards.end(), static_cast<int>(mac5)) == masked_boards.end()) {
+          if(t1Reset[mac5] > t1ResetMax && std::find(fVetoedMac5s.begin(), fVetoedMac5s.end(), static_cast<uint8_t>(mac5)) == fVetoedMac5s.end()) {
             t1ResetMax = t1Reset[mac5];
 	    t1maxboard = static_cast<int>(mac5);
 	  }
@@ -660,6 +660,7 @@ void sbndaq::BernCRTdqmSBND::reconfigure(fhicl::ParameterSet const & pset)
   fRateNormalisation            = pset.get<double>("RateNormalisation");
   fBoardPedestalGap             = pset.get<uint16_t>("BoardPedestalGap");
   fMac5s                        = pset.get<std::vector<uint8_t>>("metric_board_config.groups.CRT_board");
+  fVetoedMac5s                  = pset.get<std::vector<uint8_t>>("VetoedBoards");
   fBeamWindowStart = pset.get<int>("BeamWindowStart",320000);
   fBeamWindowEnd = pset.get<int>("BeamWindowEnd",350000);
  
