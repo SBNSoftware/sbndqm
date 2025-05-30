@@ -22,7 +22,6 @@
  *               ReadoutRate       - How many non-clock reset hits were there on this board in this event?
  *               T0ClockDrift      - For T0 reset events, difference of T0 timestamp from exactly 1e9ns (1s)
  *               Baseline          - Average pedestal across all channels on this board, with the exception of max and pair of max, and any channels that surpass fBigHitADCThreshold
- *               AverageADC        - Same as Baseline but reported as LastPoint in sbndaq::sendMetric -- TO BE DEPRECATED
  *               Deadtime          - Time difference between consecutive hits of any type (minimum value should be deadtime)
  *               PullWindow        - Difference between first & last timestamp for that board in the event (maximum value should be the pull window)
  *               NT0Resets         - Number of T0 reset events in this board in this event
@@ -32,13 +31,11 @@
  *               MaxADCValuePair   - ADC value from pair of highest-ADC channel
  *               MaxADCChannel     - Index of channel with highest ADC
  *               MaxADCChannelPair - Index of channel paired to the one with highest ADC
- *               earlysynch        - Distance between last poll start and hit timestamp - TO BE REMOVED
- *               latesynch         - Distance between hit timestamp and end of this poll - TO BE REMOVED
  *
  *       Channel-level:
  *               ChReadoutRate  - How many non-clock reset hits were there on this board where this channel was the largest in this event?
  *               Pedestal       - Pedestal mean for a channel
- *               ADC            - Value of ADC when this channel is max (or paired with max) -- NOTE: Attempting pedestal subtraction
+ *               ADC            - Value of ADC when this channel is max (or paired with max) -- NOTE: Now pedestal suppressed!
  *
  *	Event-level:
  *             T0ResetSpread  - The range between the lowest & highest T0 values for T0 reset events seen across all boards
@@ -272,8 +269,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     std::string mac5Str = std::to_string(mac5);
     if(fDebug) std::cout << "Mac5: " << mac5Str <<std::endl;
 
-    //const uint64_t & fragment_timestamp = hit.timestamp;
-
     //data from FEB:
     std::string mac5_str = std::to_string(mac5);
 
@@ -287,12 +282,8 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     
     const uint16_t * adc = hit.adc;
 
-    //const uint64_t & this_poll_end             = hit.this_poll_end;
-    //const uint64_t & last_poll_start           = hit.last_poll_start;
-
     size_t maxadc        = 0; int maxindex = -1;
     size_t totaladc   = 0;
-    //int ADCchannel = 0;
 
     //let's fill our sample hist with the Time_TS0()-1e9 if 
     //it's a GPS reference pulse
@@ -309,16 +300,10 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     ///////////////////////////
   
     for(int i = 0; i<32; i++) {
-      //ADCchannel = adc[i];
-      
       size_t pedValue = static_cast<size_t>( (m_pedMap[mac5*100 + i]).second );
       // If this is a "physics event", we send the ADC value (pedestal-suppressed for now)
       if( adc[i] > pedValue + fBoardPedestalGap ) {
-	if( (fDebug) && (mac5*100 + i == 22000) ) { // this is INSANELY verbose...
-	  std::cout << "For channel " << std::to_string(i + mac5 * 100) << " the raw ADC value is " << adc[i] << " and the suppression is " << pedValue << "; sending " << adc[i] - pedValue << " to DB" << std::endl;
-	}
 	//Send Channel-Level Metrics to the database
-	//sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ADC", ADCchannel, 0, artdaq::MetricMode::LastPoint);  // Not Average
 	sbndaq::sendMetric("CRT_channel", std::to_string(i + 100 * mac5), "ADC", adc[i] - pedValue, 0, artdaq::MetricMode::Average);
       }
     }
@@ -340,8 +325,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       sbndaq::sendMetric("CRT_board", mac5_str, "MaxADCChannelPair", pairindex, 0, artdaq::MetricMode::LastPoint);
     }
 
-    // We also want to keep track of the averaged ADC of each channel over time (Pedestal),
-    // and the average of all ADC over boards at each point (AverageADC) (Board)
+    // We also want to keep track of the averaged ADC of each channel over time (Pedestal)
 
     if( (!isTs0Reset && !isTs1Reset && isTs0Good) || (isTs0Reset || isTs1Reset) ) {
       int nBaselineChannels = 0;
@@ -362,11 +346,9 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       }
 
       // guard against 0 channels contributing
-      //nBaselineChannels = std::max(nBaselineChannels, 1);
       if( nBaselineChannels > 0 ) {
 	int baseline = totaladc / nBaselineChannels;
 	sbndaq::sendMetric("CRT_board", mac5_str, "baseline", baseline, 0, artdaq::MetricMode::Average);
-	//sbndaq::sendMetric("CRT_board", mac5_str, "AverageADC", baseline, 0, artdaq::MetricMode::LastPoint);
       } // send if > 0 baseline channels
     }
 
@@ -388,9 +370,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
         maxTS[mac5] = fragmentTS;
 
     ++hitCount[mac5];
-
-    //uint64_t earlysynch = last_poll_start - fragment_timestamp;
-    //uint64_t latesynch = fragment_timestamp - this_poll_end;
     
     //From the code that writes to Grafana	
     auto thisone = hit.fragment_ID;  uint plane = (thisone & 0x0700) >> 8;
@@ -461,10 +440,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
     //only send clockdrift info when it makes sense to do so; that is, for T0 reset events.
     if(isTs0Reset && isTs0Good) {sbndaq::sendMetric("CRT_board", mac5_str, "T0clockdrift", static_cast<int>(ts0) - 1e9, 0, artdaq::MetricMode::LastPoint);}
 
-    //Sychronization Metrics
-    //sbndaq::sendMetric("CRT_board", mac5_str, "earlysynch", earlysynch, 0, artdaq::MetricMode::Average);
-    //sbndaq::sendMetric("CRT_board", mac5_str, "latesynch", latesynch, 0, artdaq::MetricMode::Average);
-
   } //loop over all CRT hits in an event
 
   uint32_t t0ResetMin = std::numeric_limits<uint32_t>::max();
@@ -499,7 +474,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
       // John: I saw weirdly large spreads when including 78 and 86. 86 seems to fire early by 5 us,
       // and 78 is known temperamental. Switching this off after chatting with Henry
 
-      // This vector contains vetoed boards. We do not want to see these
+      // This vector contains vetoed boards. We do not want to see these // NOTE - add to fcl
       std::vector<int> masked_boards = { 61, 78, 86, 166, 169 };
       if(t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
