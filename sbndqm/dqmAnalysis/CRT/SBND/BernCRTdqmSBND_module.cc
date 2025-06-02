@@ -402,7 +402,7 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 	  t0Reset[mac5] = ts0;
 
 	  if( t0Reset[mac5] != std::numeric_limits<uint32_t>::lowest() &&
-	      t0Reset[mac5] != std::numeric_limits<uint32_t>::max() ) {
+	      t0Reset[mac5] != std::numeric_limits<uint32_t>::max() && fDebug ) {
 	    std::cout << "From mac5 = " << static_cast<int>(mac5) << " the t0Reset = " << t0Reset[mac5]
 		      << std::endl;
 	  }
