@@ -474,8 +474,6 @@ void sbndaq::BernCRTdqmSBND::analyze(art::Event const & evt) {
 
       // John: I saw weirdly large spreads when including 78 and 86. 86 seems to fire early by 5 us,
       // and 78 is known temperamental. Switching this off after chatting with Henry
-
-      // This vector contains vetoed boards. We do not want to see these
       if(t0Reset[mac5] != std::numeric_limits<uint32_t>::max())
         {
           ++boardsWithT0Reset;
