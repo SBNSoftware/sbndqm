@@ -31,7 +31,7 @@ streamCRT: {
 	121, 40, 39, 128, 127, 178, 144, 180, 141, 179, 109, 116, 47, 49, 117, 185, 184, 183, 72, 216, 213, 212, 211, 210, 209  # TopHigh
       ]
     }
-    streams:[slow, fast, archiving]
+    streams:[archiving]
     metrics:{
       T0clockdrift: {
 	units: ns
