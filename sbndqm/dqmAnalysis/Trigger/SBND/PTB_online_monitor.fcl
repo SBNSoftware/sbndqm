@@ -169,7 +169,7 @@ services: {
 } 
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
-services.RedisConnection.password: "SBNDOMJun11"
+services.RedisConnection.password: "/home/nfs/sbnd/redis_passfile"
 
 services.InitMetricManager.connections.fast.send_zeros: false
 services.InitMetricManager.connections.slow.send_zeros: false
