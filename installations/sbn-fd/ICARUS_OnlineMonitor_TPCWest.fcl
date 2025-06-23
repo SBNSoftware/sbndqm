@@ -153,7 +153,6 @@ outputs.decodedout:{
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEWRAW_*",
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWERAW_*",
 		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWWRAW_*",
-		    "drop recob::ChannelROIs_daqTPCROI_*_*",	   
 		    "drop *_*_*_DAQ*" ]
 
   fileProperties: { 
@@ -167,6 +166,7 @@ outputs.decodedout:{
 physics.producers.daqTPCROI: @local::physics.producers.daqTPCROI
 physics.producers.daqTPCROI.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
 physics.producers.daqTPCROI.OutputRawWaveform: true
+physics.producers.daqTPCROI.OutputChannelROIs: false
 
 # PMT + trigger decoder
 physics.producers.daqPMT: @local::decodePMTOnline
