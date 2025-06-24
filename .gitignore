@@ -1,2 +1,3 @@
 *.swp
 *~
+fcl/redis_connection.fcl
