@@ -85,7 +85,7 @@ BEGIN_PROLOG
       hostname: "icarus-db02.fnal.gov"
     
       groups: {
-        BeamTiming: [ [0, 7] ]
+        BeamTiming: [ [0, 8] ]
       }
 
       streams: ["archiving"]
@@ -95,12 +95,12 @@ BEGIN_PROLOG
           BNB_RWM_EW: {
             units: us
             title: "Crate %(instance)s RWM-EW"
-            display_range: [-12., 12.]
+            display_range: [-12., 16.]
           }
           NUMI_RWM_EW: {
             units: us
             title: "Crate %(instance)s RWM-EW"
-            display_range: [-12., 12.]
+            display_range: [-12., 16.]
           }
       }   
     }

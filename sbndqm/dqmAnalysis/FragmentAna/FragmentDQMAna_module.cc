@@ -54,6 +54,7 @@ public:
 
 private:
   void analyze_fragment(artdaq::Fragment frag);
+  std::vector<art::InputTag> fFragmentLabels;
   bool fVerbose;
   int fReportingLevel;
 
@@ -66,6 +67,7 @@ sbndaq::FragmentDQMAna::FragmentDQMAna(fhicl::ParameterSet const & pset)
 {
 
   //configuration
+  fFragmentLabels = pset.get<std::vector<art::InputTag>>("FragmentLabels");
   fVerbose = pset.get<bool>("Verbose",false);
   fReportingLevel = pset.get<int>("ReportingLevel",0);
 
@@ -122,16 +124,21 @@ void sbndaq::FragmentDQMAna::analyze(art::Event const & evt) {
   std::vector<double> fragment_count;
   std::vector<double> fragment_ID;
 
-  //loop over fragments in event
-  auto fragmentHandles = evt.getMany<artdaq::Fragments>(); //returns std::vector< art::Handle< std::vector<artdaq::Fragment> > >
+  // get all fragments from labels in event
+  std::vector<art::Handle<std::vector<artdaq::Fragment>>> fragmentHandles; 
+  for(auto const& label : fFragmentLabels ) {
+    
+    art::Handle<std::vector<artdaq::Fragment>> handle;
+    evt.getByLabel( label, handle );
+    if (!handle.isValid() || handle->size() == 0)  continue;
+    fragmentHandles.push_back(handle);
+	
+  }
 
   if (fVerbose) {std::cout << "We have " << fragmentHandles.size() << " fragment collections." << std::endl;}
 
   for (auto const& handle : fragmentHandles) {
     //handle is art::Handle< std::vector<artdaq::Fragment> >
-
-    if (!handle.isValid() || handle->size() == 0)
-      continue;
 
     for (auto const& frag : *handle){
       //frag is artdaq::Fragment
