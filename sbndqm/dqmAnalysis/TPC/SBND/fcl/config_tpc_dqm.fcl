@@ -71,22 +71,6 @@ streamTPC: {
   send_sbnd_metrics: false
   broken_th: 1
   @table::analysis_config
-  metrics: {
-    redis_metric_5m: {    
-      level: 3
-      metricPluginType: "redis"
-      reporting_interval: 600.0
-      verbose: true
-      redis_key_postfix: ":10m"
-    }
-    redis_metric_archive: {
-      level: 3
-      metricPluginType: "redis"
-      reporting_interval: 600.0 
-      verbose: true
-      redis_key_postfix: ":archiving"
-    }
-  }
   metric_config_broken: {
     streams: [archiving]
     groups: {

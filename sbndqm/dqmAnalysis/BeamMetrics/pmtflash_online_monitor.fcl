@@ -1,26 +1,7 @@
+#include "pmtflash_config.fcl"
 #include "redis_connection.fcl"
-#include "config_spectdc_dqm.fcl"
 
-process_name: SPECTDCDQM
-
-physics: {
-  producers: {
-    daqSPECTDC: {
-      module_type: "SPECTDCDecoder"
-      SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
-    }
-  }
-
-  analyzers: {
-    dqmSPECTDC: @local::streamSPECTDC
-  }
-
-  prod: [ daqSPECTDC ]
-  ana: [ dqmSPECTDC ]
-
-  trigger_paths: [ prod ]
-  end_paths: [ ana ]
-}
+process_name: SBNDPMTFlashMetrics
 
 services: {
   RedisConnection: @local::redis_connection
@@ -28,11 +9,12 @@ services: {
   InitMetricManager: {
     connections: {
       fast: @local::redis_metric_fast
+      flash: @local::redis_metric_flash
       slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
     }
   }
-}
+} 
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
 services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
@@ -51,32 +33,58 @@ source:
   dispatcherPort: 6021
 
   transfer_plugin: {
-    unique_label: "SPECTDCOnlineMonitor"
+    unique_label: "FlashOnlineMonitor"
     transferPluginType: Shmem
-    shm_key: 0x34913041 #can change to another unique
-    max_fragment_size_words: 100000000
+    shm_key: 0x34913041
+    max_fragment_size_words: 100000000 
     first_event_builder_rank: 0
     source_rank: 5
     destination_rank: 6
   }
 
   dispatcher_config: {
-    unique_label: "SPECTDCOnlineMonitor"
+    unique_label: "FlashOnlineMonitor"
     path: [ out ]
     physics: {}
     outputs: {
       out: {
         module_type: TransferOutput
         transfer_plugin: {
-          unique_label: "SPECTDCOnlineMonitor"
+          unique_label: "FlashOnlineMonitor"
           transferPluginType: Shmem
-          shm_key: 0x34913041 #can change to another unique
-          max_fragment_size_words: 100000000
+          shm_key: 0x34913041
+          max_fragment_size_words: 100000000 
           first_event_builder_rank: 0
           destination_rank: 6
         }
       }
     }
   }
+} 
+
+outputs: {
+  dumper:  {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+   }
+} 
+
+physics:
+{
+
+ producers:{}
+
+ filters:{}
+
+ analyzers:{
+  flashana: @local::flashmetrics
+ }
+
+ stream1:  [ ]
+ ana: [ flashana ]
+
+  out1 : [dumper]
+  end_paths: [ ana ]
 }
 

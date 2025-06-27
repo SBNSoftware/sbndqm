@@ -169,8 +169,7 @@ services: {
 } 
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
-services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
-
+services.RedisConnection.password: "/home/nfs/sbnd/redis_passfile"
 
 services.InitMetricManager.connections.fast.send_zeros: false
 services.InitMetricManager.connections.slow.send_zeros: false
@@ -198,7 +197,7 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "TriggerOnlineMonitor"
+     unique_label: "TriggerOM"
       transferPluginType: Shmem
       shm_key: 0x40471187
       max_fragment_size_words: 100000000 #58543672 #33554432
@@ -209,7 +208,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "TriggerOnlineMonitor"
+    unique_label: "TriggerOM"
     path: [ out ]
     physics: {}
     outputs: {
@@ -217,7 +216,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "TriggerOnlineMonitor"
+           unique_label: "TriggerOM"
             transferPluginType: Shmem
 
             shm_key: 0x40471187

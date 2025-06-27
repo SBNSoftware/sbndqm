@@ -20,8 +20,8 @@ services: {
 }
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
-# services.RedisConnection.port: 6379
-services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876" 
+services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
+
 
 #source is a root file
 source:
