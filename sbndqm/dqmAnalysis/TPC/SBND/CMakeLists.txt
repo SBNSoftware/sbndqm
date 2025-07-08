@@ -82,16 +82,18 @@ cet_build_plugin( TPCWaveformAndFftRedisSBND art::module
 )
 
 cet_build_plugin( OnlineEvdSBND art::module
+	LIBRARIES
         ROOT::Core
-	      FFTW3::FFTW3
+	FFTW3::FFTW3
+        larcorealg::Geometry 
         lardataobj::RecoBase
         larcore::Geometry_Geometry_service
         artdaq_utilities::artdaq-utilities_Plugins
         sbndaq_online::storage
         sbndaq_online::redis_connection
         sbndaq_online::hiredis
+        art_root_io::TFileService_service
         sbndqm_Decode_TPC_SBND_DQMChannelMap_TPCDQMChannelMapService_service
-		    art_root_io::TFileService_service
         #sbndcode_ChannelMaps_TPC_TPCChannelMapService_service
 )
 
