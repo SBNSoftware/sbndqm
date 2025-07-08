@@ -1,4 +1,4 @@
-#include "redis_connection.fcl"
+#include "redis_connection_icarus.fcl"
 
 process_name: Dump
 
@@ -18,10 +18,6 @@ services: {
     }
   }
 }
-
-services.RedisConnection.host: "sbnd-db01.fnal.gov"
-services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
-
 
 #source is a root file
 source:

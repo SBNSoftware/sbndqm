@@ -1,5 +1,5 @@
 #include "simple_channel_info.fcl"
-#include "redis_connection.fcl"
+#include "redis_connection_sbnd.fcl"
 #include "TPCChannelMapService.fcl"
 #include "SBNDTPCDecoderDefaults.fcl"
 #include "services_sbnd.fcl"

@@ -1,5 +1,5 @@
 #include "simple_channel_info.fcl"
-#include "redis_connection.fcl"
+#include "redis_connection_sbnd.fcl"
 
 analysis_config: {
 ReportingLevel: 1
