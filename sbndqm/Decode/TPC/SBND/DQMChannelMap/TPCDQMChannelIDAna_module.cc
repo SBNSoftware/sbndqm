@@ -20,7 +20,7 @@
 
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/raw.h"
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 
 #include "sbndqm/Decode/TPC/SBND/DQMChannelMap/TPCDQMChannelMapService.h"
 
@@ -102,7 +102,7 @@ void sbnd::TPCDQMChannelIDAna::analyze(art::Event const& e)
 {
   // Implementation of required member function here.
 
-  art::ServiceHandle<geo::Geometry> geo;
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
   art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
 
   // Get raw digits
@@ -114,7 +114,7 @@ void sbnd::TPCDQMChannelIDAna::analyze(art::Event const& e)
     //cout<<rd.hannel()<<" "<<rawadc[0]<<endl;
     ch = rd.Channel();
     chid = rawadc[0];
-    auto const & chids = geo->ChannelToWire(ch);
+    auto const & chids = wireReadout.ChannelToWire(ch);
     tpc = chids[0].TPC;
     plane = chids[0].Plane;
     wire = chids[0].Wire;

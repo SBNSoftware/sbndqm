@@ -21,7 +21,7 @@
 
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 
 #include "canvas/Utilities/InputTag.h"
 #include "art/Framework/Principal/Event.h"
@@ -220,7 +220,7 @@ void tpcAnalysis::OnlineEvdSBND::analyze(art::Event const& e)
     }
   }
 
-  art::ServiceHandle<geo::Geometry> geo;
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
   art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
 
   // Get raw digits
@@ -245,7 +245,7 @@ void tpcAnalysis::OnlineEvdSBND::analyze(art::Event const& e)
 
     auto adc_vec = rd->ADCs();
     int ch = rd->Channel();
-    auto const & chids = geo->ChannelToWire(ch);
+    auto const & chids = wireReadout.ChannelToWire(ch);
     int tpc = chids[0].TPC;
     int plane = chids[0].Plane;
     int wire = chids[0].Wire;
