@@ -30,7 +30,7 @@ analysis_config: {
   threshold_sigma: 5
   noise_range_sampling: 1
   n_smoothing_samples: 1
-  baseline_calc: 2
+  baseline_calc: 1
   n_mode_skip: 3
   use_planes: false
   refine_baseline: false
