@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.24.01 REQUIRED)
-project(sbndqm VERSION 1.03.00 LANGUAGES CXX)
+project(sbndqm VERSION 1.04.00 LANGUAGES CXX)
 
 message(STATUS "\n\n  ==========================   ${PROJECT_NAME}   ==========================")
 
@@ -42,7 +42,7 @@ find_package( sbndaq_artdaq_core REQUIRED)
 find_package( artdaq_utilities REQUIRED)
 find_package( jsoncpp REQUIRED )
 find_package( artdaq_core EXPORT REQUIRED)
-find_package( sbndaq_online EXPORT REQUIRED )
+find_package( sbndaq_online REQUIRED )
 find_package( sbnobj REQUIRED )
 find_package( sbnanaobj REQUIRED )
 find_package( sbncode REQUIRED)

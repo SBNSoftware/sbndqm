@@ -1,14 +1,8 @@
 #include "simple_channel_info.fcl"
-#include "redis_connection.fcl"
+#include "redis_connection_sbnd.fcl"
 
 analysis_config: {
 ReportingLevel: 1
-BoardID: 3
-ChannelNumber: 15
-
-EventBlock: 10
-BeamBESGate: 30
-OffBeamBESGate: 26
 }
 
 physics: {
@@ -29,11 +23,9 @@ physics: {
         streams: ["slow","fast","archiving"]
         metrics: {
 
-          LLT_periodicity:{            
+          LLT_counts:{            
             units: seconds 
-            title: "PTB LLT %(instance)s periodicity" 
-            #display_range: [ 0, 6 ]
-
+            title: "PTB LLT %(instance)s counts" 
           }
         }
       }
@@ -46,11 +38,9 @@ physics: {
         streams: ["slow","fast","archiving"]
         metrics: {
 
-          HLT_periodicity:{
+          HLT_counts:{
             units: seconds 
-            title: "PTB HLT %(instance)s periodicity" 
-            #display_range: [ 0, 6 ]
-
+            title: "PTB HLT %(instance)s counts" 
           }
         }
       }
@@ -58,7 +48,7 @@ physics: {
       metric_beam_light_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          BEAM_LIGHT_DIFF: [ [0, 1] ]
+          BEAM_LIGHT_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
@@ -81,7 +71,7 @@ physics: {
       metric_beam_crt_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          BEAM_CRT_DIFF: [ [0, 1] ]
+          BEAM_CRT_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
@@ -110,46 +100,46 @@ physics: {
       metric_ptb_tdc_diff: {
         hostname: "sbnd-db01.fnal.gov"
         groups: {
-          PTB_TDC_DIFF: [ [0, 1] ]
+          PTB_TDC_DIFF: [0]
         }
         streams: ["slow","fast","archiving"]
         metrics: {
 
-          TDC4_HLTFLASH:{
+          TDC_HLT_FLASH:{
             units: microseconds 
             title: "|PTB - TDC| flash trigger timestamps"
           }
 
-          TDC5_HLTEVENT:{
+          TDC_HLT_EVENT:{
             units: microseconds 
             title: "|PTB - TDC| event trigger timestamps"
           }
 
-          TDC1_HLTT1:{
+          TDC_HLT_T1:{
             units: microseconds 
             title: "|PTB - TDC| CRT t1 reset timestamps"
           }
 
-          TDC2_LLTBES:{
+          TDC_LLT_BES:{
             units: microseconds 
             title: "|PTB - TDC| BES timestamps"
           }
 
-          NUMBER_TDC1:{}
+          NUMBER_TDC_T1:{}
 
-          NUMBER_TDC2:{}
+          NUMBER_TDC_BES:{}
 
-          NUMBER_TDC4:{}
+          NUMBER_TDC_FLASH:{}
 
-          NUMBER_TDC5:{}
+          NUMBER_TDC_EVENT:{}
 
-          NUMBER_T1RESET:{}
+          NUMBER_PTB_T1:{}
 
-          NUMBER_BES:{}
+          NUMBER_PTB_BES:{}
           
-          NUMBER_FLASH:{}
+          NUMBER_PTB_FLASH:{}
 
-          NUMBER_EVENT:{}
+          NUMBER_PTB_EVENT:{}
         }
       }
 
@@ -179,7 +169,7 @@ services: {
 } 
 
 services.RedisConnection.host: "sbnd-db01.fnal.gov"
-services.RedisConnection.password: "B4730D6D9606E3EB37048EB017D4C69EFB56243CCC408E3BEC3BFDEEDF792876"
+services.RedisConnection.password: "/home/nfs/sbnd/redis_passfile"
 
 services.InitMetricManager.connections.fast.send_zeros: false
 services.InitMetricManager.connections.slow.send_zeros: false
@@ -202,11 +192,12 @@ source:
   commanderPluginType: xmlrpc
   dispatcherHost: localhost
   dispatcherPort: 6021
+  #dispatcherPort: 6009
 
 
   transfer_plugin: {
 
-     unique_label: "TriggerOnlineMonitor4"
+     unique_label: "TriggerOM"
       transferPluginType: Shmem
       shm_key: 0x40471187
       max_fragment_size_words: 100000000 #58543672 #33554432
@@ -217,7 +208,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "TriggerOnlineMonitor4"
+    unique_label: "TriggerOM"
     path: [ out ]
     physics: {}
     outputs: {
@@ -225,7 +216,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "TriggerOnlineMonitor4"
+           unique_label: "TriggerOM"
             transferPluginType: Shmem
 
             shm_key: 0x40471187

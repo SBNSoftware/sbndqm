@@ -21,7 +21,7 @@
 
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 
 #include "canvas/Utilities/InputTag.h"
 #include "art/Framework/Principal/Event.h"
@@ -129,12 +129,8 @@ void tpcAnalysis::OnlineEvdSBND::SendImages(art::Event const& e)
     // Write image data to Redis
     std::string image_key = Form("tpc%d:plane%d:evd:image",tpc,plane);
     art::ServiceHandle<sbndaq::RedisConnectionService> redis;
-    //std::cout << "[tpcAnalysis::OnlineEvdSBND::SendImages] " << image_path << " : " << image_data.data() << std::endl;
-    //std::cout << "[tpcAnalysis::OnlineEvdSBND::SendImages] " << image_path << " : " << image_data << std::endl;
 
     redis->Command("SET %s %b", image_key.c_str(), image_data.c_str(), image_data.size());
-    //sbndaq::SendBinary(image_key, image_data.c_str(), image_data.size());
-    //sbndaq::SendEventMeta(image_key, e); 
   }
 
   // Send event display for WIBs and FEBs png files to Redis
@@ -224,7 +220,7 @@ void tpcAnalysis::OnlineEvdSBND::analyze(art::Event const& e)
     }
   }
 
-  art::ServiceHandle<geo::Geometry> geo;
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
   art::ServiceHandle<SBND::TPCDQMChannelMapService> channelMap;
 
   // Get raw digits
@@ -249,7 +245,7 @@ void tpcAnalysis::OnlineEvdSBND::analyze(art::Event const& e)
 
     auto adc_vec = rd->ADCs();
     int ch = rd->Channel();
-    auto const & chids = geo->ChannelToWire(ch);
+    auto const & chids = wireReadout.ChannelToWire(ch);
     int tpc = chids[0].TPC;
     int plane = chids[0].Plane;
     int wire = chids[0].Wire;

@@ -32,7 +32,7 @@
 //#include "messagefacility/MessageLogger/MessageLogger.h" 
 
 //LArSoft includes
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 //#include "nutools/ParticleNavigation/ParticleList.h"
 //#include "nutools/ParticleNavigation/EmEveIdCalculator.h"
@@ -243,9 +243,9 @@ namespace cluster{
   {
     std::cout << " Inizia Purity ICARUS Ana " << std::endl;
     // code stolen from TrackAna_module.cc
-    art::ServiceHandle<geo::Geometry>      geom;
-      unsigned int  fDataSize;
-      std::vector<short> rawadc;      //UNCOMPRESSED ADC VALUES.
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    unsigned int  fDataSize;
+    std::vector<short> rawadc;      //UNCOMPRESSED ADC VALUES.
     // get all hits in the event
     //InputTag cluster_tag { "fuzzycluster" }; //CH comment trovato con eventdump code
 
@@ -302,7 +302,7 @@ namespace cluster{
       {
           raw::ChannelID_t channel = rawDigit->Channel();
           //std::cout << channel << std::endl;
-          std::vector<geo::WireID> wids = geom->ChannelToWire(channel);
+          std::vector<geo::WireID> wids = wireReadout.ChannelToWire(channel);
           // for now, just take the first option returned from ChannelToWire
           geo::WireID wid  = wids[0];
           // We need to know the plane to look up parameters

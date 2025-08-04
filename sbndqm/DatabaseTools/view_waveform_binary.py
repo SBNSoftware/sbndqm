@@ -27,13 +27,13 @@ def main(args):
          print(e)
          return
 
-    data = util.parse_binary(data, data_type)
+    data = util.parse_binary(data, data_type.decode("utf-8"))
     if sizes:
-        sizes = util.parse_binary(sizes, size_type)
+        sizes = util.parse_binary(sizes, size_type.decode("utf-8"))
     else:
        sizes = [len(data)]
     if offsets:
-        offsets = util.parse_binary(offsets, offset_type)
+        offsets = util.parse_binary(offsets, offset_type.decode("utf-8"))
     else:
         offsets = [0]
 

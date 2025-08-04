@@ -146,7 +146,7 @@ template<typename T> size_t sbndaq::BeamTimingStreams::getStartSample( std::vect
   size_t minbin = getMinBin( vv, 0, vv.size() );
 
   //search only a cropped region of the waveform backward from the min
-  size_t maxbin =  minbin-20; 
+  size_t maxbin =  minbin-100; 
 
   // Now we crawl betweem maxbin and minbin and we stop when:
   // bin value > ( maxbin value - minbin value )*0.2

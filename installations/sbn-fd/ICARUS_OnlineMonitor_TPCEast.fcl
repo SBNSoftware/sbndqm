@@ -1,4 +1,4 @@
-#include "redis_connection.fcl"
+#include "redis_connection_icarus.fcl"
 #include "services_basic_icarus.fcl"
 #include "stage0_icarus_defs.fcl"
 #include "icarus_online_decoder_defs.fcl"
@@ -9,8 +9,8 @@
 BEGIN_PROLOG
 
 tpclabels_daq: ["daq:PHYSCRATEDATATPCEE","daq:PHYSCRATEDATATPCEW"]
-tpclabels_DecoderRaw: ["daqTPC:PHYSCRATEDATATPCEERAW","daqTPC:PHYSCRATEDATATPCEWRAW"]
-tpclabels_DecoderDenoised: ["daqTPC:PHYSCRATEDATATPCEE","daqTPC:PHYSCRATEDATATPCEW"]
+tpclabels_DecoderRaw: ["daqTPCROI:PHYSCRATEDATATPCEERAW","daqTPCROI:PHYSCRATEDATATPCEWRAW"]
+tpclabels_DecoderDenoised: ["daqTPCROI:PHYSCRATEDATATPCEE","daqTPCROI:PHYSCRATEDATATPCEW"]
 
 analysis_config: {
   // producer of digits and header info
@@ -30,7 +30,7 @@ analysis_config: {
   threshold_sigma: 5
   noise_range_sampling: 1
   n_smoothing_samples: 1
-  baseline_calc: 2
+  baseline_calc: 1
   n_mode_skip: 3
   use_planes: false
   refine_baseline: false
@@ -148,7 +148,12 @@ outputs.decodedout:{
   dataTier:    "raw"
   compressionLevel: 3
   SelectEvents: [pscale_OnMonFiles]
-  outputCommands: [ "keep *_*_*_*", "drop raw::OpDetWaveforms_*_*_*" ]
+  outputCommands: [ "keep *_*_*_*", "drop raw::OpDetWaveforms_*_*_*", 
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEERAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCEWRAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWERAW_*",
+		    "drop raw::RawDigits_*_PHYSCRATEDATATPCWWRAW_*",
+		    "drop *_*_*_DAQ*" ]
 
   fileProperties: { 
     #maxSubRuns: 1 
@@ -158,9 +163,10 @@ outputs.decodedout:{
 }
 
 # TPC decoder
-physics.producers.daqTPC: @local::physics.producers.daqTPC
-physics.producers.daqTPC.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
-physics.producers.daqTPC.OutputRawWaveform: true
+physics.producers.daqTPCROI: @local::physics.producers.daqTPCROI
+physics.producers.daqTPCROI.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
+physics.producers.daqTPCROI.OutputRawWaveform: true
+physics.producers.daqTPCROI.OutputChannelROIs: false
 
 # PMT + trigger decoder
 physics.producers.daqPMT: @local::decodePMTOnline
@@ -354,6 +360,7 @@ physics.analyzers:
   CRTAna:{
     SelectEvents: [ crt_only ]
     module_type: BernCRTdqm
+    FragmentLabels: [ "daq:ContainerBERNCRTV2", "daq:BERNCRTV2" ]
 
     metric_board_config: {
       groups:{
@@ -396,7 +403,8 @@ physics.analyzers:
     SelectEvents: [ pmt_only, crt_only ]
 
     module_type: FragmentDQMAna
-    
+    FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730", "daq:ContainerBERNCRTV2", "daq:BERNCRTV2"]
+ 
     metric_config: {
        groups: {
            PMT_cont_frag : [8204, 8208, 8206, 8203, 8200, 8202, 8209, 8194, 8214, 
@@ -450,9 +458,9 @@ physics.analyzers.pmtana.SelectEvents: [ pmt_only ]
 physics.analyzers.timingana.SelectEvents: [ pmt_only ]
 physics.analyzers.triggerana.SelectEvents: [ trigger_only ]
 
-physics.pscale_OnMonFiles:    [prescale20, daqTPC ]
-physics.online_purity:   [prescale5,  daqTPC, purityana0, purityana1]
-physics.tpc_only: [ prescale5, daqTPC ]
+physics.pscale_OnMonFiles:    [prescale5, daqTPCROI ]
+physics.online_purity:   [prescale5,  daqTPCROI, purityana0, purityana1]
+physics.tpc_only: [ prescale2, daqTPCROI ]
 physics.pmt_only: [ prescale1, daqPMT, daqTrigger ]
 physics.trigger_only: [ prescale1, daqTrigger ]
 physics.crt_only: [ prescale1 ]

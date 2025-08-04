@@ -166,7 +166,8 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
 
   std::string groupName = "PMT";
 
-
+  int counter = 0;
+  int counterb = 0;
   // Now we look at the waveforms 
   art::Handle opdetHandle
    = evt.getHandle<std::vector<raw::OpDetWaveform>>( m_opdetwaveform_tag);
@@ -181,9 +182,19 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
 
       if( m_unique_channels.size() > nTotalChannels ) { break; }
 
-      if((opdetwaveform.ChannelNumber()+1)%16 == 0) { continue; }
 
-      unsigned int const pmtId = opdetwaveform.ChannelNumber();
+   counter = opdetwaveform.ChannelNumber();
+      if((opdetwaveform.ChannelNumber()+1)%16 == 0 || opdetwaveform.ChannelNumber()>=128) { continue; }
+
+	if (counter > 15 && counter < 31) counterb = 1;
+        if (counter > 31 && counter < 47) counterb = 2;
+	if (counter > 47 && counter < 63) counterb = 3;
+        if (counter > 63 && counter < 79) counterb = 4;
+	if (counter > 79 && counter < 95) counterb = 5;
+        if (counter > 95 && counter < 111) counterb = 6;
+	if (counter > 111 && counter < 127) counterb = 7;
+
+	unsigned int const pmtId = opdetwaveform.ChannelNumber() - counterb;	
       
       auto findIt = std::find( m_unique_channels.begin(), m_unique_channels.end(), pmtId );
 
@@ -207,6 +218,8 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       //std::cout << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl;
 
       // Send the metrics 
+//	if((pmtId+1)%16 != 0) {
+      //std::cout << " sending metrics for " << pmtId << " " << baseline << " " << rms << " " << npulses << std::endl; 
       sbndaq::sendMetric(groupName, pmtId_s, "baseline", baseline, level, mode); // Send baseline information
       sbndaq::sendMetric(groupName, pmtId_s, "rms", rms, level, mode); // Send rms information
       sbndaq::sendMetric(groupName, pmtId_s, "rate", npulses, level, rate); // Send rate information
@@ -247,8 +260,9 @@ void sbndaq::CAENV1730StreamsSBND::analyze(art::Event const & evt) {
       
       // send EventMeta
       sbndaq::SendEventMeta("snapshot:waveform:PMT:" + pmtId_s, evt);
+      sbndaq::SendEventMeta("snapshot:fft:PMT:" + pmtId_s, evt);
 
-
+//	} //// end channels with no 16th
     } // for      
 
     if( m_unique_channels.size() < nTotalChannels ) {
