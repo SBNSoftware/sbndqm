@@ -53,6 +53,9 @@ analysis_config: {
 
   // Change tick period to be 0.4 for ICARUS
   tick_period: 0.4
+
+  // Baseline is already subtracted in daqROI
+  is_baseline_subtracted: true
 }
 
 END_PROLOG
