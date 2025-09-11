@@ -114,6 +114,7 @@ public:
     bool fill_waveforms;
     bool reduce_data;
     bool timing;
+    bool is_baseline_subtracted;
 
     AnalysisConfig(const fhicl::ParameterSet &param);
     AnalysisConfig() {}
