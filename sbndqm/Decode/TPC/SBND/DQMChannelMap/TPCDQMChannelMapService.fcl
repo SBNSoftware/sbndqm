@@ -1,0 +1,9 @@
+BEGIN_PROLOG
+
+SBNDTPCDQMChannelMapServiceDefaults: {
+  UseHWDB: false           # if true, read map data from the hardware database
+  ReadMapFromFile: true    # if true, read map data from a file
+  FileName: "SBNDTPCDQMChannelMap_v2.txt"
+}
+
+END_PROLOG

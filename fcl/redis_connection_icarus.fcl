@@ -1,0 +1,35 @@
+BEGIN_PROLOG
+
+redis_connection: {
+  # Flush redis calls after every event
+  message_buffer_size: -1
+}
+
+redis_metric_fast: { // can be named anything
+  level: 3
+  metricPluginType: "redis"
+  // period in seconds to send metric to database
+  reporting_interval: 2.0
+  // need to add postfix otherwise this metric sender and the other one will collide
+  redis_key_postfix: ":fast"
+}
+
+redis_metric_slow: { // can be named anything
+  level: 3
+  metricPluginType: "redis"
+  reporting_interval: 10.0
+  // need to add postfix otherwise this metric sender and the other one will collide
+  redis_key_postfix: ":slow" 
+}
+
+redis_metric_archive: {
+  level: 3
+  metricPluginType: "redis"
+  reporting_interval: 30.0 # 30s
+  verbose: true
+  // need to add postfix otherwise this metric sender and the other one will collide
+  redis_key_postfix: ":archiving"
+}
+
+
+END_PROLOG

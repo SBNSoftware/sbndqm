@@ -1,0 +1,103 @@
+#include "redis_connection_sbnd.fcl"
+#include "config_crt_dqm.fcl"
+
+process_name: Dump
+
+services: {
+  # TFileService: { fileName: "crt_test_1.root" }
+   #RedisConnection: {
+   # host: "sbnd-db01.fnal.gov"
+   #}
+#  message: @local::standard_debug
+
+  RedisConnection: @local::redis_connection
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+}
+
+services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
+
+
+
+services.ArtdaqSharedMemoryServiceInterface:
+{
+  service_provider: ArtdaqGlobalsService
+}
+
+
+source: {
+   commanderPluginType: xmlrpc
+   dispatcherHost: localhost
+   dispatcherPort: 6021
+   dispatcher_config: {
+      outputs: {
+         out: {
+            module_type: "TransferOutput"
+            transfer_plugin: {
+               destination_rank: 6
+               first_event_builder_rank: 0
+               max_fragment_size_words: 1e8
+               shm_key: 1078400086
+               transferPluginType: "Shmem"
+               unique_label: "CRTOnlineMonitor"
+            }
+         }
+      }
+      path: [
+         "out"
+      ]
+      physics: {}
+      unique_label: "CRTOnlineMonitor"
+}
+   module_type: "TransferInput"
+   register_fragment_types: false
+   timeoutInUsecs: 5e7
+   transfer_plugin: {
+      destination_rank: 6
+      first_event_builder_rank: 0
+      max_fragment_size_words: 1e8
+      shm_key: 1078400086
+      source_rank: 5
+      transferPluginType: "Shmem"
+      unique_label: "CRTOnlineMonitor"
+   }
+}
+
+outputs:
+{
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+}
+
+physics:
+{
+  producers:{}
+  
+  filters:{}
+  
+  analyzers:{
+    crtana: @local::streamCRT
+  }
+
+  #define the output stream, there could be more than one if using filters 
+  stream1:  [ ]
+  ana: [ crtana ]
+  
+  out1 : [dumper]
+  end_paths: [ ana ]
+  #end_paths is a keyword and contains the paths that do not modify the art::Event, 
+  #ie analyzers and output streams.  these all run simultaneously
+  #end_paths:     [ ana ]  
+}
+
+
+

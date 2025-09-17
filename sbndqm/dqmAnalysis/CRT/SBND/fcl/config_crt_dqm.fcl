@@ -1,0 +1,143 @@
+#include "crt_channel_list.fcl"
+
+BEGIN_PROLOG 
+
+streamCRT: {
+  
+  module_type: BernCRTdqmSBND
+
+  Debug:                        false
+  CRTModuleLabel:               "daq"
+  CRTInstanceLabel:             "ContainerBERNCRTV2"
+  SPECTDCModuleLabel:           "daq"
+  SPECTDCInstanceLabels:        [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
+  DAQHeaderModuleLabel:         "daq"
+  DAQHeaderInstanceLabel:       "RawEventHeader"
+  SPECTDCT1Channel:             0
+  RawTSCorrection:              367000
+  BigHitADCThreshold:           600
+  BoardsRequiredForResetSpread: 100
+  RateNormalisation:            0.05
+  BoardPedestalGap:             60
+  VetoedBoards:                 [ 61, 78, 86, 166, 169 ]
+
+  metric_board_config: {
+    groups: {
+    CRT_board: [
+	88, 152, 156, 153, 159, 134, 135, 238, 155, 151, 150, 136, 157, 158, 182, 149, 73, 58, # North
+	60, 56, 169, 166, 24, 57, 33, 34, 61, 171, 59, 176, 170, 168, 172, 173, # South
+	160, 222, 220, 81, 85, 143, 162, 133, 132, 44, 147, 146, 131, 79, 206, 204, 200, 18, # East
+	174, 148, 163, 164, 165, 55, 120, 42, 138, 130, 197, 199, 202, 19, 198, 45, 203, 207, # West
+	82, 86, 90, 91, 99, 100, 93, 94, 95, 87, 97, 98, 77, 78, 83, 84, 104, 103, 102, 101, # Bottom
+	111, 107, 106, 115, 105, 123, 50, 125, 126, 129, 114, 118, 48, 145, 119, 223, 36, 51, 71, 187, 16, 205, 35, 228, 75, # TopLow
+	121, 40, 39, 128, 127, 178, 144, 180, 141, 179, 109, 116, 47, 49, 117, 185, 184, 183, 72, 216, 213, 212, 211, 210, 209  # TopHigh
+      ]
+    }
+    streams:[archiving]
+    metrics:{
+      T0clockdrift: {
+	units: ns
+	title: "FEB %(instance)s"
+	display_range: [-20.0, 20.0]
+      }
+      T1ResetTDCDiff: {
+	units: ns
+	title: "FEB %(instance)s"
+	display_range: [0.0, 100.0]
+      }
+      MaxADCValue: {
+	units: ADC
+	title: "FEB %(instance)s"
+	display_range: [0.0, 4000.0]
+      }
+      MaxADCChannel: {
+	title: "FEB %(instance)s"
+	display_range: [0.0, 31.0]
+      }
+      MaxADCValuePair: {
+	units: ADC
+	title: "FEB %(instance)s"
+	display_range: [0.0, 4000.0]
+      }
+      MaxADCChannelPair: {
+	title: "FEB %(instance)s"
+	display_range: [0.0, 31.0]
+      }
+      baseline: {
+	units: ADC
+	title: "FEB %(instance)s"
+	display_range: [0.0, 4000.0]
+      } 
+      Deadtime: {
+	units: ns
+	title: "FEB %(instance)s"
+	#display_range: [0.0, 1000000.0]
+      }
+      ReadoutRate: {
+	title: "FEB %(instance)s"
+      }
+      PullWindow: {
+	units: ns
+	title: "FEB %(instance)s"
+      }
+      MissingT0: {
+	title: "FEB %(instance)s"
+      }
+      MissingT1: {
+	title: "FEB %(instance)s"
+      }
+      NT0Resets: {
+	title: "FEB %(instance)s"
+      }
+      NT1Resets: {
+	title: "FEB %(instance)s"
+      }
+    }
+  }
+  
+  metric_channel_config: 
+  {
+    #groups: { CRT_channel: @local::crt_channel_list }
+    groups: { CRT_channel: [[1600, 23831]] }
+    streams: [archiving]
+    metrics:{ 
+      ADC: { 
+	units: ADC
+	title: "Chan %(instance)s"
+	display_range: [0, 4000] 
+      }
+      ChReadoutRate: {
+	title: "Chan %(instance)s"
+      }
+      Pedestal: {
+	units: ADC
+	title: "Chan %(instance)s"
+	display_range: [0.0, 4000.0]
+      }
+    }       
+  }
+
+  metric_event_config: {
+    groups: { CRT_event: [0] }
+    streams:[archiving]
+    metrics:{ 
+      T0ResetSpread: {
+	units: ns
+	#title: "Maximum difference in t0 reset timestamps"
+      }
+      T1ResetSpread: {
+	units: ns
+	#title: "Maximum difference in t1 reset timestamps"
+      }
+    }
+  }
+  
+  # TODO - remove this
+  metric_fragment_config: {
+     groups:{ CRT_cont_frag:[] }
+     streams:[archiving]
+     metrics:{ }
+  }
+}
+
+END_PROLOG

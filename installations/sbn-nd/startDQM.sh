@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MRBDIR=/home/nfs/gputnam/sbndqm/
+MRBDIR=/home/nfs/sbnd/DQM_DevAreas/SHIFTER/
 
 function printhelp() {
   echo "Starts the online monitoring. Can be run in the foreground or background."
@@ -49,11 +49,13 @@ function main() {
   cd $MRBDIR
   source /daq/software/products/setup
   setup mrb
-  source localProducts_sbndqm_v0_05_00_e19_prof_s94/setup
+  source localProducts_sbndqm_v1_03_00_e26_prof/setup
   mrbsetenv
+  mrbsetenv
+  setup sbndcode -v v09_93_01_02 -q e26:prof
   mrbslp
   cd srcs/sbndqm
-  python sbndqm/DAQConsumer/daq_consumer.py -f $PWD/installations/sbn-nd/online_tpc_analysis.fcl -l /daq/log/DAQConsumer/ &
+  python sbndqm/DAQConsumer/daq_consumer.py -f $PWD/installations/sbn-nd/online_tpc_analysis.fcl -l /home/nfs/sbnd/DQM_DevAreas/SHIFTER/srcs/sbndqm/installations/sbn-nd/ &
   DAQConsumer=$! 
   echo "Online Monitoring Started"
   wait $DAQConsumer

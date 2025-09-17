@@ -1,27 +1,27 @@
-simple_plugin( ExampleTimeStream "module"
-  art_Framework_Services_Registry
-#  art_Framework_Services_Optional
-  ${ROOT_BASIC_LIB_LIST}
+cet_build_plugin( ExampleTimeStream art::module
+  LIBRARIES
+  art::Framework_Services_Registry
+  ROOT::Core
   artdaq_utilities::artdaq-utilities_Plugins
-  sbndaq_online_storage
+  sbndaq_online::storage
 )
 
-simple_plugin( ExampleDatabaseStorage "module"
-  art_Framework_Services_Registry
-	#  art_Framework_Services_Optional
-  ${ROOT_BASIC_LIB_LIST}
-  sbndaq_online_storage
-  sbndaq_online_hiredis	
-  sbndaq_online_redis_connection
+cet_build_plugin( ExampleDatabaseStorage art::module
+  LIBRARIES
+  art::Framework_Services_Registry
+  ROOT::Core
+  sbndaq_online::storage
+  sbndaq_online::hiredis	
+  sbndaq_online::redis_connection
 )
 
-simple_plugin( ExampleAlarm "module"
-  art_Framework_Services_Registry
-	#  art_Framework_Services_Optional
-  ${ROOT_BASIC_LIB_LIST}
-  sbndaq_online_storage
-  sbndaq_online_hiredis	
-  sbndaq_online_redis_connection
+cet_build_plugin( ExampleAlarm art::module
+  LIBRARIES
+  art::Framework_Services_Registry
+  ROOT::Core
+  sbndaq_online::storage
+  sbndaq_online::hiredis	
+  sbndaq_online::redis_connection
 )
 
 install_source()

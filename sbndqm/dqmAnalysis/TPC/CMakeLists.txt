@@ -1,157 +1,55 @@
-include_directories(${FFTW_INCLUDE_DIR})
-cet_find_library(FFTW_LIBRARY NAMES fftw3 fftw3-3 PATHS ENV FFTW_LIBRARY )
-
-# filter modules for running online monitoring
-add_subdirectory(OnlineFilters)
+include_directories( ${FFTW_INCLUDE_DIR} )
 
 # install fcl
-add_subdirectory(fcl)
+add_subdirectory(OnlineFilters)
+add_subdirectory(ICARUS)
+add_subdirectory(SBND)
 
 art_dictionary(DICTIONARY_LIBRARIES tpcAnalysis_SBN)
 
 cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 	SOURCE  Analysis.cc
+                AnalysisSBND.cc
 		FFT.cc
 		Noise.cc
 		PeakFinder.cc
 		ChannelData.cc
+		ChannelDataSBND.cc
 	LIBRARIES
-	        sbndqm_Decode_Mode
-		${LARDATAOBJ} 
-		lardataobj_RawData
-		lardata_Utilities
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-			art_Persistency_Provenance
-        	${ART_FRAMEWORK_IO_SOURCES}
-       		canvas
-		art_Framework_Services_FileServiceInterfaces
-		${ART_UTILITIES}
-		${FHICLCPP}
-		${ROOT_BASIC_LIB_LIST} 
-		FFTW_LIBRARY
-                           larcore_Geometry_Geometry_service
-                           larcorealg_Geometry
-                           lardataobj_Simulation
-                           lardata_Utilities
-                           lardataobj_RawData
-                           lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
-                           ${ART_FRAMEWORK_CORE}
-                           ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-                           canvas
-                           ${MF_MESSAGELOGGER}
-                           ${MF_UTILITIES}
-                           ${FHICLCPP}
-                           cetlib cetlib_except
-                           ${CLHEP}
-                           ${ROOT_BASIC_LIB_LIST}
-			${Boost_SYSTEM_LIBRARY}
-)
-
-simple_plugin( OfflineAnalysis module
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
-)
-
-simple_plugin( TPCWaveformCreator module
-  sbndaq_online_hiredis
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
-)
-
-simple_plugin( OnlineAnalysis module
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-			art_root_io_tfile_support
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq_utilities::artdaq-utilities_Plugins
-)
-
-simple_plugin( TPCPurityDQMSender module
-  sbndaq_online_storage
-  sbndaq_online_redis_connection
-  sbndaq_online_hiredis
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  sbnobj_Common_Analysis
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}#
-			art_root_io_tfile_support#
-			art_root_io_TFileService_service
-                        art_Persistency_Common
-        	${ART_FRAMEWORK_IO_SOURCES}
-  artdaq_utilities::artdaq-utilities_Plugins
-)
-simple_plugin( TPCWaveformAndFftRedis module
-  tpcAnalysis_SBN
-  ${LARDATAOBJ}
-  lardataobj_RawData
-  ${ART_UTILITIES}
-  ${FHICLCPP}
-  ${ART_FRAMEWORK_CORE}
-  ${ROOT_BASIC_LIB_LIST}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-                        art_root_io_tfile_support
-                        art_root_io_TFileService_service
-                        art_Persistency_Common
-                ${ART_FRAMEWORK_IO_SOURCES}
-  artdaq_utilities::artdaq-utilities_Plugins
-  sbndaq_online_storage
-  sbndaq_online_hiredis
-  sbndaq_online_redis_connection
+		sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
+	        sbndqm::Decode_Mode
+		lardata::Utilities
+		lardataobj::RawData
+		lardataobj::RecoBase
+		art::Framework_Principal
+		art::Framework_Services_Registry
+		art_root_io::tfile_support
+		art_root_io::TFileService_service
+		art_root_io::art_root_io
+                art::Persistency_Common
+		art::Persistency_Provenance
+        	art::Framework_IO_Sources
+       		canvas::canvas
+		art::Framework_Services_FileServiceInterfaces
+		art::Utilities
+		fhiclcpp::fhiclcpp
+		ROOT::Core
+		FFTW3::FFTW3
+                larcore::Geometry_Geometry_service
+                larcorealg::Geometry
+                lardataobj::Simulation
+                lardata::DetectorInfoServices_DetectorClocksServiceStandard_service
+		art::Framework_Core
+		art::Framework_Services_Optional_RandomNumberGenerator_service
+		messagefacility::MF_MessageLogger
+		messagefacility::headers
+                cetlib::cetlib
+		cetlib_except::cetlib_except
+		CLHEP::Random
+		ROOT::Geom
+		ROOT::XMLIO
+		ROOT::Gdml
+		Boost::system
 )
 
 install_headers()

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash +x
 
 if [ $# -ne 5 ]; then
   echo " "

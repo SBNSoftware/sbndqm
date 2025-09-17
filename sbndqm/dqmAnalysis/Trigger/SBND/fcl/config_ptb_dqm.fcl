@@ -1,0 +1,153 @@
+BEGIN_PROLOG
+
+streamPTB: {
+
+  module_type: PTBdqm
+
+  metric_llt_trigger_rate: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    groups: {
+      LLT_ID: [ [0, 32] ]
+    }
+
+    streams: ["slow","fast","archiving"]
+
+    metrics: {
+      LLT_counts:{
+        units: seconds
+        title: "PTB LLT %(instance)s counts"
+      }
+    }
+  }
+
+  metric_hlt_trigger_rate: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    groups: {
+      HLT_ID: [ [0, 32] ]
+    }
+
+    streams: ["slow","fast","archiving"]
+
+    metrics: {
+      HLT_counts:{
+        units: seconds
+        title: "PTB HLT %(instance)s counts"
+      }
+    }
+  }
+
+  metric_beam_light_diff: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    groups: {
+      BEAM_LIGHT_DIFF: [0]
+    }
+
+    streams: ["slow","fast","archiving"]
+
+    metrics: {
+
+      BEAM_LIGHT:{
+        units: microseconds
+        title: "BEAM (BES) - LIGHT"
+        display_range: [-10000, 10000]
+      }
+
+      OFFBEAM_LIGHT:{
+        units: microseconds
+        title: "OFFBEAM (BES) - LIGHT"
+        display_range: [-10000, 10000]
+
+      }
+    }
+  }
+
+  metric_beam_crt_diff: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    groups: {
+      BEAM_CRT_DIFF: [0]
+    }
+
+    streams: ["slow","fast","archiving"]
+
+    metrics: {
+
+      BEAM_HLT_T1RESET:{
+        units: microseconds
+        title: "BEAM HLT - BEAM T1 RESET"
+      }
+
+      OFFBEAM_HLT_T1RESET:{
+        units: microseconds
+        title: "OFFBEAM HLT - OFFBEAM T1 RESET"
+      }
+
+      NUMBER_OFFBEAM_T1RESET:{}
+
+      NUMBER_BEAM_T1RESET:{}
+
+      NUMBER_OFFBEAM_HLT:{}
+
+      NUMBER_BEAM_HLT:{}
+
+    }  
+  }
+                                                                   
+  metric_ptb_tdc_diff: {
+
+    hostname: "sbnd-db.fnal.gov"
+
+    groups: {
+      PTB_TDC_DIFF: [0]
+    }
+
+    streams: ["slow","fast","archiving"]
+
+    metrics: {
+
+      TDC_HLT_FLASH:{
+        units: microseconds
+        title: "|PTB - TDC| flash trigger timestamps"
+      }
+
+      TDC_HLT_EVENT:{
+        units: microseconds
+        title: "|PTB - TDC| event trigger timestamps"
+      }
+
+      TDC_HLT_T1:{
+        units: microseconds
+        title: "|PTB - TDC| CRT t1 reset timestamps"
+      }
+
+      TDC_LLT_BES:{
+        units: microseconds
+        title: "|PTB - TDC| BES timestamps"
+      }
+
+      NUMBER_TDC_T1:{}
+
+      NUMBER_TDC_BES:{}
+
+      NUMBER_TDC_FLASH:{}
+
+      NUMBER_TDC_EVENT:{}
+
+      NUMBER_PTB_T1:{}
+
+      NUMBER_PTB_BES:{}
+
+      NUMBER_PTB_FLASH:{}
+
+      NUMBER_PTB_EVENT:{}
+    }
+  }
+}
+END_PROLOG
