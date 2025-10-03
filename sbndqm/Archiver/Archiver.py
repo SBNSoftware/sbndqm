@@ -154,7 +154,9 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
         #Loop over the streams which have entries to be archived.
         for StreamObject in ReadStream:
             stream_name_b = StreamObject[0]
-            stream_name = stream_name_b.decode('utf-8')
+            # print("DEBUG: stream_name_b =", stream_name_b, "type =", type(stream_name_b))
+            # stream_name = stream_name_b.decode('utf-8')
+            stream_name = stream_name_b
             entries = StreamObject[1]
             #Loop over the individual entries in the stream.
             for DataObject in entries:
