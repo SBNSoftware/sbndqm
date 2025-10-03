@@ -128,7 +128,10 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
         #ReadStream is a list of stream object which have new entries that have yet to be archived.
         try:
             st = time.time()
-            ReadStream = r.xread(StreamDict, block=0)
+            try:
+                ReadStream = r.xread(StreamDict, block=0)
+            except Exception as e:
+                logging.error(e)
             logging.info('XREAD time: {}'.format(time.time()-st))
             #logging.info('Redis READ completed.')
         except redis.RedisError as err:
@@ -153,16 +156,19 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
 
         #Loop over the streams which have entries to be archived.
         for StreamObject in ReadStream:
-            stream_name_b = StreamObject[0]
+            # stream_name_b = StreamObject[0]
             # print("DEBUG: stream_name_b =", stream_name_b, "type =", type(stream_name_b))
             # stream_name = stream_name_b.decode('utf-8')
-            stream_name = stream_name_b
+            stream_name = StreamObject[0]
             entries = StreamObject[1]
             #Loop over the individual entries in the stream.
             for DataObject in entries:
                 entry_id_b, entry_fields = DataObject
-                entry_id = entry_id_b.decode('utf-8')
-
+                try: 
+                    entry_id = entry_id_b.decode('utf-8')
+                except Exception as e:
+                    logging.error(e)
+                
                 #Check if the latest completed archived entry is '0' (no metrics have been archived yet for the stream).
                 if StreamDict[stream_name] == '0':
                     NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
