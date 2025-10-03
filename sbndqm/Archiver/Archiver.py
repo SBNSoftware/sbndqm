@@ -133,7 +133,7 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
             except Exception as e:
                 logging.error(e)
             logging.info('XREAD time: {}'.format(time.time()-st))
-            #logging.info('Redis READ completed.')
+            logging.info('Redis READ completed.')
         except redis.RedisError as err:
             logging.error('Error while reading streams: {}'.format(err))
             logging.error(type(err))
@@ -155,84 +155,99 @@ def ProcessStreams(r, p, cur, StreamDict, Config, args):
         ReconnectCount = 0
 
         #Loop over the streams which have entries to be archived.
+        countStreams = 0
+        totalStreams = len(ReadStream)
+        logging.info("Streams to be archived: {}".format(totalStreams))
+
         for StreamObject in ReadStream:
             # stream_name_b = StreamObject[0]
             # print("DEBUG: stream_name_b =", stream_name_b, "type =", type(stream_name_b))
             # stream_name = stream_name_b.decode('utf-8')
             stream_name = StreamObject[0]
             entries = StreamObject[1]
+            logging.debug("Stream: {}".format(stream_name))
+            
             #Loop over the individual entries in the stream.
             for DataObject in entries:
                 entry_id_b, entry_fields = DataObject
                 try: 
                     entry_id = entry_id_b.decode('utf-8')
-                except Exception as e:
-                    logging.error(e)
-                
-                #Check if the latest completed archived entry is '0' (no metrics have been archived yet for the stream).
-                if StreamDict[stream_name] == '0':
-                    NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
-                    TotalSetTime += SetLatest(r, stream_name, NewLatest)
-                    TotalSetN += 1
-                    ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
-                    StreamDict[stream_name] = entry_id
-                #Check if the current entry is within the time block (contained in the interval of entries to be archived).
-                elif int( entry_id.split('-')[0] ) < int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5]:
-                    ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
-                    StreamDict[stream_name] = entry_id
-                #Make sure that there are metrics to archive (No metrics in MetricDict, but GetLatest is more than one time block previous to the next entry).
-                elif int( entry_id.split('-')[0] ) > int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5] and len(MetricDict[stream_name]) == 0:
-                    NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
-                    TotalSetTime += SetLatest(r, stream_name, NewLatest)
-                    TotalSetN += 1
-                    ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
-                    StreamDict[stream_name] = entry_id
-                #The entry is outside the current time block. Set a new latest completed and write to the database.
-                else:
-                    #Case for "mean" averaging.
-                    if Config[stream_name][3] == 0:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
-                        TotalSetN += 1
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #Case for "median" averaging.
-                    elif Config[stream_name][3] == 1:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][-1][0])
-                        TotalSetN += 1
-                        MetricList = [ x[1] for x in MetricDict[stream_name] ]
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], median(MetricList), int(MetricDict[stream_name][-1][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #Case for "mode" averaging.
-                    elif Config[stream_name][3] == 2:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
-                        TotalSetN += 1
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][3], int(MetricDict[stream_name][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #Case for "max" averaging.
-                    elif Config[stream_name][3] == 3:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
-                        TotalSetN += 1
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #Case for "min" averaging.
-                    elif Config[stream_name][3] == 4:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
-                        TotalSetN += 1
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #Case for "last" averaging.
-                    elif Config[stream_name][3] == 5:
-                        TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
-                        WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
-                        MetricDict[stream_name] = []
-                    #After performing the archiving on the previous block of data, we can now process the current entry.
-                    ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
-                    StreamDict[stream_name] = entry_id
-                    #Check to see if there is a gap in the data stream (the current object is more than one time interval from the latest completed).
-                    if int( entry_id.split('-')[0] ) > int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5]:
+            
+                    logging.debug("Entry: {}, fields: {}".format(entry_id,entry_fields))
+                    
+                    #Check if the latest completed archived entry is '0' (no metrics have been archived yet for the stream).
+                    if StreamDict[stream_name] == '0':
                         NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
                         TotalSetTime += SetLatest(r, stream_name, NewLatest)
                         TotalSetN += 1
+                        ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
+                        StreamDict[stream_name] = entry_id
+                    #Check if the current entry is within the time block (contained in the interval of entries to be archived).
+                    elif int( entry_id.split('-')[0] ) < int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5]:
+                        ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
+                        StreamDict[stream_name] = entry_id
+                    #Make sure that there are metrics to archive (No metrics in MetricDict, but GetLatest is more than one time block previous to the next entry).
+                    elif int( entry_id.split('-')[0] ) > int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5] and len(MetricDict[stream_name]) == 0:
+                        NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
+                        TotalSetTime += SetLatest(r, stream_name, NewLatest)
+                        TotalSetN += 1
+                        ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
+                        StreamDict[stream_name] = entry_id
+                    #The entry is outside the current time block. Set a new latest completed and write to the database.
+                    else:
+                        #Case for "mean" averaging.
+                        if Config[stream_name][3] == 0:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
+                            TotalSetN += 1
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #Case for "median" averaging.
+                        elif Config[stream_name][3] == 1:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][-1][0])
+                            TotalSetN += 1
+                            MetricList = [ x[1] for x in MetricDict[stream_name] ]
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], median(MetricList), int(MetricDict[stream_name][-1][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #Case for "mode" averaging.
+                        elif Config[stream_name][3] == 2:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
+                            TotalSetN += 1
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][3], int(MetricDict[stream_name][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #Case for "max" averaging.
+                        elif Config[stream_name][3] == 3:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
+                            TotalSetN += 1
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #Case for "min" averaging.
+                        elif Config[stream_name][3] == 4:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
+                            TotalSetN += 1
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #Case for "last" averaging.
+                        elif Config[stream_name][3] == 5:
+                            TotalSetTime += SetLatest(r, stream_name, MetricDict[stream_name][0])
+                            WritePostgres(p, cur, Config[stream_name][4], Config[stream_name][2], MetricDict[stream_name][1], int(MetricDict[stream_name][0].split('-')[0]))
+                            MetricDict[stream_name] = []
+                        #After performing the archiving on the previous block of data, we can now process the current entry.
+                        ProcessData(MetricDict, (entry_id, entry_fields), Config, stream_name)
+                        StreamDict[stream_name] = entry_id
+                        #Check to see if there is a gap in the data stream (the current object is more than one time interval from the latest completed).
+                        if int( entry_id.split('-')[0] ) > int( GetLatest(r, stream_name).split('-')[0] ) + 1000*Config[stream_name][5]:
+                            NewLatest = str( int( entry_id.split('-')[0] ) - 1 ) + '-0'
+                            TotalSetTime += SetLatest(r, stream_name, NewLatest)
+                            TotalSetN += 1 
+
+                except Exception as e:
+                    logging.exception(e)
+
+            if countStreams % 5000 == 0 or countStreams == totalStreams:
+                percentDone = (countStreams / totalStreams) * 100
+                logging.info("Processed {}/{} streams ({:.2f}%)".format(countStreams,totalStreams,percentDone))
+            countStreams += 1
+
         logging.info('Total set time: {}'.format(TotalSetTime))
         logging.info('Average set time: {}'.format(float(TotalSetTime)/float(TotalSetN) if TotalSetN else 0.0))
 
@@ -415,4 +430,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-pw", "--password", default=None)
     parser.add_argument("-pr", "--processes", default=1)
-    main(parser.parse_args())
+    try:
+        main(parser.parse_args())
+    except Exception as e:
+        logging.exception("Uncaught exception in main()")
+        logging.exception(f"Archiver crashed with exception: {e}")
+        sys.exit(1)
