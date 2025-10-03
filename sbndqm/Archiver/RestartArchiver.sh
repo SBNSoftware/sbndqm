@@ -4,7 +4,14 @@ echo "Remaining OnMon Archiver.py processes:"
 ps aux | grep '[p]ython Archiver.py'
 
 echo "Killing remaining OnMon Archiver.py processes..."
-kill -9 $(ps aux | grep '[p]ython Archiver.py' | awk '{print $2}')
+
+toKillProc=$(ps aux | grep '[p]ython Archiver.py' | awk '{print $2}')
+if [[ $toKillProc != '' ]] ; then
+    kill -9 $toKillProc
+else
+    echo "No OnMon Archiver.py processes remaning..."
+fi
+
 
 echo "Restarting OnMon Archiver."
 cd /home/nfs/icarus/Archiver/sbndqm/sbndqm/Archiver
