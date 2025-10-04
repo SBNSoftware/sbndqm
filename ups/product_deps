@@ -35,7 +35,7 @@ fwdir   product_dir scripts
 # Add the dependent product and version
 
 product             version  
-sbndaq_online       v1_01_00
+sbndaq_online       v1_02_00
 sbndaq_artdaq_core  v1_10_06
 sbncode             v10_06_00_01
 fhiclpy             v4_03_05

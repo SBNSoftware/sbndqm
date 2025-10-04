@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.24.01 REQUIRED)
-project(sbndqm VERSION 1.04.00 LANGUAGES CXX)
+project(sbndqm VERSION 1.05.00 LANGUAGES CXX)
 
 message(STATUS "\n\n  ==========================   ${PROJECT_NAME}   ==========================")
 
