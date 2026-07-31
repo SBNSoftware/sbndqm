@@ -18,10 +18,11 @@ services:
   RedisConnection: @local::redis_connection
   ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
   TPCDQMChannelMapService: @local::SBNDTPCDQMChannelMapServiceDefaults
-  AuxDetExptGeoHelperInterface: { service_provider: "sbndcode/CRT/CRTGeometryHelper" }
-  ExptGeoHelperInterface:    @local::sbnd_geometry_helper
-  Geometry:                  @local::sbnd_geo
-  GeometryConfigurationWriter:    {}
+  #AuxDetExptGeoHelperInterface: { service_provider: "sbndcode/CRT/CRTGeometryHelper" }
+  #ExptGeoHelperInterface:    @local::sbnd_geometry_helper
+  #Geometry:                  @local::sbnd_geo
+  #GeometryConfigurationWriter:    {}
+  @table::sbnd_geometry_services
 
   InitMetricManager: {
     connections: {
@@ -31,7 +32,7 @@ services:
   }
 }
 
-services.RedisConnection.host: "sbnd-db01.fnal.gov"
+services.RedisConnection.host: "sbnd-db03.fnal.gov"
 services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
 services.TPCDQMChannelMapService: @local::SBNDTPCDQMChannelMapServiceDefaults
 
@@ -49,7 +50,7 @@ source:
   dispatcherPort: 6021
 
   transfer_plugin: {
-     unique_label: "SHIFTEROM"
+     unique_label: "SHIFTEROM1"
       transferPluginType: Shmem
       shm_key: 0x40470920
       max_fragment_size_words: 1e8
@@ -59,14 +60,14 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "SHIFTEROM"
+    unique_label: "SHIFTEROM1"
     path: [ out ]
     physics: {}
     outputs: {
       out: {
         module_type: TransferOutput
         transfer_plugin: {
-          unique_label: "SHIFTEROM"
+          unique_label: "SHIFTEROM1"
           transferPluginType: Shmem
           shm_key: 0x40470920
           max_fragment_size_words: 1e8
@@ -231,7 +232,10 @@ physics.flash_path:     [ flash_only ]
 physics.timing_path:  [ timing_only ]
 physics.trigger_path: [ trigger_only ]
 
-physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path ]
+#physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path ]
+physics.trigger_paths: [@sequence::physics.pmt_path]
+
+#physics.trigger_paths: [@sequence::physics.tpc_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path ]
 
 physics.atpc:         [ Meta, OnlineAnalysis, OnlineAnalysisRawData, OnlineEvdSBND ]
 physics.apmt:         [ MetaPMT, pmtAnalysis ]
@@ -240,7 +244,10 @@ physics.atiming:      [ dqmSPECTDC ]
 physics.atrigger:     [ ptbAnalysis ]
 physics.aflash:     [ flashana ]
 
-physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash ]
+#physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash ]
+physics.a: [@sequence::physics.apmt]
+
+#physics.a: [@sequence::physics.atpc, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash ]
 
 physics.decoded_stream: [ decodedout ]
 physics.end_paths: [ a ]
