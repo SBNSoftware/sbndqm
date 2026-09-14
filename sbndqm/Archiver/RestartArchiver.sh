@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# this script should only be run as user `icarus`
+
+if [[ "$(whoami)" != "icarus" ]]; then
+    echo "This script must be run as user icarus, now as $(whoami)"
+    exit 1
+fi
+
 echo "Remaining OnMon Archiver.py processes:"
 ps aux | grep '[p]ython Archiver.py'
 

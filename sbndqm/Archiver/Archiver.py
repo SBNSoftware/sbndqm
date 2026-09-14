@@ -371,7 +371,10 @@ def WritePostgres(p, cur, Table, Channel, Value, Time):
     Attempt = 0
     if math.isnan(Value):
         Value = 0;
-    Command = 'INSERT INTO runcon_prd.' + Table + ' (CHANNEL_ID, SMPL_TIME, SMPL_VALUE) VALUES (' + str(Channel) + ',to_timestamp(' + str(Timestamp) + '),' + str(Value) + ');'
+
+    Command = f'''INSERT INTO runcon_prd.{Table} (CHANNEL_ID, SMPL_TIME, SMPL_VALUE) 
+    VALUES ({str(Channel)}, to_timestamp({str(Timestamp)}),{str(Value)})
+    ON CONFLICT (channel_id, smpl_time) DO NOTHING;'''
     while Attempt < 5:
         try:
             Attempt += 1

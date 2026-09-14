@@ -1,14 +1,14 @@
 {
     "postgresql": {
         "database": "icarus_online_prd", 
-        "hostname": "icarus-db02.fnal.gov", 
+        "hostname": "icarus-db04.fnal.gov", 
         "port": 5434, 
         "user": "runcon_writer",
 	"passfile": "runcon_writer.txt",
 	"metric_config": "runcon_prd.monitor_map"
     }, 
     "redis": {
-        "hostname": "icarus-db02.fnal.gov", 
+        "hostname": "icarus-db04.fnal.gov", 
         "monitor_time": 3, 
         "port": 6379,
 	"timeout": 30
