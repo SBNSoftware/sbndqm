@@ -84,7 +84,7 @@ source:
 #decoder output
 outputs.decodedout:{
   module_type: RootOutput
-  fileName:    "/data/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
+  fileName:    "/daq/scratch/onmon_files/onmon_output_%r_%s_%tc_%#-decoded.root"
   dataTier:    "raw"
   compressionLevel: 3
   SelectEvents: [pscale_OnMonFiles]
