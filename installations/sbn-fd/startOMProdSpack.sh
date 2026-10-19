@@ -7,7 +7,7 @@ printf '\033]2;Online Monitoring\a'
 #defaults
 my_env="sbn-fd"
 my_devdir=$1
-my_redishost=icarus-db02.fnal.gov
+my_redishost=icarus-db04.fnal.gov
 my_swdir=/daq/software
 
 my_daqarea=${HOME}/DQM_SPACK_DevAreas
@@ -31,6 +31,7 @@ echo "$(spack find --format '{name}@{version} {variants.s} {variants.cxxstd} /{h
 echo "$(spack find --format '{name}@{version} {variants.cxxstd} /{hash:7}' sbndqm)"
 echo "$(spack find --format '{name}@{version} {variants.cxxstd} /{hash:7}' sbndaq-online)"
 echo "$(spack find --format '{name}@{version} {variants.cxxstd} /{hash:7}' icaruscode)"
+echo "$(spack find --format '{name}@{version} {variants.cxxstd} /{hash:7}' artdaq-suite)"
 
 echo "Loaded Spack enviroment!"
 
@@ -51,6 +52,8 @@ export FHICL_FILE_PATH="$FCL_DIR:$my_daqarea/$my_devdir:$FHICL_FILE_PATH"
 
 #cleanup
 killall -9 lar
+pkill -f alive_monitor.py
+pkill -f daq_consumer.py
 ipcrm -M 0x40471454
 
 python $my_daqarea/$my_devdir/sbndqm/sbndqm/AliveMonitor/alive_monitor.py -s "$my_redishost" -k DAQConsumer \
