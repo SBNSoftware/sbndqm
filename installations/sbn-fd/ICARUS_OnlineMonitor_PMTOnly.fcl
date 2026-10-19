@@ -3,10 +3,15 @@
 #include "icarus_online_decoder_defs.fcl"
 #include "icarus_pmt_analysis_defs.fcl"
 #include "icarus_trigger_analysis_defs.fcl"
+#include "channelmapping_icarus.fcl"
 
 #service overrides
 services.RedisConnection: @local::redis_connection
 services.RedisConnection.host: "icarus-db02.fnal.gov"
+
+# PMT channel numbering from the offline channel mapping (SQLite, local file)
+services.IICARUSChannelMap: @local::icarus_channelmappinggservice
+
 services.InitMetricManager: {
   connections: {
     archiving: {

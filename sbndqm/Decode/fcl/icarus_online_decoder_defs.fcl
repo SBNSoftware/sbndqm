@@ -1,8 +1,16 @@
 BEGIN_PROLOG
 
+# online PMT channel numbering (see OnlinePMTChannelMap.h):
+# PMTs from the offline channel mapping, 16th channel of each board at SpecialChannelBase + board
+icarus_pmt_online_channels: {
+  SpecialChannelIndex: 15
+  SpecialChannelBase:  360
+}
+
 decodePMTOnline: {
   module_type: DaqDecoderIcarusPMT
   FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
+  @table::icarus_pmt_online_channels
 }
   
 decodeTriggerOnline: {

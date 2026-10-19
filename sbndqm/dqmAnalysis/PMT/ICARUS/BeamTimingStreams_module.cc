@@ -5,6 +5,7 @@
 // Description: 
 //  Monitor accelerator reference timing signals (RWM and EW) as 
 //  digitized in channel 16 of ICARUS PMT digitizers.
+//  The special channel numbering follows OnlinePMTChannelMap.h.
 // 
 ////////////////////////////////////////////////////////////////////////
 
@@ -20,6 +21,7 @@
 // data objects
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/ICARUS/OnlinePMTChannelMap.h"
 #include "sbndqm/Decode/Trigger/detail/TriggerGateTypes.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 #include "lardataobj/RawData/TriggerData.h"
@@ -51,7 +53,7 @@ namespace sbndaq {
       template<typename T> static size_t getStartSample( std::vector<T> const& vv, T thres );
       
       std::string getGateName(int source);
-      bool isSpecialChannel (int channel, std::map<size_t,std::string> const& channel_map, int &crateID);
+      bool isSpecialChannel (unsigned int channel, std::map<size_t,std::string> const& channel_map, int &crateID) const;
 
       virtual void analyze(art::Event const & evt);
   
@@ -66,9 +68,8 @@ namespace sbndaq {
       short int m_ADC_threshold;
       double m_OpticalTick; 
 
-      const unsigned int nChannelsPerBoard = 16;
-      const unsigned int nBoards = 24;
-      unsigned int nTotalChannels = nBoards*nChannelsPerBoard;
+      // only the special channels are used: no database needed
+      pmtAnalysis::OnlinePMTChannelMap m_channel_map;
   
       std::map<size_t, std::string>  RWMboards {
 	{ 0x2017, "eebot03" }, 
@@ -104,6 +105,7 @@ sbndaq::BeamTimingStreams::BeamTimingStreams(fhicl::ParameterSet const & pset)
   , m_metric_config{ pset.get<fhicl::ParameterSet>("TimingMetricConfig") }
   , m_ADC_threshold{ pset.get<short int>("ADCthreshold", 200)}
   , m_OpticalTick{ 0.002 }
+  , m_channel_map{ 24, pset.get<unsigned int>("SpecialChannelIndex", 15), pset.get<unsigned int>("SpecialChannelBase", 360) }
 {
   // Configure the redis metrics 
   sbndaq::GenerateMetricConfig( m_metric_config );
@@ -188,14 +190,14 @@ std::string sbndaq::BeamTimingStreams::getGateName(int source){
 
 //------------------------------------------------------------------------------------------------------------------
 
-bool sbndaq::BeamTimingStreams::isSpecialChannel(int pmtID, std::map<size_t,std::string> const& channel_map, int &crateID){
+bool sbndaq::BeamTimingStreams::isSpecialChannel(unsigned int pmtID, std::map<size_t,std::string> const& channel_map, int &crateID) const {
 
-  int digitizer_last_channel = 15;
   crateID = -1;
+  if( !m_channel_map.isSpecialChannel(pmtID) ) return false;
+  size_t const board = m_channel_map.specialChannelBoard(pmtID); // boards from 0 to 23
   for(auto it=channel_map.begin(); it!=channel_map.end(); it++){ 
-    size_t eff_fragment_id = it->first & 0x0fff; // boards from 0 to 23
-    int spare_channel = eff_fragment_id*nChannelsPerBoard + digitizer_last_channel;
-    if( spare_channel == pmtID ){
+    size_t eff_fragment_id = it->first & 0x0fff;
+    if( eff_fragment_id == board ){
       crateID = int( eff_fragment_id / 3); // crates from 0 to 7
       return true;
     }

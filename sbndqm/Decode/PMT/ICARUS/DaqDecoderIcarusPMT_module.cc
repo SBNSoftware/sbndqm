@@ -9,11 +9,14 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/Run.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Utilities/InputTag.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"
 #include "canvas/Utilities/InputTag.h"
 
+#include "fhiclcpp/types/Atom.h"
 #include "fhiclcpp/types/Sequence.h"
 
 #include <memory>
@@ -31,6 +34,8 @@
 #include "sbndaq-artdaq-core/Overlays/ICARUS/PhysCrateFragment.hh"
 #include "lardataobj/RawData/OpDetWaveform.h"
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/ICARUS/OnlinePMTChannelMap.h"
+#include "icaruscode/Decode/ChannelMapping/IICARUSChannelMap.h"
 
 
 namespace daq 
@@ -64,6 +69,18 @@ namespace daq
           std::vector<art::InputTag>{ "daq:CAENV1730", "daq:ContainerCAENV1730" }
         };
 
+        fhicl::Atom<unsigned int> SpecialChannelIndex {
+          Name("SpecialChannelIndex"),
+          Comment("digitizer channel not connected to a PMT (RWM, EW, trigger primitives)"),
+          15
+        };
+
+        fhicl::Atom<unsigned int> SpecialChannelBase {
+          Name("SpecialChannelBase"),
+          Comment("channel number of the special channel of the first board (next boards follow)"),
+          360
+        };
+
       };
 
       using Parameters = art::EDProducer::Table<Config>;
@@ -84,6 +101,7 @@ namespace daq
       void sortWaveformsByTime(std::vector<ProtoWaveform> &wfs) const;
       raw::OpDetWaveform mergeWaveformGroup(std::vector<ProtoWaveform> &all_wfs, std::vector<int> const& group);
 
+      void beginRun(art::Run &) override;
       void produce(art::Event & e) override;
 
     private:
@@ -93,6 +111,8 @@ namespace daq
       template <typename T> std::vector<T>& appendTo( std::vector<T>& dest, std::vector<T>&& src);
       
       std::vector<art::InputTag> fFragmentLabels;
+      icarusDB::IICARUSChannelMap const& fChannelMapService;
+      pmtAnalysis::OnlinePMTChannelMap fChannelMap;
       std::map<std::size_t,std::vector<ProtoWaveform>> fProtoWaveforms;
       double fOpticalTickNS;
 
@@ -113,12 +133,24 @@ namespace daq
 daq::DaqDecoderIcarusPMT::DaqDecoderIcarusPMT(Parameters const & params)
   : art::EDProducer(params)
   , fFragmentLabels{ params().FragmentsLabels() }
+  , fChannelMapService{ *(art::ServiceHandle<icarusDB::IICARUSChannelMap const>{}) }
+  , fChannelMap{ 24, params().SpecialChannelIndex(), params().SpecialChannelBase() }
   , fOpticalTickNS{ 2.0 }
 {
   
   // Output data products
   produces<std::vector<raw::OpDetWaveform>>();
   produces<std::vector<pmtAnalysis::PMTDigitizerInfo>>();
+
+}
+
+// -----------------------------------------------------------------------------------------
+
+void daq::DaqDecoderIcarusPMT::beginRun(art::Run &) {
+
+  // the service has already selected the database tables for this run
+  for( std::string const& problem : fChannelMap.update( fChannelMapService ) )
+    mf::LogError("DaqDecoderIcarusPMT") << problem << "!";
 
 }
 
@@ -227,12 +259,16 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
 
   for( size_t digitizerChannel=0; digitizerChannel<nChannelsPerBoard; digitizerChannel++ ) {
 
-    // We don't have access to the offline DB: this is a different channel mapping
-    // Also offline DB doesn't deal with special channels (16th) 
-    std::size_t const pmtID = digitizerChannel+nChannelsPerBoard*eff_fragment_id;
+    // temperatures are indexed by digitizer channel, enabled or not
+    temperatures.push_back( float( metafrag.chTemps[digitizerChannel] ));
 
     std::size_t const channelPosInData = chDataMap[digitizerChannel];
     if (channelPosInData >= nEnabledChannels) continue; // not enabled
+
+    // PMT channels from the offline DB, special channel (16th) from configuration
+    unsigned int const pmtID = fChannelMap.channel(eff_fragment_id, digitizerChannel);
+    if (pmtID == pmtAnalysis::OnlinePMTChannelMap::NoChannel) continue; // not mapped (reported at beginRun)
+
     std::size_t const ch_offset = channelPosInData * nSamplesPerChannel;
 
     // get the waveform
@@ -241,8 +277,6 @@ void daq::DaqDecoderIcarusPMT::processFragment( const artdaq::Fragment &artdaqFr
     // saves all waveforms from this channel in the event + TTT for time stitching
     auto this_wf =  raw::OpDetWaveform(fragmentTimestamp, pmtID, wvfm);
     fProtoWaveforms[pmtID].emplace_back(this_wf, time_tag);
-
-    temperatures.push_back( float( metafrag.chTemps[digitizerChannel] ));
 
   }
 

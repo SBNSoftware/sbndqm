@@ -15,6 +15,8 @@ cet_build_plugin( DaqDecoderIcarusPMT art::module
   cetlib::cetlib
   cetlib_except::cetlib_except
   sbndqm_Decode_PMT_PMTDecodeData
+  art::Framework_Services_Registry
+  icaruscode::Decode_ChannelMapping
 )
 
 install_headers()

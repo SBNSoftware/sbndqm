@@ -10,6 +10,8 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/Run.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "canvas/Utilities/Exception.h"
 
@@ -26,6 +28,8 @@
 #include "larana/OpticalDetector/OpHitFinder/PulseRecoManager.h"
 
 #include "sbndqm/Decode/PMT/PMTDecodeData/PMTDigitizerInfo.hh"
+#include "sbndqm/Decode/PMT/ICARUS/OnlinePMTChannelMap.h"
+#include "icaruscode/Decode/ChannelMapping/IICARUSChannelMap.h"
 #include "sbndqm/Decode/Mode/Mode.hh"
 #include "sbndaq-online/helpers/SBNMetricManager.h"
 #include "sbndaq-online/helpers/MetricConfig.h"
@@ -55,14 +59,15 @@ namespace sbndaq {
 
       explicit CAENV1730Streams(fhicl::ParameterSet const & pset); // explicit doesn't allow for copy initialization
   
+      virtual void beginRun(art::Run const &) override;
       virtual void analyze(art::Event const & evt);
       void SendTemperatureMetrics(art::Event const & evt);  
 
     private:
 
-      const unsigned int nChannelsPerBoard = 16;
-      const unsigned int nBoards = 24;
-      unsigned int nTotalChannels = nBoards*nChannelsPerBoard;
+      icarusDB::IICARUSChannelMap const& m_channel_map_service;
+      pmtAnalysis::OnlinePMTChannelMap m_channel_map;
+      unsigned int nTotalChannels;
         
       art::InputTag m_opdetwaveform_tag;
       art::InputTag m_pmtdigitizer_tag;
@@ -89,6 +94,9 @@ namespace sbndaq {
 
 sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
+  , m_channel_map_service{ *(art::ServiceHandle<icarusDB::IICARUSChannelMap const>{}) }
+  , m_channel_map{ 24, pset.get<unsigned int>("SpecialChannelIndex", 15), pset.get<unsigned int>("SpecialChannelBase", 360) }
+  , nTotalChannels{ m_channel_map.nChannels() }
   , m_opdetwaveform_tag{ pset.get<art::InputTag>("OpDetWaveformLabel") }
   , m_pmtdigitizer_tag{ pset.get<art::InputTag>("PMTDigitizerLabel") }
   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db02") }
@@ -141,6 +149,16 @@ sbndaq::CAENV1730Streams::CAENV1730Streams(fhicl::ParameterSet const & pset)
 
 //------------------------------------------------------------------------------------------------------------------
 
+void sbndaq::CAENV1730Streams::beginRun(art::Run const &) {
+
+  // the service has already selected the database tables for this run
+  // problems are already reported by the decoder
+  m_channel_map.update( m_channel_map_service );
+
+}
+
+//------------------------------------------------------------------------------------------------------------------
+
 void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
 
   int level = 3; 
@@ -172,7 +190,8 @@ void sbndaq::CAENV1730Streams::SendTemperatureMetrics(art::Event const & evt) {
       float T = digitizer.getTemperature(ch);
       if( maxT < T ) maxT = T;
  
-      size_t pmtID = ch + nChannelsPerBoard*boardId;
+      unsigned int const pmtID = m_channel_map.channel(boardId, ch);
+      if( pmtID == pmtAnalysis::OnlinePMTChannelMap::NoChannel ) continue;
       std::string pmtID_s = std::to_string(pmtID);
      
       // send sigle-channel temperature

@@ -46,6 +46,12 @@ find_package( sbndaq_online REQUIRED )
 find_package( sbnobj REQUIRED )
 find_package( sbnanaobj REQUIRED )
 find_package( sbncode REQUIRED)
+
+# ICARUS PMT modules use the offline channel mapping from icaruscode
+if(ICARUS_BUILD)
+  find_package( icaruscode REQUIRED )
+endif()
+
 find_package( TRACE REQUIRED)
 
 find_package( FFTW3 REQUIRED )

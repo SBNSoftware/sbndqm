@@ -19,6 +19,7 @@ cet_build_plugin( CAENV1730Streams art::module
   sbndaq_online::redis_connection
   sbndaq_online::hiredis
   sbndqm_Decode_PMT_PMTDecodeData
+  icaruscode::Decode_ChannelMapping
   larana::OpticalDetector_OpHitFinder
   FFTW3::FFTW3
 )

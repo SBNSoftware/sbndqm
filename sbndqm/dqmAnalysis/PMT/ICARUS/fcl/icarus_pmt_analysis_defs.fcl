@@ -1,10 +1,12 @@
 #include "icarus_pmt_online_monitor_configuration.fcl"
+#include "icarus_online_decoder_defs.fcl"
 
 BEGIN_PROLOG
 
   pmtAnalysis: {
     module_type: CAENV1730Streams
     SelectEvents: [] 
+    @table::icarus_pmt_online_channels
       
     OpDetWaveformLabel: "daqPMT"
     PMTDigitizerLabel: "daqPMT"
@@ -76,6 +78,7 @@ BEGIN_PROLOG
 
     module_type: BeamTimingStreams
     SelectEvents: [] 
+    @table::icarus_pmt_online_channels
     
     OpDetWaveformLabel: "daqPMT"
     TriggerLabel: "daqTrigger"
