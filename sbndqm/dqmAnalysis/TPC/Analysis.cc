@@ -90,6 +90,9 @@ Analysis::AnalysisConfig::AnalysisConfig(const fhicl::ParameterSet &param) {
   // whether to use plane data in peakfinding
   use_planes = param.get<bool>("use_planes", false);
 
+  //set true if input waveform is subtracted
+  is_baseline_subtracted = param.get<bool>("is_baseline_subtracted", false);
+
   // method to calculate baseline:
   // 0 == assume baseline is 0
   // 1 == assume baseline is in digits.GetPedestal()
@@ -329,6 +332,11 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     _timing.EndTime(&_timing.baseline_calc);
   }
 
+  float baseline_local = _per_channel_data[channel].baseline;
+  if (_config.is_baseline_subtracted) {
+	baseline_local = 0;
+  }
+
   if (_config.timing) {
     _timing.StartTime();
   }
@@ -355,11 +363,11 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     threshold = _config.threshold;
   }
   else if (_config.threshold_calc == 1) {
-    auto thresholds = Threshold(adc_vec, _per_channel_data[channel].baseline, _config.threshold_sigma, _config.verbose);
+    auto thresholds = Threshold(adc_vec, baseline_local, _config.threshold_sigma, _config.verbose);
     threshold = thresholds.Val();
   }
   else if (_config.threshold_calc == 2) {
-    NoiseSample temp({{0, (unsigned)digits.NADC()-1}}, _per_channel_data[channel].baseline);
+    NoiseSample temp({{0, (unsigned)digits.NADC()-1}}, baseline_local);
     float raw_rms = temp.RMS(adc_vec);
     threshold = raw_rms * _config.threshold_sigma;
   }
@@ -368,7 +376,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
     float n_sigma = _config.threshold_sigma;
     if (_config.use_planes && _channel_info.PlaneType(channel) == PeakFinder::collection) n_sigma = n_sigma * 1.5;
   
-    threshold = _thresholds[channel].Threshold(adc_vec, _per_channel_data[channel].baseline, n_sigma);
+    threshold = _thresholds[channel].Threshold(adc_vec, baseline_local, n_sigma);
   }
   if (_config.timing) {
     _timing.EndTime(&_timing.calc_threshold);
@@ -384,7 +392,7 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   if (_config.find_signal) {
     PeakFinder::plane_type plane = (_config.use_planes) ? _channel_info.PlaneType(channel) : PeakFinder::unspecified;
   
-    PeakFinder peaks(adc_vec, _per_channel_data[channel].baseline, threshold, 
+    PeakFinder peaks(adc_vec, baseline_local, threshold, 
         _config.n_smoothing_samples, _config.n_above_threshold, plane);
     _per_channel_data[channel].peaks.assign(peaks.Peaks()->begin(), peaks.Peaks()->end());
   }
@@ -399,11 +407,11 @@ void Analysis::ProcessChannel(const raw::RawDigit &digits) {
   // get noise samples
   if (_config.noise_range_sampling == 0) {
     // use first n_noise_samples
-    _noise_samples[channel] = NoiseSample( { { 0, _config.n_noise_samples -1 } }, _per_channel_data[channel].baseline);
+    _noise_samples[channel] = NoiseSample( { { 0, _config.n_noise_samples -1 } }, baseline_local);
   }
   else {
     // or use peak finding
-    _noise_samples[channel] = NoiseSample(_per_channel_data[channel].peaks, _per_channel_data[channel].baseline, digits.NADC()); 
+    _noise_samples[channel] = NoiseSample(_per_channel_data[channel].peaks, baseline_local, digits.NADC()); 
   }
 
   // Refine baseline values by taking the mean over the background range
