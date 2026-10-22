@@ -6,7 +6,7 @@ streamPTB: {
 
   metric_llt_trigger_rate: {
 
-    hostname: "sbnd-db.fnal.gov"
+    hostname: "sbnd-db01.fnal.gov"
 
     groups: {
       LLT_ID: [ [0, 32] ]
@@ -24,7 +24,7 @@ streamPTB: {
 
   metric_hlt_trigger_rate: {
 
-    hostname: "sbnd-db.fnal.gov"
+    hostname: "sbnd-db01.fnal.gov"
 
     groups: {
       HLT_ID: [ [0, 32] ]
@@ -42,7 +42,7 @@ streamPTB: {
 
   metric_beam_light_diff: {
 
-    hostname: "sbnd-db.fnal.gov"
+    hostname: "sbnd-db01.fnal.gov"
 
     groups: {
       BEAM_LIGHT_DIFF: [0]
@@ -69,7 +69,7 @@ streamPTB: {
 
   metric_beam_crt_diff: {
 
-    hostname: "sbnd-db.fnal.gov"
+    hostname: "sbnd-db01.fnal.gov"
 
     groups: {
       BEAM_CRT_DIFF: [0]
@@ -102,7 +102,7 @@ streamPTB: {
                                                                    
   metric_ptb_tdc_diff: {
 
-    hostname: "sbnd-db.fnal.gov"
+    hostname: "sbnd-db01.fnal.gov"
 
     groups: {
       PTB_TDC_DIFF: [0]
@@ -147,6 +147,25 @@ streamPTB: {
       NUMBER_PTB_FLASH:{}
 
       NUMBER_PTB_EVENT:{}
+    }
+  }
+
+  metric_hlt_gate_count: {
+
+    hostname: "sbnd-db01.fnal.gov"
+
+    groups: {
+      HLT_ID: [[0, 32]]
+    }
+
+    streams: ["nozero"]
+
+    metrics: {
+
+      HLT_gate_count:{
+        units: counts
+        title: "PTB HLT gate count"
+      }
     }
   }
 }

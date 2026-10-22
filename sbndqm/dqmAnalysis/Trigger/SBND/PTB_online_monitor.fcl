@@ -16,7 +16,7 @@ physics: {
       module_type: PTBdqm
 
       metric_llt_trigger_rate: {
-        hostname: "sbnd-db01.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
         groups: {
           LLT_ID: [ [0, 32] ]
         }
@@ -31,7 +31,7 @@ physics: {
       }
 
       metric_hlt_trigger_rate: {
-        hostname: "sbnd-db01.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
         groups: {
           HLT_ID: [ [0, 32] ]
         }
@@ -46,7 +46,7 @@ physics: {
       }
 
       metric_beam_light_diff: {
-        hostname: "sbnd-db01.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
         groups: {
           BEAM_LIGHT_DIFF: [0]
         }
@@ -69,7 +69,7 @@ physics: {
       }
 
       metric_beam_crt_diff: {
-        hostname: "sbnd-db01.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
         groups: {
           BEAM_CRT_DIFF: [0]
         }
@@ -98,7 +98,7 @@ physics: {
       }
       
       metric_ptb_tdc_diff: {
-        hostname: "sbnd-db01.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
         groups: {
           PTB_TDC_DIFF: [0]
         }
@@ -143,6 +143,25 @@ physics: {
         }
       }
 
+      metric_hlt_gate_count: {
+
+        hostname: "sbnd-db01.fnal.gov"
+
+        groups: {
+          HLT_ID: [[0, 32]]
+        }
+
+        streams: ["nozero"]
+
+        metrics: {
+
+          HLT_gate_count:{
+            units: counts
+            title: "PTB HLT gate count"
+          }
+        }
+      }
+
     }
   }
   
@@ -162,18 +181,21 @@ services: {
     connections: {
       fast: @local::redis_metric_fast
       slow: @local::redis_metric_slow
-      archive: @local::redis_metric_archive
+      archiving @local::redis_metric_archive
+      nozero: @local::redis_metric_nozero
     }
   }
 
 } 
 
-services.RedisConnection.host: "sbnd-db01.fnal.gov"
-services.RedisConnection.password: "/home/nfs/sbnd/redis_passfile"
+services.RedisConnection.host: "sbnd-db03.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
+
 
 services.InitMetricManager.connections.fast.send_zeros: false
 services.InitMetricManager.connections.slow.send_zeros: false
 services.InitMetricManager.connections.archiving.send_zeros: false
+services.InitMetricManager.connections.flash.send_zeros: false
 
 
 
@@ -197,7 +219,7 @@ source:
 
   transfer_plugin: {
 
-     unique_label: "TriggerOM"
+     unique_label: "TriggerOnlineMonitor"
       transferPluginType: Shmem
       shm_key: 0x40471187
       max_fragment_size_words: 100000000 #58543672 #33554432
@@ -208,7 +230,7 @@ source:
   }
 
   dispatcher_config: {
-    unique_label: "TriggerOM"
+    unique_label: "TriggerOnlineMonitor"
     path: [ out ]
     physics: {}
     outputs: {
@@ -216,7 +238,7 @@ source:
         module_type: TransferOutput
         transfer_plugin: {
 
-           unique_label: "TriggerOM"
+           unique_label: "TriggerOnlineMonitor"
             transferPluginType: Shmem
 
             shm_key: 0x40471187
