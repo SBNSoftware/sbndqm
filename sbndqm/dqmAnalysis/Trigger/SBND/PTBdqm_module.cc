@@ -95,11 +95,17 @@ namespace sbndaq {
       int hlt_id;
       int llt_id;
 
+      bool fhlt2_found;
+      bool fhlt4_found;
+      int fhlt2_gate_count;
+      int fhlt4_gate_count;
+
       void analyze_caen_fragment(artdaq::Fragment frag);
       void analyze_ptb_fragment(artdaq::Fragment frag, int eventcounter);
       void analyze_tdc_fragment(artdaq::Fragment frag);
       void analyze_trigger_rates();
       void analyze_event_metrics();
+      void analyze_gate_counts();
       void resetdatavectors();
       void reseteventdatavectors();
       static bool sortcol( const std::vector<uint64_t>& v1, const std::vector<uint64_t>& v2 );	
@@ -176,6 +182,7 @@ sbndaq::PTBdqm::PTBdqm(fhicl::ParameterSet const & pset)
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_beam_light_diff")); 
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_beam_crt_diff")); 
   sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_ptb_tdc_diff")); 
+  sbndaq::GenerateMetricConfig(pset.get<fhicl::ParameterSet>("metric_hlt_gate_count")); 
 }
 
 //------------------------------------------------------------------------------------------------------------------
@@ -290,29 +297,47 @@ void sbndaq::PTBdqm::analyze_ptb_fragment(artdaq::Fragment frag, int eventcounte
                    trigger_mask &= (trigger_mask - 1); // Turn off the least significant 1-bit
                    int hlt_id = static_cast<int>(ht_id);
                    if(hlt_id < 32){
-		      hlt_type_ts[hlt_id].emplace_back(frag.timestamp());
-		      if(hlt_id >= 22 && hlt_id <= 30 ){
-			 flash_trigger_ts.emplace_back(frag.timestamp());
-		      }
-		      else if(hlt_id == 20 || hlt_id == 21){
-			 crt_t1reset_ts.emplace_back(frag.timestamp());
-                         if(hlt_id == 20) crt_t1reset_b_ts.emplace_back(frag.timestamp());
-                         else             crt_t1reset_ob_ts.emplace_back(frag.timestamp());
-		      }
-		      else if(hlt_id >= 0 && hlt_id <= 19 ){
-			 event_trigger_ts.emplace_back(frag.timestamp());
-		      }
-		      if(hlt_id == 1 || hlt_id == 2 ){
-			 hlt_beam_ts.emplace_back(frag.timestamp());
-		      }
-		      else if(hlt_id == 3 || hlt_id == 4 ){
-			 hlt_offbeam_ts.emplace_back(frag.timestamp());
-		      }
-		      ++hlt_counts[eventcounter][hlt_id+1];
+                     hlt_type_ts[hlt_id].emplace_back(frag.timestamp());
+                     if(hlt_id >= 22 && hlt_id <= 30 ){
+                        flash_trigger_ts.emplace_back(frag.timestamp());
+                     }
+                     else if(hlt_id == 20 || hlt_id == 21){
+                        crt_t1reset_ts.emplace_back(frag.timestamp());
+                        if(hlt_id == 20) crt_t1reset_b_ts.emplace_back(frag.timestamp());
+                        else crt_t1reset_ob_ts.emplace_back(frag.timestamp());
+                     }
+                     else if(hlt_id >= 0 && hlt_id <= 19 ){
+                        event_trigger_ts.emplace_back(frag.timestamp());
+                     }
+                     
+                     if(hlt_id == 1 || hlt_id == 2 ){
+                        hlt_beam_ts.emplace_back(frag.timestamp());
+                     }
+                     else if(hlt_id == 3 || hlt_id == 4 ){
+                        hlt_offbeam_ts.emplace_back(frag.timestamp());
+                     }
+                     ++hlt_counts[eventcounter][hlt_id+1];
+
+                     // Save HLT2 and HLT4 gate counters
+                     if(hlt_id == 2 && !fhlt2_found){
+                        int gate_count = ptb_fragment.Trigger(i)->gate_counter;
+                        if (gate_count > 0) {
+                           fhlt2_gate_count = gate_count;
+                           fhlt2_found = true;
+                        }
+                        
+                     }
+                     else if(hlt_id == 4 && !fhlt4_found){
+                        int gate_count = ptb_fragment.Trigger(i)->gate_counter;
+                        if (gate_count > 0) {
+                           fhlt4_gate_count = gate_count;
+                           fhlt4_found = true;
+                        }
+                     }
                    }
                }
                break;
-             }
+            }
          }
       }
 }
@@ -568,11 +593,30 @@ void::sbndaq::PTBdqm::reseteventdatavectors(){
   ftdc_event_utc.clear();
 }
 
+
+void sbndaq::PTBdqm::analyze_gate_counts() {
+  if (fhlt2_found){
+   std::cout << "Saving HLT2 gate count: " << fhlt2_gate_count << std::endl;
+   sbndaq::sendMetric("HLT_ID", "2", "HLT_gate_count", fhlt2_gate_count, fReportingLevel, artdaq::MetricMode::LastPoint);
+  }
+
+  if (fhlt4_found) {
+   std::cout << "Saving HLT4 gate count: " << fhlt4_gate_count << std::endl;
+   sbndaq::sendMetric("HLT_ID", "4", "HLT_gate_count", fhlt4_gate_count, fReportingLevel, artdaq::MetricMode::LastPoint);
+  }
+}
+
 void sbndaq::PTBdqm::analyze(art::Event const & evt) {
 
   // Clear CAEN data in the beginning of each event
   fTicksVec.clear();
   fWvfmsVec.clear();
+
+  fhlt2_found = false;
+  fhlt4_found = false;
+
+  fhlt2_gate_count = -1;
+  fhlt4_gate_count = -1;
   
   //Get PTB fragment container
   art::InputTag itag(fDAQLabel, fPTBContainerInstance);
@@ -695,6 +739,7 @@ void sbndaq::PTBdqm::analyze(art::Event const & evt) {
 
   analyze_event_metrics();
   analyze_trigger_rates();
+  analyze_gate_counts();
 
   resetdatavectors();
   reseteventdatavectors();
