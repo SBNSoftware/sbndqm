@@ -314,7 +314,7 @@ void SPECTDCStreams::analyze(art::Event const & e) {
   //Get event number 
   _event = e.id().event(); 
 
-  if (fVerbose >= 1) std::cout << "================= EVENT " << _event << " =================" << std::endl; 
+  if (fVerbose >= 1) std::cout << "~*~*~*~*~*~*~*~*~ WOLOLO EVENT " << _event << " K BYEEEE ~*~*~*~*~*~*~*~*~" << std::endl;
 
   //------------------------------------------------------------------------------// 
   // Get DAQTimestamps products 

@@ -19,7 +19,8 @@ cet_build_plugin( SPECTDCStreams art::module
   art_root_io::TFileService_service
 
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
-  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND 
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Obj_SBND
 
   sbnobj::SBND_Timing
 

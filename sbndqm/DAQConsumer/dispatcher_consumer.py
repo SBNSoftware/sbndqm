@@ -21,10 +21,19 @@ class DispatcherConsumer:
         self.PROCESSES = {}
         self.dispatchers = {}
 
+        print("I have constructed a dispatcher consumer with these arguments:")
+        print("fhicl_configurations:", self.fhicl_configurations)
+        print("process_names:", self.process_names)
+        print("log_dir:", self.log_dir)
+        print("overwrite_path:", self.overwrite_path)
+        print("PROCESSES:", self.PROCESSES)
+        print("dispatchers:", self.dispatchers)
+
     def run(self):
         this_dispatchers = self.get_dispatchers() 
         new_dispatchers = {}
         for port in this_dispatchers:
+            print(f"Checking port {port}...")
             if port in self.dispatchers:
                 new_dispatchers[port] = self.dispatchers[port]
             else:
@@ -120,11 +129,13 @@ class DispatcherConsumer:
         dispatcher_ports = set()
         for pid in pids:
             port = None
-            try: 
+            try:
                 with open(os.path.join('/proc', pid, 'cmdline')) as f:
                     cmdline = f.read().split('\0')
             except: # may happen if a given process no longer exists
                 continue
+            if len(cmdline) and False:
+                print(pid, cmdline[0])
             if len(cmdline) and cmdline[0] == "dispatcher":
                 for cmd in cmdline:
                     if cmd.startswith("id:"):

@@ -13,6 +13,7 @@ cet_make_library(
         artdaq_core::artdaq-core_Utilities
         sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common
         sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
+	sbndaq_artdaq_core::sbndaq-artdaq-core_Obj_SBND
 )
 
 install_headers()

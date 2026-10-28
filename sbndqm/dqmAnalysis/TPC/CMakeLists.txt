@@ -16,7 +16,8 @@ cet_make_library( LIBRARY_NAME tpcAnalysis_SBN
 		ChannelData.cc
 		ChannelDataSBND.cc
 	LIBRARIES
-		sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
+	        sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND_NevisTPC
+	        sbndaq_artdaq_core::sbndaq-artdaq-core_Obj_SBND
 	        sbndqm::Decode_Mode
 		lardata::Utilities
 		lardataobj::RawData

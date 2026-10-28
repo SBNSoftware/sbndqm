@@ -13,7 +13,8 @@ cet_build_plugin( PTBdqm art::module
   art_root_io::tfile_support
   art_root_io::TFileService_service
   sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_Common 
-  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND 
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Overlays_SBND
+  sbndaq_artdaq_core::sbndaq-artdaq-core_Obj_SBND
   artdaq_core::artdaq-core_Utilities
   artdaq_utilities::artdaq-utilities_Plugins
   sbndaq_online::storage
