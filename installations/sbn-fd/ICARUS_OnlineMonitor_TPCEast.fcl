@@ -168,8 +168,9 @@ outputs.decodedout:{
 # TPC decoder
 physics.producers.daqTPCROI: @local::physics.producers.daqTPCROI
 physics.producers.daqTPCROI.FragmentsLabelVec: [ @sequence::tpclabels_daq ]
-physics.producers.daqTPCROI.OutputRawWaveform: true
-physics.producers.daqTPCROI.OutputChannelROIs: false
+physics.producers.daqTPCROI.OutputRawWaveform: true              # needed by EVD
+physics.producers.daqTPCROI.OutputChannelROIs: false             # not needed by EVD
+physics.producers.daqTPCROI.DecoderTool.RemoveBadChannels: false # no masking for EVD
 
 # PMT + trigger decoder
 physics.producers.daqPMT: @local::decodePMTOnline
