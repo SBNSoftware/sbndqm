@@ -45,10 +45,10 @@ namespace sbndaq {
 
       explicit BeamTimingStreams(fhicl::ParameterSet const & pset);
       
-      template<typename T> T Median(std::vector<T> data) const;
+      template<typename T> static T Median(std::vector<T> data);
       template<typename T> static size_t getMaxBin(std::vector<T> const& vv, size_t startElement, size_t endElement);
       template<typename T> static size_t getMinBin(std::vector<T> const& vv, size_t startElement, size_t endElement);
-      template<typename T> static size_t getStartSample( std::vector<T> const& vv, T thres );
+      template<typename T> static double getStartSample( std::vector<T> const& vv, double thres );
       
       std::string getGateName(int source);
       bool isSpecialChannel (int channel, std::map<size_t,std::string> const& channel_map, int &crateID);
@@ -102,7 +102,7 @@ sbndaq::BeamTimingStreams::BeamTimingStreams(fhicl::ParameterSet const & pset)
   , m_redis_hostname{ pset.get<std::string>("RedisHostname", "icarus-db02") }
   , m_redis_port{ pset.get<int>("RedisPort", 6379) }
   , m_metric_config{ pset.get<fhicl::ParameterSet>("TimingMetricConfig") }
-  , m_ADC_threshold{ pset.get<short int>("ADCthreshold", 200)}
+  , m_ADC_threshold{ pset.get<short int>("ADCthreshold", 500)}
   , m_OpticalTick{ 0.002 }
 {
   // Configure the redis metrics 
@@ -111,7 +111,7 @@ sbndaq::BeamTimingStreams::BeamTimingStreams(fhicl::ParameterSet const & pset)
 
 //------------------------------------------------------------------------------------------------------------------
 
-template<typename T> T sbndaq::BeamTimingStreams::Median( std::vector<T> data ) const {
+template<typename T> T sbndaq::BeamTimingStreams::Median( std::vector<T> data ){
 
   std::nth_element( data.begin(), data.begin() + data.size()/2, data.end() );
   return data[ data.size()/2 ];
@@ -140,35 +140,40 @@ template<typename T> size_t sbndaq::BeamTimingStreams::getMaxBin(std::vector<T> 
 
 //------------------------------------------------------------------------------------------------------------------
 
-template<typename T> size_t sbndaq::BeamTimingStreams::getStartSample( std::vector<T> const& vv, T thres ){
-    
+template<typename T> double sbndaq::BeamTimingStreams::getStartSample( std::vector<T> const& vv, double thres ){
+
+  // same procedure as icarus::timing::PulseStartExtractor (InterpolatedCF) in icaruscode
+  if( vv.empty() )
+    return 0;
+
   // get the pulse minimum (undershoot of the signal)
   size_t minbin = getMinBin( vv, 0, vv.size() );
 
   //search only a cropped region of the waveform backward from the min
-  size_t maxbin =  minbin-100; 
+  size_t maxbin = ( minbin >= 100 ) ? minbin-100 : 0;
 
-  // Now we crawl betweem maxbin and minbin and we stop when:
-  // bin value > ( maxbin value - minbin value )*0.2
-  size_t startbin = maxbin;
-  auto delta = vv[maxbin]-vv[minbin];
- 
+  // baseline as median of everything before the search region (at least first sample)
+  double baseline = Median( std::vector<T>( vv.begin(), vv.begin() + std::max<size_t>(maxbin, 1) ) );
+  double delta = baseline - vv[minbin];
+
   if( delta < thres ) // just noise
-    return 0; //return first bin 
+    return 0; //return first bin
 
-  for( size_t bin=maxbin; bin<minbin; bin++ ){
-    auto val = vv[maxbin]-vv[bin];
-    if( val >= 0.2*delta ){  // 20%
-      startbin = bin - 1;
-      break;
-    }
-  }
+  // Now we crawl between maxbin and minbin and we stop at the first sample
+  // below baseline by at least 20% of the amplitude (the minimum always is)
+  double level = baseline - 0.2*delta;
+  size_t bin = maxbin;
+  while( bin < minbin && vv[bin] > level )
+    bin++;
 
-  if( startbin < maxbin ){
-    startbin=maxbin;
-  }
+  // already below the level at the start of the search region
+  if( bin == maxbin )
+    return maxbin;
 
-  return startbin;
+  // interpolate between the samples across the 20% level
+  double before = vv[bin-1];
+  double after = vv[bin];
+  return (bin-1) + (before-level)/(before-after);
 }
 
 //------------------------------------------------------------------------------------------------------------------
