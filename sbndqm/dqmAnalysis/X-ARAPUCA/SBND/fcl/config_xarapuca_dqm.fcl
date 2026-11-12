@@ -1,0 +1,43 @@
+#include "xarapuca_stream_config_SBND.fcl"
+
+BEGIN_PROLOG
+
+streamXARAPUCA: {
+  module_type: CAENV1740StreamsSBND
+  reco_man:      @local::standard_preco_manager
+  HitAlgoConfig: @local::xarapuca_opreco_hit_slidingwindow
+  PedAlgoConfig: @local::xarapuca_opreco_pedestal_rmsslider
+
+  BoardSlots:      [7, 13, 16, 19]   # must match decoder board_id_list
+  ChannelIdFactor: 100               # decoder: channel_id = slot*100 + channel
+  TickPeriod:      0.016             # [us]
+  BoardGroups:     ["APSAIA", "ARARA", "ARARA", "ARARA"]   # one per BoardSlots entry (slot 7 = APSAIA)
+
+  XARAPUCAMetricConfig: {
+    hostname: "sbnd-db01.fnal.gov"
+    groups: {
+      APSAIA: [ [0, 63] ]      # slot 7 (board index 0)
+      ARARA:  [ [64, 255] ]    # slots 13, 16, 19 (board indices 1-3)
+    }
+    streams: ["archiving"]
+    metrics: {
+      rms: {
+        units: ADC
+        title: "%(group)s channel %(instance)s rms"
+        display_range: [0., 50.]      # TUNE
+      }
+      baseline: {
+        units: ADC
+        title: "%(group)s channel %(instance)s Pedestal"
+        display_range: [0, 4095]      # TUNE
+      }
+      rate: {
+        units: Hz
+        title: "%(group)s channel %(instance)s single channel rate"
+        display_range: [ -50, 250 ]   # TUNE
+      }
+    }
+  }
+}
+
+END_PROLOG

@@ -1,0 +1,93 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection_sbnd.fcl"
+#include "opticaldetectormodules.fcl"
+#include "xarapuca_stream_config_SBND.fcl"   # also pulls in sbndcode's xarapucadecoder.fcl
+
+physics: {
+
+  producers: {
+
+    # sbndcode decoder: CAEN V1740 fragments -> std::vector<raw::OpDetWaveform>
+    # instance label "XARAPUCAChannels"; channel_id = slot*100 + board channel
+    daqXARAPUCA: @local::xarapucadecoder
+
+  }
+
+  analyzers: {
+
+    xarapucaAnalysis: {
+
+      module_type: CAENV1740StreamsSBND
+
+      OpDetWaveformLabel: "daqXARAPUCA:XARAPUCAChannels"
+
+      reco_man:      @local::standard_preco_manager
+      HitAlgoConfig: @local::xarapuca_opreco_hit_slidingwindow
+      PedAlgoConfig: @local::xarapuca_opreco_pedestal_rmsslider
+
+      BoardSlots:      [7, 13, 16, 19]   # must match decoder board_id_list
+      ChannelIdFactor: 100
+      TickPeriod:      0.016
+      BoardGroups:     ["APSAIA", "ARARA", "ARARA", "ARARA"]   # one per BoardSlots entry (slot 7 = APSAIA)
+
+      XARAPUCAMetricConfig: {
+
+        hostname: "sbnd-db.fnal.gov"
+
+        groups: {
+          APSAIA: [ [0, 63] ]     # slot 7
+          ARARA:  [ [64, 255] ]   # slots 13, 16, 19
+        }
+
+        streams: ["30s"]
+
+        metrics: {
+
+          rms: {
+            units: ADC
+            title: "%(group)s channel %(instance)s rms"
+            display_range: [0., 50.]      # TUNE
+          }
+
+          baseline: {
+            units: ADC
+            title: "%(group)s channel %(instance)s Pedestal"
+            display_range: [0, 4095]      # TUNE
+          }
+
+          rate: {
+            units: Hz
+            title: "%(group)s channel %(instance)s single channel rate"
+            display_range: [ 0, 100000 ]  # TUNE
+          }
+
+        }
+      }
+    }
+  }
+
+  my_producer_modules: [ daqXARAPUCA ]
+  trigger_paths: [ my_producer_modules ]
+
+  ana: [ xarapucaAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+services: {
+
+  RedisConnection: @local::redis_connection
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+}
+
+services.RedisConnection.host: "sbnd-db03.fnal.gov"
+
+process_name: SBNDXARAPUCAANALYSIS
