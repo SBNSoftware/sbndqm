@@ -79,6 +79,9 @@ physics: {
 services: {
 
   RedisConnection: @local::redis_connection
+  TFileService: {
+    fileName: "xarapuca_output.root"
+  }
 
   InitMetricManager: {
     connections: {
