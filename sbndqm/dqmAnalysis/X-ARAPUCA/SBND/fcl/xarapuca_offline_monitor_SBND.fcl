@@ -34,7 +34,7 @@ physics: {
 
       XARAPUCAMetricConfig: {
 
-        hostname: "sbnd-db.fnal.gov"
+        hostname: "sbnd-db03.fnal.gov"
 
         groups: {
           APSAIA: [ [0, 63] ]     # slot 7
