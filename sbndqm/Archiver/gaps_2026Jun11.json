@@ -1,0 +1,218 @@
+{
+  "database": "sbnd_online_prd",
+  "host": "sbnd-db03",
+  "port": 5434,
+  "schema": "runcon_prd",
+  "tables_scanned": 68,
+  "gap_threshold_days": 3.0,
+  "coverage_start": "2023-03-02T15:24:41-06:00",
+  "coverage_end": "2026-06-11T16:28:31.812000-05:00",
+  "active_days": 157,
+  "scan_seconds": 335.62,
+  "gaps": [
+    {
+      "last_metric_before": "2023-03-02T15:24:41-06:00",
+      "first_metric_after": "2023-03-09T13:34:40-06:00",
+      "duration_seconds": 598199.0,
+      "duration_human": "6 days, 22 hours"
+    },
+    {
+      "last_metric_before": "2023-03-09T13:34:40-06:00",
+      "first_metric_after": "2023-03-23T12:55:45-05:00",
+      "duration_seconds": 1203665.0,
+      "duration_human": "13 days, 22 hours"
+    },
+    {
+      "last_metric_before": "2023-03-23T12:55:45-05:00",
+      "first_metric_after": "2023-05-22T14:25:51-05:00",
+      "duration_seconds": 5189406.0,
+      "duration_human": "60 days, 1 hour"
+    },
+    {
+      "last_metric_before": "2023-05-22T15:36:53-05:00",
+      "first_metric_after": "2023-06-09T15:23:43-05:00",
+      "duration_seconds": 1554410.0,
+      "duration_human": "17 days, 23 hours"
+    },
+    {
+      "last_metric_before": "2023-06-09T15:25:55-05:00",
+      "first_metric_after": "2023-07-25T13:50:34-05:00",
+      "duration_seconds": 3968679.0,
+      "duration_human": "45 days, 22 hours"
+    },
+    {
+      "last_metric_before": "2023-07-25T14:03:04-05:00",
+      "first_metric_after": "2023-09-27T11:30:44-05:00",
+      "duration_seconds": 5520460.0,
+      "duration_human": "63 days, 21 hours"
+    },
+    {
+      "last_metric_before": "2023-09-27T11:30:44-05:00",
+      "first_metric_after": "2023-10-17T17:16:24-05:00",
+      "duration_seconds": 1748740.0,
+      "duration_human": "20 days, 5 hours"
+    },
+    {
+      "last_metric_before": "2023-10-17T17:16:24-05:00",
+      "first_metric_after": "2023-10-26T17:13:58-05:00",
+      "duration_seconds": 777454.0,
+      "duration_human": "8 days, 23 hours"
+    },
+    {
+      "last_metric_before": "2023-10-26T17:13:58-05:00",
+      "first_metric_after": "2023-11-20T13:34:17-06:00",
+      "duration_seconds": 2150419.0,
+      "duration_human": "24 days, 21 hours"
+    },
+    {
+      "last_metric_before": "2023-11-20T14:01:07-06:00",
+      "first_metric_after": "2024-01-29T15:55:13-06:00",
+      "duration_seconds": 6054846.0,
+      "duration_human": "70 days, 1 hour"
+    },
+    {
+      "last_metric_before": "2024-01-30T01:35:11-06:00",
+      "first_metric_after": "2024-02-07T22:17:27-06:00",
+      "duration_seconds": 765736.0,
+      "duration_human": "8 days, 20 hours"
+    },
+    {
+      "last_metric_before": "2024-02-07T22:17:27-06:00",
+      "first_metric_after": "2024-02-17T06:24:38-06:00",
+      "duration_seconds": 806831.0,
+      "duration_human": "9 days, 8 hours"
+    },
+    {
+      "last_metric_before": "2024-02-17T14:51:24-06:00",
+      "first_metric_after": "2024-02-23T10:34:32-06:00",
+      "duration_seconds": 502988.0,
+      "duration_human": "5 days, 19 hours"
+    },
+    {
+      "last_metric_before": "2024-02-23T19:38:55-06:00",
+      "first_metric_after": "2024-03-04T14:04:33-06:00",
+      "duration_seconds": 843938.0,
+      "duration_human": "9 days, 18 hours"
+    },
+    {
+      "last_metric_before": "2024-03-04T14:05:02-06:00",
+      "first_metric_after": "2024-03-15T22:33:52-05:00",
+      "duration_seconds": 977330.0,
+      "duration_human": "11 days, 7 hours"
+    },
+    {
+      "last_metric_before": "2024-03-16T07:18:50-05:00",
+      "first_metric_after": "2024-04-11T02:47:16-05:00",
+      "duration_seconds": 2230106.0,
+      "duration_human": "25 days, 19 hours"
+    },
+    {
+      "last_metric_before": "2024-04-11T08:06:59-05:00",
+      "first_metric_after": "2024-04-15T12:05:57-05:00",
+      "duration_seconds": 359938.0,
+      "duration_human": "4 days, 3 hours"
+    },
+    {
+      "last_metric_before": "2024-04-16T18:40:26-05:00",
+      "first_metric_after": "2024-04-30T10:20:13-05:00",
+      "duration_seconds": 1179587.0,
+      "duration_human": "13 days, 15 hours"
+    },
+    {
+      "last_metric_before": "2024-04-30T12:06:38-05:00",
+      "first_metric_after": "2024-07-22T20:10:57-05:00",
+      "duration_seconds": 7200259.0,
+      "duration_human": "83 days, 8 hours"
+    },
+    {
+      "last_metric_before": "2024-07-22T23:46:20-05:00",
+      "first_metric_after": "2024-07-28T17:23:45-05:00",
+      "duration_seconds": 495445.0,
+      "duration_human": "5 days, 17 hours"
+    },
+    {
+      "last_metric_before": "2024-07-29T21:25:53-05:00",
+      "first_metric_after": "2024-09-27T17:59:02-05:00",
+      "duration_seconds": 5171589.0,
+      "duration_human": "59 days, 20 hours"
+    },
+    {
+      "last_metric_before": "2024-09-27T18:08:15-05:00",
+      "first_metric_after": "2024-10-09T21:30:20-05:00",
+      "duration_seconds": 1048925.0,
+      "duration_human": "12 days, 3 hours"
+    },
+    {
+      "last_metric_before": "2024-10-09T22:40:00-05:00",
+      "first_metric_after": "2024-11-07T07:50:27-06:00",
+      "duration_seconds": 2455827.0,
+      "duration_human": "28 days, 10 hours"
+    },
+    {
+      "last_metric_before": "2024-11-14T17:18:15-06:00",
+      "first_metric_after": "2024-11-18T03:14:44-06:00",
+      "duration_seconds": 294989.0,
+      "duration_human": "3 days, 9 hours"
+    },
+    {
+      "last_metric_before": "2024-11-21T17:31:55-06:00",
+      "first_metric_after": "2024-11-27T14:02:49-06:00",
+      "duration_seconds": 505854.0,
+      "duration_human": "5 days, 20 hours"
+    },
+    {
+      "last_metric_before": "2025-01-17T05:03:03-06:00",
+      "first_metric_after": "2025-02-09T07:00:08-06:00",
+      "duration_seconds": 1994225.0,
+      "duration_human": "23 days, 1 hour"
+    },
+    {
+      "last_metric_before": "2025-02-17T22:33:55-06:00",
+      "first_metric_after": "2025-05-21T06:45:05.129000-05:00",
+      "duration_seconds": 7974670.129,
+      "duration_human": "92 days, 7 hours"
+    },
+    {
+      "last_metric_before": "2025-05-29T10:06:29.682000-05:00",
+      "first_metric_after": "2025-06-02T06:57:12.911000-05:00",
+      "duration_seconds": 334243.229,
+      "duration_human": "3 days, 20 hours"
+    },
+    {
+      "last_metric_before": "2025-06-02T13:57:59.249000-05:00",
+      "first_metric_after": "2025-06-29T23:59:22.145000-05:00",
+      "duration_seconds": 2368882.896,
+      "duration_human": "27 days, 10 hours"
+    },
+    {
+      "last_metric_before": "2025-07-08T08:04:56.634000-05:00",
+      "first_metric_after": "2026-02-24T22:58:27.143000-06:00",
+      "duration_seconds": 20015610.509,
+      "duration_human": "231 days, 15 hours"
+    },
+    {
+      "last_metric_before": "2026-03-05T02:40:16.073000-06:00",
+      "first_metric_after": "2026-03-10T09:50:59.383000-05:00",
+      "duration_seconds": 454243.31,
+      "duration_human": "5 days, 6 hours"
+    },
+    {
+      "last_metric_before": "2026-03-18T09:54:11.085000-05:00",
+      "first_metric_after": "2026-05-18T23:55:38.683000-05:00",
+      "duration_seconds": 5320887.598,
+      "duration_human": "61 days, 14 hours"
+    },
+    {
+      "last_metric_before": "2026-05-26T13:05:58.827000-05:00",
+      "first_metric_after": "2026-05-29T20:20:16.356000-05:00",
+      "duration_seconds": 285257.529,
+      "duration_human": "3 days, 7 hours"
+    },
+    {
+      "last_metric_before": "2026-05-29T20:37:54.223000-05:00",
+      "first_metric_after": "2026-06-03T11:58:58.374000-05:00",
+      "duration_seconds": 400864.151,
+      "duration_human": "4 days, 15 hours"
+    }
+  ]
+}
