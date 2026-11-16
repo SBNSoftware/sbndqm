@@ -1,0 +1,34 @@
+#include "xarapucadecoder.fcl" 
+
+BEGIN_PROLOG
+
+# NOTE: all values below marked TUNE are placeholders carried over/adapted from the PMT
+# config. V1740B is 12-bit (0-4095 ADC) at 62.5 MS/s (16 ns/sample), so PMT ranges
+# (14-bit, 2 ns) do NOT apply. Tune on real X-ARAPUCA data.
+
+xarapuca_opreco_pedestal_rmsslider: @local::standard_algo_pedestal_ub
+xarapuca_opreco_pedestal_rmsslider.BeamGateSamples:   1
+xarapuca_opreco_pedestal_rmsslider.SampleSize:        30
+xarapuca_opreco_pedestal_rmsslider.Threshold:         2.3
+xarapuca_opreco_pedestal_rmsslider.Verbose:           false
+xarapuca_opreco_pedestal_rmsslider.NWaveformsToFile:  0
+xarapuca_opreco_pedestal_rmsslider.MaxSigma:          2.3
+xarapuca_opreco_pedestal_rmsslider.PedRangeMax:       4095  # TUNE: 12-bit digitizer
+xarapuca_opreco_pedestal_rmsslider.PedRangeMin:       0     # TUNE
+xarapuca_opreco_pedestal_rmsslider.NumPreSample:      10
+xarapuca_opreco_pedestal_rmsslider.NumPostSample:     20
+
+xarapuca_opreco_hit_slidingwindow: @local::standard_algo_slidingwindow
+xarapuca_opreco_hit_slidingwindow.PositivePolarity:    false # TUNE: check X-ARAPUCA signal polarity
+xarapuca_opreco_hit_slidingwindow.NumPreSample:        5
+xarapuca_opreco_hit_slidingwindow.NumPostSample:       10
+xarapuca_opreco_hit_slidingwindow.ADCThreshold:        13    # TUNE
+xarapuca_opreco_hit_slidingwindow.NSigmaThreshold:     3
+xarapuca_opreco_hit_slidingwindow.TailADCThreshold:    6     # TUNE
+xarapuca_opreco_hit_slidingwindow.TailNSigmaThreshold: 2
+xarapuca_opreco_hit_slidingwindow.EndADCThreshold:     3     # TUNE
+xarapuca_opreco_hit_slidingwindow.EndNSigmaThreshold:  1
+xarapuca_opreco_hit_slidingwindow.MinPulseWidth:       5     # TUNE (samples are 16 ns, not 2 ns)
+xarapuca_opreco_hit_slidingwindow.Verbosity:           false
+
+END_PROLOG

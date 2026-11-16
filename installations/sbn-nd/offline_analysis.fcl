@@ -1,17 +1,19 @@
-#include "simple_channel_info.fcl"
-#include "redis_connection_sbnd.fcl"
-#include "TPCDQMChannelMapService.fcl"
-#include "SBNDDQMTPCDecoderDefaults.fcl"
-#include "services_sbnd.fcl"
-#include "simulationservices_sbnd.fcl"
-#include "opticaldetectormodules.fcl"
+#include "simple_channel_info.fcl" 
+#include "redis_connection_sbnd.fcl" 
+#include "TPCDQMChannelMapService.fcl" 
+#include "SBNDDQMTPCDecoderDefaults.fcl" 
+#include "services_sbnd.fcl" 
+#include "simulationservices_sbnd.fcl" 
+#include "opticaldetectormodules.fcl" 
 #include "pmt_stream_config_SBND.fcl" 
-#include "config_spectdc_dqm.fcl"
-#include "config_ptb_dqm.fcl"
-#include "config_pmt_dqm.fcl"
-#include "config_crt_dqm.fcl"
-#include "config_tpc_dqm.fcl"
+#include "config_spectdc_dqm.fcl" 
+#include "config_ptb_dqm.fcl" 
+#include "config_pmt_dqm.fcl" 
+#include "config_crt_dqm.fcl" 
+#include "config_tpc_dqm.fcl" 
 #include "pmtflash_config.fcl"
+#include "config_xarapuca_dqm.fcl"
+
 
 
 services:
@@ -25,12 +27,19 @@ services:
   #GeometryConfigurationWriter:    {}
   @table::sbnd_geometry_services
 
+  #For X-ARAPUCA Decoder
+  TFileService: {
+    fileName: "/dev/null"
+  }
+
   #For CRT
   InitMetricManager: {
     connections: {
+      flash: @local::redis_metric_flash
       fast: @local::redis_metric_fast
       slow: @local::redis_metric_slow
       archive: @local::redis_metric_archive
+      nozero: @local::redis_metric_nozero
     }
   }
 
@@ -137,6 +146,7 @@ physics:
       module_type: DaqDecoderSBNDPMT
       FragmentLabels: [ "daq:CAENV1730", "daq:ContainerCAENV1730" ]
     }
+    daqXARAPUCA: @local::xarapucadecoder
     daqSPECTDC: {
       module_type:           "SPECTDCDecoder"
       SPECTDCInstanceLabels: [ "TDCTIMESTAMP", "ContainerTDCTIMESTAMP" ]
@@ -159,6 +169,13 @@ physics:
     }
     pmtAnalysis: @local::streamPMT
 
+    # X-ARAPUCA
+    MetaXARAPUCA: {
+      module_type: ReportMetadata
+      RedisKey: eventmetaXARAPUCA
+      SelectEvents: [xarapuca_only]
+    }
+    xarapucaAnalysis: @local::streamXARAPUCA
     # CRT
     MetaCRT: {
       module_type: ReportMetadata
@@ -204,10 +221,11 @@ physics.analyzers.dqmSPECTDC.DAQTimestampLabel: "daqSPECTDC"
 physics.analyzers.pmtAnalysis.SelectEvents: [pmt_only]
 physics.analyzers.pmtAnalysis.OpDetWaveformLabel: "daqPMT"
 
-physics.analyzers.crtAnalysis.SelectEvents: [crt_only]
+physics.analyzers.crtana.SelectEvents: [crt_only]
 
-physics.analyzers.flashAnalysis.SelectEvents: [flash_only]
+physics.analyzers.flashana.SelectEvents: [flash_only]
 
+physics.analyzers.xarapucaAnalysis.SelectEvents: [xarapuca_only]
 
 physics.crt_only: [ prescale1 ]
 physics.pmt_only: [ daqPMT ]
@@ -215,15 +233,17 @@ physics.tpc_only: [ daq ]
 physics.timing_only: [ daqSPECTDC ]
 physics.trigger_only: [ prescale1 ]
 physics.flash_only: [ prescale1 ]
+physics.xarapuca_only: [ daqXARAPUCA ]
 
 physics.crt_path: [ crt_only ]
 physics.pmt_path: [ pmt_only ]
 physics.tpc_path: [ tpc_only ]
 physics.timing_path: [ timing_only ]
 physics.trigger_path: [ trigger_only ]
-physics.flash_path: [ flash_only]
+physics.flash_path: [ flash_only ]
+physics.xarapuca_path: [ xarapuca_only ]
 
-physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path ]
+physics.trigger_paths: [@sequence::physics.tpc_path, @sequence::physics.pmt_path , @sequence::physics.crt_path, @sequence::physics.timing_path, @sequence::physics.trigger_path, @sequence::physics.flash_path, @sequence::physics.xarapuca_path ]
 
 physics.atpc:         [ Meta, OnlineAnalysis, OnlineAnalysisRawData] #, OnlineEvdSBND ]
 physics.apmt:         [ MetaPMT, pmtAnalysis ]
@@ -231,8 +251,9 @@ physics.acrt:         [ MetaCRT, crtana ]
 physics.atiming:      [ dqmSPECTDC ]
 physics.atrigger:     [ ptbAnalysis ]
 physics.aflash:     [ flashana ]
+physics.axarapuca: [ xarapucaAnalysis ]
 
-physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash ]
+physics.a: [@sequence::physics.atpc, @sequence::physics.apmt, @sequence::physics.acrt, @sequence::physics.atiming, @sequence::physics.atrigger, @sequence::physics.aflash, @sequence::physics.axarapuca ]
 
 physics.decoded_stream: [ decodedout ]
 physics.end_paths: [ a ]

@@ -1,0 +1,102 @@
+#include "simple_channel_info.fcl"
+#include "redis_connection_sbnd.fcl"
+#include "opticaldetectormodules.fcl"
+#include "xarapuca_stream_config_SBND.fcl"
+#include "services_sbnd.fcl"
+#include "config_xarapuca_dqm.fcl"
+
+physics: {
+
+  producers: {
+
+    # sbndcode decoder: CAEN V1740 fragments -> std::vector<raw::OpDetWaveform>
+    # instance label "XARAPUCAChannels"; channel_id = slot*100 + board channel
+    daqXARAPUCA: @local::xarapucadecoder
+
+  }
+  analyzers: {
+    xarapucaAnalysis: @local::streamXARAPUCA
+  }
+
+  my_producer_modules: [ daqXARAPUCA ]
+  trigger_paths: [ my_producer_modules ]
+
+  ana: [ xarapucaAnalysis ]
+  end_paths: [ ana ]
+
+}
+
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
+
+  transfer_plugin: {
+     unique_label: "XARAPUCAOM"
+      transferPluginType: Shmem
+      shm_key: 0x40470920
+      max_fragment_size_words: 1e8 
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "XARAPUCAOM"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "XARAPUCAOM"
+          transferPluginType: Shmem
+          shm_key: 0x40470920
+          max_fragment_size_words: 1e8
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
+services: {
+
+  RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
+
+  InitMetricManager: {
+    connections: {
+      fast: @local::redis_metric_fast
+      slow: @local::redis_metric_slow
+      archive: @local::redis_metric_archive
+    }
+  }
+
+  #For X-ARAPUCA Decoder
+  TFileService: {
+    fileName: "/dev/null"
+  } 
+
+}
+
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+} 
+
+services.RedisConnection.host: "sbnd-db03.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
+
+process_name: SBNDXARAPUCAANALYSIS
