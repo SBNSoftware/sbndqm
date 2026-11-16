@@ -1,7 +1,9 @@
 #include "simple_channel_info.fcl"
 #include "redis_connection_sbnd.fcl"
 #include "opticaldetectormodules.fcl"
-#include "xarapuca_stream_config_SBND.fcl"   # also pulls in sbndcode's xarapucadecoder.fcl
+#include "xarapuca_stream_config_SBND.fcl"
+#include "services_sbnd.fcl"
+#include "config_xarapuca_dqm.fcl"
 
 physics: {
 
@@ -12,58 +14,8 @@ physics: {
     daqXARAPUCA: @local::xarapucadecoder
 
   }
-
   analyzers: {
-
-    xarapucaAnalysis: {
-
-      module_type: CAENV1740StreamsSBND
-
-      OpDetWaveformLabel: "daqXARAPUCA:XARAPUCAChannels"
-
-      reco_man:      @local::standard_preco_manager
-      HitAlgoConfig: @local::xarapuca_opreco_hit_slidingwindow
-      PedAlgoConfig: @local::xarapuca_opreco_pedestal_rmsslider
-
-      BoardSlots:      [7, 13, 16, 19]   # must match decoder board_id_list
-      ChannelIdFactor: 100
-      TickPeriod:      0.016
-      BoardGroups:     ["APSAIA", "ARARA", "ARARA", "ARARA"]   # one per BoardSlots entry (slot 7 = APSAIA)
-
-      XARAPUCAMetricConfig: {
-
-        hostname: "sbnd-db.fnal.gov"
-
-        groups: {
-          APSAIA: [ [0, 63] ]     # slot 7
-          ARARA:  [ [64, 255] ]   # slots 13, 16, 19
-        }
-
-        streams: ["30s"]
-
-        metrics: {
-
-          rms: {
-            units: ADC
-            title: "%(group)s channel %(instance)s rms"
-            display_range: [0., 50.]      # TUNE
-          }
-
-          baseline: {
-            units: ADC
-            title: "%(group)s channel %(instance)s Pedestal"
-            display_range: [0, 4095]      # TUNE
-          }
-
-          rate: {
-            units: Hz
-            title: "%(group)s channel %(instance)s single channel rate"
-            display_range: [ 0, 100000 ]  # TUNE
-          }
-
-        }
-      }
-    }
+    xarapucaAnalysis: @local::streamXARAPUCA
   }
 
   my_producer_modules: [ daqXARAPUCA ]
@@ -74,9 +26,52 @@ physics: {
 
 }
 
+source:
+{
+  module_type: TransferInput
+  register_fragment_types: false
+  # The timeout shouldn't be much smaller than the period between events, otherwise
+  # there's a spew of timeout messages
+  timeoutInUsecs: 10000000
+
+  commanderPluginType: xmlrpc
+  dispatcherHost: localhost
+  dispatcherPort: 6021
+
+  transfer_plugin: {
+     unique_label: "XARAPUCAOM"
+      transferPluginType: Shmem
+      shm_key: 0x40470920
+      max_fragment_size_words: 1e8 
+      first_event_builder_rank: 0
+          source_rank: 5
+          destination_rank: 6
+  }
+
+  dispatcher_config: {
+    unique_label: "XARAPUCAOM"
+    path: [ out ]
+    physics: {}
+    outputs: {
+      out: {
+        module_type: TransferOutput
+        transfer_plugin: {
+          unique_label: "XARAPUCAOM"
+          transferPluginType: Shmem
+          shm_key: 0x40470920
+          max_fragment_size_words: 1e8
+          first_event_builder_rank: 0
+          destination_rank: 6
+        }
+      }
+    }
+  }
+}
+
 services: {
 
   RedisConnection: @local::redis_connection
+  ArtdaqSharedMemoryServiceInterface: { service_provider: ArtdaqGlobalsService }
 
   InitMetricManager: {
     connections: {
@@ -86,8 +81,22 @@ services: {
     }
   }
 
+  #For X-ARAPUCA Decoder
+  TFileService: {
+    fileName: "/dev/null"
+  } 
+
 }
 
+outputs: {
+  dumper: {
+    module_type: FileDumperOutput
+    wantProductFriendlyClassName: true
+    onlyIfPresent: true
+  }
+} 
+
 services.RedisConnection.host: "sbnd-db03.fnal.gov"
+services.RedisConnection.passfile: "/home/nfs/sbnd/redis_passfile"
 
 process_name: SBNDXARAPUCAANALYSIS

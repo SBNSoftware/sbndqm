@@ -4,6 +4,7 @@ BEGIN_PROLOG
 
 streamXARAPUCA: {
   module_type: CAENV1740StreamsSBND
+  OpDetWaveformLabel: "daqXARAPUCA:XARAPUCAChannels"
   reco_man:      @local::standard_preco_manager
   HitAlgoConfig: @local::xarapuca_opreco_hit_slidingwindow
   PedAlgoConfig: @local::xarapuca_opreco_pedestal_rmsslider

@@ -192,7 +192,7 @@ sbndaq::CAENV1740StreamsSBND::CAENV1740StreamsSBND(fhicl::ParameterSet const & p
 //------------------------------------------------------------------------------------------------------------------
 
 void sbndaq::CAENV1740StreamsSBND::analyze(art::Event const & evt) {
-
+  std::cout<<"X-ARAPUCA DQM Module."<<std::endl;
   int level = 3;
 
   artdaq::MetricMode mode = artdaq::MetricMode::Average;
