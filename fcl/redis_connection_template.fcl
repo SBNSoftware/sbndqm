@@ -40,6 +40,7 @@ redis_metric_archive: {
   verbose: true
   // need to add postfix otherwise this metric sender and the other one will collide
   redis_key_postfix: ":archiving"
+  send_zeros: false
 }
 
 redis_metric_nozero: {
