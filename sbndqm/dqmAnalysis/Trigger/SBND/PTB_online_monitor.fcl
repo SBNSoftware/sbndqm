@@ -181,7 +181,7 @@ services: {
     connections: {
       fast: @local::redis_metric_fast
       slow: @local::redis_metric_slow
-      archiving @local::redis_metric_archive
+      archiving: @local::redis_metric_archive
       nozero: @local::redis_metric_nozero
     }
   }
